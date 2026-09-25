@@ -74,9 +74,15 @@ export function isAbsorbed(s: WordState | undefined): boolean {
   return score >= ABSORBED_SCORE && (recalls >= 1 || s.exposures >= NO_RECALL_EXPOSURES);
 }
 
-/** Gloss in the user's native language, falling back to English, then anything. */
-export function glossFor(word: Word, native: string): string {
-  return word.gloss[native] ?? word.gloss["en"] ?? Object.values(word.gloss)[0] ?? word.id;
+/**
+ * Gloss in the user's native language, falling back to English, then anything.
+ * A gloss in the target language itself is useless (house = house), so the gloss
+ * keyed by `lang`'s base is skipped: learning en with native en shows ru.
+ */
+export function glossFor(word: Word, native: string, lang?: string): string {
+  const own = lang?.split("-")[0];
+  const key = [native, "en", ...Object.keys(word.gloss)].find((k) => k !== own && word.gloss[k] !== undefined);
+  return (key ? word.gloss[key] : word.gloss[native] ?? Object.values(word.gloss)[0]) ?? word.id;
 }
 
 export function wordsPerResponse(level: number): number {

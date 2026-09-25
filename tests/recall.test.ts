@@ -74,6 +74,19 @@ describe("quiz", () => {
     expect(checkAnswer("еж", mk("erizo", "ёж", "hedgehog"))).toBe(true);
   });
 
+  test("checkAnswer: any apostrophe matches an Uzbek ' gloss", () => {
+    const w: Word = { ...mk("hijo", "сын", "son"), gloss: { ru: "сын", en: "son", uz: "o'g'il" } };
+    for (const a of ["o'g'il", "oʻgʻil", "o’g’il", "O`g`il"]) expect(checkAnswer(a, w)).toBe(true);
+  });
+
+  test("checkAnswer ignores the gloss in the target's own language", () => {
+    const w = mk("house", "дом", "house");
+    expect(checkAnswer("house", w, "en")).toBe(false);
+    expect(checkAnswer("house", w, "en-GB")).toBe(false);
+    expect(checkAnswer("дом", w, "en")).toBe(true);
+    expect(checkAnswer("house", w, "es")).toBe(true);
+  });
+
   test("success writes a recall into state", () => {
     const state: State = { casa: { exposures: 5, lastSeen: "" } };
     applyQuizResult(state, "casa", true);

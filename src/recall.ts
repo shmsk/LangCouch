@@ -39,13 +39,21 @@ export function applyQuizResult(state: State, id: string, ok: boolean): State {
   return state;
 }
 
-const normAnswer = (s: string) => s.toLowerCase().trim().replaceAll("ё", "е");
+// Uzbek Latin oʻ/gʻ/tutuq belgisi get typed with any of these; glosses store plain '.
+const normAnswer = (s: string) => s.toLowerCase().trim().replaceAll("ё", "е").replace(/[ʻʼ‘’`´]/g, "'");
 
-/** Loose gloss comparison: lowercase, trim, ё=е, comma/slash-separated gloss variants accepted — any gloss language counts. */
-export function checkAnswer(answer: string, word: Word): boolean {
+/**
+ * Loose gloss comparison: lowercase, trim, ё=е, any apostrophe = ', comma/slash-separated
+ * gloss variants accepted — any gloss language counts except the target's own
+ * (learning en, "house" is not a translation of "house").
+ */
+export function checkAnswer(answer: string, word: Word, lang?: string): boolean {
   const a = normAnswer(answer);
   if (!a) return false;
-  const variants = Object.values(word.gloss)
+  const own = lang?.split("-")[0];
+  const variants = Object.entries(word.gloss)
+    .filter(([k]) => k !== own)
+    .map(([, g]) => g)
     .flatMap((g) => g.split(/[,;/()]/))
     .map(normAnswer)
     .filter(Boolean);

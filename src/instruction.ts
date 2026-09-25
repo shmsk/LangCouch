@@ -22,7 +22,7 @@ export function langName(code: string): string {
  */
 export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null): string {
   const name = langName(config.lang);
-  const vocab = picks.map((p) => `${p.word.target} = ${glossFor(p.word, config.native)}`).join("; ");
+  const vocab = picks.map((p) => `${p.word.target} = ${glossFor(p.word, config.native, config.lang)}`).join("; ");
   const stage = grammarStage(config.level);
 
   const lines = [

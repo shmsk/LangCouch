@@ -26,13 +26,13 @@ flowchart LR
 ```
 
 - **Concept-keyed vocabulary**: meanings live once in `concepts.json` (id, pos, tier, glosses per native language); each `wordlists/<lang>.json` is a thin concept→lemma map, so adding a language is one small file and glosses never drift
-- **Wordlists**: ~400 core content words per language (noun/verb/adj/adv), no function words — Spanish, Portuguese, and Turkish included; adding yours is one JSON file your AI agent can produce by following [docs/AddLanguage.md](docs/AddLanguage.md); tier field reserves room for the →1000-word band, unlocked when the core is ~80% absorbed
+- **Wordlists**: ~400 core content words per language (noun/verb/adj/adv), no function words — English, German, French, Italian, Spanish, Portuguese, and Turkish included, plus en-GB, es-419 and pt-BR variants; adding yours is one JSON file your AI agent can produce by following [docs/AddLanguage.md](docs/AddLanguage.md); tier field reserves room for the →1000-word band, unlocked when the core is ~80% absorbed
 - **Per-language progress**: state lives in `~/.langcouch/state.<lang>.json`, keyed by concept id — progress survives lemma fixes and can be compared across languages ("you know *sun* in 3 of 5")
 - **SRS-lite**: least-shown words first, rotation, absorbed words drop into a ≤20% review tail
 - **Recall signal**: exposure is not knowledge — a word counts as absorbed only after you actively use it (it shows up in your own prompt, or you pass a `quiz`) or after a much larger passive dose
 - **Levels 1–10**: words → collocations (4+) → simple constructions (7+), driven by `grammar/<lang>.json` unlock rules
 - **State**: local in `~/.langcouch/` (human-readable JSON)
-- **Native language**: set `"native"` in `~/.langcouch/config.json` (default `en`) — glosses in the weave and accepted quiz answers follow it (currently `en`/`ru` glosses ship for all concepts)
+- **Native language**: set `"native"` in `~/.langcouch/config.json` (default `en`) — glosses in the weave and accepted quiz answers follow it (`en`, `ru` and `uz` (Uzbek, Latin script) glosses ship for all concepts; when you learn your own native language, e.g. `en` with native `en`, glosses fall back to another language)
 
 ### Privacy
 
@@ -42,9 +42,18 @@ The hook runs locally. It reads your prompt only to scan it for words you've alr
 
 | Code | Language | Words | Tier-1 coverage | Grammar constructions |
 |---|---|---|---|---|
-| `es` | Spanish    | 402 | 100% | 10 |
-| `pt` | Portuguese | 402 | 100% | — |
+| `en` | English (US)    | 402 | 100% | — |
+| `en-GB` | British English | variant: 8 words over `en` | 100% | — |
+| `de` | German     | 402 | 100% | — |
+| `fr` | French     | 402 | 100% | — |
+| `it` | Italian    | 402 | 100% | — |
+| `es` | Spanish (Spain) | 402 | 100% | 10 |
+| `es-419` | Latin American Spanish | variant: 9 words over `es` | 100% | 10 (from `es`) |
+| `pt` | Portuguese (Portugal) | 402 | 100% | — |
+| `pt-BR` | Brazilian Portuguese | variant: 8 words over `pt` | 100% | — |
 | `tr` | Turkish    | 402 | 100% | — |
+
+Every bundled list went through a second-model audit (a different vendor than the one that wrote it). English verbs are listed as `to work`, `to love`: English nouns and verbs often share a spelling, and each concept needs its own word. The weave still inflects them in context (*worked*, *she loves*).
 
 Adding your language is one JSON file. Just for yourself: run `/langcouch:add-language Georgian` in Claude Code, and the file lands in `~/.langcouch/wordlists/`, where it survives plugin updates. For everyone: open a PR, see [docs/AddLanguage.md](docs/AddLanguage.md). The doc is written so an AI coding agent can do it end-to-end.
 

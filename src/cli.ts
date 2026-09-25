@@ -174,7 +174,7 @@ function absorbedListView(): string {
     .map((w) => {
       const s = state[w.id]!;
       const recalls = (s.recalls ?? 0) > 0 ? `, recalls ${s.recalls}` : "";
-      return `  ${w.target} — ${glossFor(w, config.native)} (${s.exposures}×${recalls})`;
+      return `  ${w.target} — ${glossFor(w, config.native, config.lang)} (${s.exposures}×${recalls})`;
     });
   if (rows.length === 0) return `No absorbed words yet in ${config.lang} — keep going.`;
   return [`Absorbed in ${config.lang} (${rows.length}):`, ...rows].join("\n");
@@ -242,11 +242,13 @@ try {
       let correct = 0;
       for (const w of candidates) {
         const answer = await rl.question(`${w.target} → `);
-        const ok = checkAnswer(answer, w);
+        const ok = checkAnswer(answer, w, config.lang);
         applyQuizResult(state, w.id, ok);
         if (ok) correct++;
-        const others = Object.values(w.gloss).filter((g) => g !== glossFor(w, config.native));
-        console.log(ok ? "  ✓" : `  ✗ ${w.target} = ${glossFor(w, config.native)}${others.length ? ` (${others.join("; ")})` : ""}${isAbsorbed(state[w.id]) ? "" : " — back into rotation"}`);
+        const shown = glossFor(w, config.native, config.lang);
+        const own = baseLang(config.lang) ?? config.lang;
+        const others = Object.entries(w.gloss).filter(([k, g]) => k !== own && g !== shown).map(([, g]) => g);
+        console.log(ok ? "  ✓" : `  ✗ ${w.target} = ${glossFor(w, config.native, config.lang)}${others.length ? ` (${others.join("; ")})` : ""}${isAbsorbed(state[w.id]) ? "" : " — back into rotation"}`);
       }
       rl.close();
       saveState(config.lang, state);

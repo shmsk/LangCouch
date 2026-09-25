@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { pickWords, markExposed, unlockedWords } from "../src/scheduler.ts";
 import { buildInstruction, langName } from "../src/instruction.ts";
-import { wordsPerResponse, grammarStage, isAbsorbed, NO_RECALL_EXPOSURES, type Word, type State } from "../src/types.ts";
+import { glossFor, wordsPerResponse, grammarStage, isAbsorbed, NO_RECALL_EXPOSURES, type Word, type State } from "../src/types.ts";
 
 const mkWord = (id: string, tier = 1): Word => ({ id, target: id, pos: "noun", tier, gloss: { ru: `ru-${id}`, en: `en-${id}` } });
 const words: Word[] = Array.from({ length: 40 }, (_, i) => mkWord(`w${String(i).padStart(2, "0")}`));
@@ -111,5 +111,20 @@ describe("instruction", () => {
     expect(grammarStage(2)).toBe(1);
     expect(grammarStage(5)).toBe(2);
     expect(grammarStage(8)).toBe(3);
+  });
+});
+
+describe("glossFor", () => {
+  const w: Word = { id: "house", target: "house", pos: "noun", tier: 1, gloss: { en: "house", ru: "дом", uz: "uy" } };
+
+  test("native gloss wins; unknown native falls back to en", () => {
+    expect(glossFor(w, "uz", "es")).toBe("uy");
+    expect(glossFor(w, "ka", "es")).toBe("house");
+  });
+
+  test("never glosses a word in its own language: en target with en native shows ru", () => {
+    expect(glossFor(w, "en", "en")).toBe("дом");
+    expect(glossFor(w, "en", "en-GB")).toBe("дом");
+    expect(glossFor(w, "ru", "en")).toBe("дом");
   });
 });

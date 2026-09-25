@@ -117,3 +117,16 @@ describe("regional variants (pt-BR over pt)", () => {
     reset();
   });
 });
+
+describe("native gloss keys", () => {
+  test("an optional gloss key must cover every concept", () => {
+    const list = JSON.parse(readFileSync(CONCEPTS_PATH, "utf8")) as { gloss: Record<string, string> }[];
+    list[0]!.gloss.xx = "half-filled";
+    mkdirSync(dir, { recursive: true });
+    const path = join(dir, "concepts-partial.json");
+    writeFileSync(path, JSON.stringify(list));
+    const { errors } = validateConcepts(path);
+    expect(errors.some((e) => e.startsWith(`gloss.xx missing on ${list.length - 1} concepts`))).toBe(true);
+    rmSync(path);
+  });
+});

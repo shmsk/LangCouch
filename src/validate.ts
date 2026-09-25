@@ -19,6 +19,13 @@ export function validateConcepts(conceptsPath: string): { concepts: Map<string, 
     if (!c.gloss?.ru) errors.push(`#${i} (${c.id}): missing gloss.ru`);
     concepts.set(c.id, c);
   }
+  // en/ru are required above; any further native language (uz, …) is all-or-nothing,
+  // so a half-filled gloss key can't ship with learners seeing English fallbacks.
+  const keys = new Set(list.flatMap((c) => Object.keys(c.gloss ?? {})));
+  for (const key of keys) {
+    const without = list.filter((c) => !c.gloss?.[key]);
+    if (without.length) errors.push(`gloss.${key} missing on ${without.length} concepts: ${without.slice(0, 10).map((c) => c.id).join(", ")}${without.length > 10 ? ", …" : ""}`);
+  }
   return { concepts, errors };
 }
 

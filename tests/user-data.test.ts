@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { DATA_DIR as dir, availableLangs, userLangs, loadWordlist, loadGrammar, wordlistPath, WORDLISTS_DIR } from "../src/store.ts"; // sandboxed by tests/setup.ts
 
 const userWordlists = join(dir, "wordlists");
 const userGrammar = join(dir, "grammar");
+const bundled = readdirSync(WORDLISTS_DIR).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
 const bundledTr = JSON.parse(readFileSync(join(WORDLISTS_DIR, "tr.json"), "utf8")) as Record<string, string>;
 
 function reset() {
@@ -15,7 +16,7 @@ function reset() {
 describe("user-added languages in ~/.langcouch", () => {
   test("without a user dir, only bundled languages are listed", () => {
     reset();
-    expect(availableLangs()).toEqual(["es", "pt", "tr"]);
+    expect(availableLangs()).toEqual([...bundled].sort());
     expect(userLangs()).toEqual([]);
   });
 
@@ -23,7 +24,7 @@ describe("user-added languages in ~/.langcouch", () => {
     reset();
     mkdirSync(userWordlists, { recursive: true });
     writeFileSync(join(userWordlists, "ka.json"), JSON.stringify({ ...bundledTr, house: "სახლი" }));
-    expect(availableLangs()).toEqual(["es", "ka", "pt", "tr"]);
+    expect(availableLangs()).toEqual([...bundled, "ka"].sort());
     expect(userLangs()).toEqual(["ka"]);
     expect(loadWordlist("ka").find((w) => w.id === "house")?.target).toBe("სახლი");
   });
