@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bunx tsc --noEmit
+      - run: bun test
+      - run: bun tests/validate-wordlist.ts --full
+      - name: Plugin manifests are valid JSON
+        run: |
+          bun -e 'await Bun.file(".claude-plugin/plugin.json").json(); await Bun.file(".claude-plugin/marketplace.json").json(); const h = await Bun.file("hooks/hooks.json").json(); if (!h.hooks.UserPromptSubmit || !h.hooks.SessionStart) process.exit(1)'
+      - name: Shell wrappers parse
+        run: sh -n scripts/hook.sh && sh -n scripts/cli.sh
+
+  node-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Hook runs under Node (plugin fallback path)
+        run: |
+          echo '{"session_id":"ci","hook_event_name":"UserPromptSubmit","prompt":"hi"}' | node src/cli.ts hook > out.txt
+          grep -q "<langcouch>" out.txt

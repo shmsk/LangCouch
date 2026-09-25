@@ -1,0 +1,12 @@
+[
+  { "id": "def-article", "pattern": "gender + definite article (el/la + noun)", "exampleTarget": "la casa", "exampleGloss": "the house", "unlock": { "pos": "noun", "absorbedCount": 3 } },
+  { "id": "indef-article", "pattern": "indefinite article (un/una + noun)", "exampleTarget": "una mesa", "exampleGloss": "a table", "unlock": { "pos": "noun", "absorbedCount": 6 } },
+  { "id": "noun-plural", "pattern": "noun plural (-s/-es) with los/las", "exampleTarget": "las casas", "exampleGloss": "the houses", "unlock": { "pos": "noun", "absorbedCount": 8 } },
+  { "id": "adj-agreement", "pattern": "adjective agrees with the noun in gender (noun + adj)", "exampleTarget": "casa bonita", "exampleGloss": "a pretty house", "unlock": { "pos": "adj", "absorbedCount": 4 } },
+  { "id": "adj-plural", "pattern": "adjective agrees in number", "exampleTarget": "días largos", "exampleGloss": "long days", "unlock": { "pos": "adj", "absorbedCount": 8 } },
+  { "id": "presente-1sg", "pattern": "presente, 1st person singular (-o): \"I ...\"", "exampleTarget": "trabajo mucho", "exampleGloss": "I work a lot", "unlock": { "pos": "verb", "absorbedCount": 8 } },
+  { "id": "presente-3sg", "pattern": "presente, 3rd person singular (-a/-e): \"he/she ...\"", "exampleTarget": "ella trabaja", "exampleGloss": "she works", "unlock": { "pos": "verb", "absorbedCount": 12 } },
+  { "id": "presente-plural", "pattern": "presente, 1st/3rd person plural (-amos/-an)", "exampleTarget": "trabajamos juntos", "exampleGloss": "we work together", "unlock": { "pos": "verb", "absorbedCount": 20 } },
+  { "id": "prep-en", "pattern": "location preposition en (in/at) + article", "exampleTarget": "en la casa", "exampleGloss": "in the house", "unlock": { "pos": "noun", "absorbedCount": 10 } },
+  { "id": "prep-de", "pattern": "preposition de (possession/from)", "exampleTarget": "la puerta de la casa", "exampleGloss": "the door of the house", "unlock": { "pos": "noun", "absorbedCount": 12 } }
+]

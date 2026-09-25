@@ -1,0 +1,38 @@
+{
+  "name": "langcouch",
+  "version": "0.1.0",
+  "description": "Learn a language passively while you work in AI CLIs — diglot weave for the terminal",
+  "type": "module",
+  "bin": {
+    "langcouch": "src/cli.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shmsk/LangCouch.git"
+  },
+  "homepage": "https://github.com/shmsk/LangCouch#readme",
+  "bugs": "https://github.com/shmsk/LangCouch/issues",
+  "keywords": [
+    "language-learning",
+    "claude-code",
+    "diglot-weave",
+    "spaced-repetition",
+    "cli",
+    "immersion"
+  ],
+  "engines": {
+    "bun": ">=1.0"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "validate:wordlist": "bun tests/validate-wordlist.ts"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.18.3",
+    "@opencode-ai/sdk": "^1.18.3",
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  },
+  "license": "MIT"
+}

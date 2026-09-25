@@ -1,0 +1,13 @@
+node_modules/
+# bun.lock ships for reproducible CLI installs (this is an app, not a library)
+*.log
+.DS_Store
+# local user state never belongs to the repo
+.langcouch/
+# internal working docs (kept local, not part of the public repo)
+ISA.md
+LOOP.md
+Plans/
+.claude/
+# local install smoke-test output (never committed)
+/.smoke-opencode/

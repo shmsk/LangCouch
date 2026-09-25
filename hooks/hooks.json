@@ -1,0 +1,25 @@
+{
+  "description": "LangCouch diglot weave — injects the vocabulary instruction into context",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hook.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
