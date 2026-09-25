@@ -1,13 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { homedir, tmpdir } from "node:os";
-
-// DATA_DIR is resolved at module load and the module is shared across test files, so
-// set a sandbox before importing, then use whatever sandbox the store actually got.
-process.env.LANGCOUCH_DIR ??= mkdtempSync(join(tmpdir(), "langcouch-user-"));
-const { DATA_DIR: dir, availableLangs, userLangs, loadWordlist, loadGrammar, wordlistPath, WORDLISTS_DIR } = await import("../src/store.ts");
-if (dir === join(homedir(), ".langcouch")) throw new Error("refusing to run against the real ~/.langcouch");
+import { DATA_DIR as dir, availableLangs, userLangs, loadWordlist, loadGrammar, wordlistPath, WORDLISTS_DIR } from "../src/store.ts"; // sandboxed by tests/setup.ts
 
 const userWordlists = join(dir, "wordlists");
 const userGrammar = join(dir, "grammar");

@@ -1,12 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { writeFileSync, existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { tmpdir } from "node:os";
-
-// DATA_DIR is resolved at module load — point it at a sandbox BEFORE importing the store.
-const dir = mkdtempSync(join(tmpdir(), "langcouch-state-"));
-process.env.LANGCOUCH_DIR = dir;
-const { loadState, saveState } = await import("../src/store.ts");
+import { DATA_DIR as dir, loadState, saveState } from "../src/store.ts"; // sandboxed by tests/setup.ts
 
 const esPath = join(dir, "state.es.json");
 const ptPath = join(dir, "state.pt.json");
