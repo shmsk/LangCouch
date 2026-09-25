@@ -376,7 +376,12 @@ try {
         }
         console.log(installClaude(scope));
       } else if (args[0] === "codex") {
-        console.log(installCodex());
+        const scope = args.includes("--scope") ? args[args.indexOf("--scope") + 1] : "project";
+        if (scope !== "project" && scope !== "user") {
+          console.error("--scope must be project or user");
+          process.exit(1);
+        }
+        console.log(installCodex(scope));
       } else if (args[0] === "opencode") {
         const scope = args.includes("--scope") ? args[args.indexOf("--scope") + 1] : "project";
         if (scope !== "project" && scope !== "user") {
@@ -385,7 +390,7 @@ try {
         }
         console.log(installOpencode(scope));
       } else {
-        console.error("usage: langcouch install <claude [--scope project|user] | codex | opencode [--scope project|user]>");
+        console.error("usage: langcouch install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user]>");
         process.exit(1);
       }
       break;
@@ -406,7 +411,7 @@ try {
           "  instruction               print the weave instruction (without marking exposures)",
           "  hook                      CLI-hook mode (marks exposures, always exit 0)",
           "  install claude [--scope project|user]   register the hook in Claude Code",
-          "  install codex   self-serve AGENTS.md section for Codex CLI (experimental)",
+          "  install codex [--scope project|user]   register the hook in Codex CLI (hooks.json)",
           "  install opencode [--scope project|user]   install the plugin + AGENTS.md fallback for opencode",
         ].join("\n"),
       );

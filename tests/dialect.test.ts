@@ -44,6 +44,8 @@ describe("regional variants (pt-BR over pt)", () => {
     expect(normalizeLang("pt-br")).toBe("pt-BR");
     expect(normalizeLang("PT_BR")).toBe("pt-BR");
     expect(normalizeLang("es-419")).toBe("es-419");
+    expect(normalizeLang("latam")).toBe("es-419");
+    expect(normalizeLang(" LATAM ")).toBe("es-419");
     expect(normalizeLang("pt")).toBe("pt");
     expect(baseLang("pt-BR")).toBe("pt");
     expect(baseLang("pt")).toBeNull();

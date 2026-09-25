@@ -10,7 +10,7 @@
       "name": "langcouch",
       "source": "./",
       "description": "Passive language immersion (diglot weave) via UserPromptSubmit hook — replies weave in vocabulary from the language you're learning",
-      "version": "0.3.0",
+      "version": "0.3.5",
       "category": "productivity",
       "tags": ["language-learning", "education", "hooks", "spaced-repetition"]
     }

@@ -1,13 +1,13 @@
 import { join } from "node:path";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 
 /**
  * Shared self-serve AGENTS.md section for CLIs without a real context-injection
- * hook (Codex, opencode fallback). The model is told to run `langcouch hook`
+ * hook (opencode fallback). The model is told to run `langcouch hook`
  * itself at the start of each reply. Idempotent via marker comments — re-running
  * refreshes the section in place without duplicating.
  *
- * Used by: adapters/codex, adapters/opencode (fallback path).
+ * Used by: adapters/opencode (fallback path). adapters/codex only removes it (it now has a real hook).
  */
 
 export const AGENTS_START = "<!-- langcouch:start -->";
@@ -45,4 +45,19 @@ export function writeAgentsSection(agentsPath: string, cliPath: string): "added"
   mkdirSync(join(agentsPath, ".."), { recursive: true });
   writeFileSync(agentsPath, next);
   return action;
+}
+/**
+ * Remove the langcouch section from AGENTS.md, e.g. when a CLI gains a real hook
+ * and the self-serve path would double-deliver. Deletes the file if nothing else is left.
+ * Returns true if a section was removed.
+ */
+export function removeAgentsSection(agentsPath: string): boolean {
+  if (!existsSync(agentsPath)) return false;
+  const existing = readFileSync(agentsPath, "utf8");
+  if (!existing.includes(AGENTS_START) || !existing.includes(AGENTS_END)) return false;
+  const re = new RegExp(`\\n*${AGENTS_START}[\\s\\S]*?${AGENTS_END}\\n*`);
+  const next = existing.replace(re, "\n\n").trim();
+  if (next) writeFileSync(agentsPath, `${next}\n`);
+  else rmSync(agentsPath);
+  return true;
 }

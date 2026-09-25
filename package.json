@@ -1,6 +1,6 @@
 {
   "name": "langcouch",
-  "version": "0.3.0",
+  "version": "0.3.5",
   "description": "Learn a language passively while you work in AI CLIs — diglot weave for the terminal",
   "type": "module",
   "bin": {

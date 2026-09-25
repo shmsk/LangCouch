@@ -21,5 +21,5 @@ All three must be green before a PR. CI runs the same commands.
 
 - TypeScript + bun; no runtime dependencies (the hook must start in milliseconds).
 - The hook contract is sacred: `langcouch hook` never breaks the host session — on any error it prints nothing and exits 0.
-- All product surfaces (CLI output, docs, code comments, weave instructions) are English-only. Wordlist/gloss data is the only place other languages appear.
+- All product surfaces (CLI output, docs, code comments, weave instructions) are English-only. Wordlist/gloss data and README translations (`README.<lang>.md`, which follow `README.md`) are the only places other languages appear.
 - Data changes should come with a second-model audit (see docs/AddLanguage.md, Step 6).

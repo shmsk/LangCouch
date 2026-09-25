@@ -75,8 +75,13 @@ export function loadConcepts(): Concept[] {
 /**
  * Canonical spelling of a language code, BCP 47 style: base lowercase, region uppercase,
  * anything else lowercase ("PT_br" → "pt-BR"). File names and state keys use this form.
+ * Friendly aliases resolve first, for codes nobody can guess ("latam" → "es-419").
  */
+const LANG_ALIASES: Record<string, string> = { latam: "es-419" };
+
 export function normalizeLang(code: string): string {
+  const alias = LANG_ALIASES[code.trim().toLowerCase()];
+  if (alias) return alias;
   const [base = "", ...rest] = code.trim().split(/[-_]/);
   const tail = rest.map((t) => (/^([a-z]{2}|\d{3})$/i.test(t) ? t.toUpperCase() : t.toLowerCase()));
   return [base.toLowerCase(), ...tail].join("-");
