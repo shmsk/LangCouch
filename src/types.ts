@@ -41,6 +41,8 @@ export interface Config {
   level: number;
   /** Kill switch: when false, the hook emits nothing. Toggled by pause/resume. */
   enabled?: boolean;
+  /** Spanish words in the Claude Code spinner tips. Opt-in; toggled by `spinner on|off`. */
+  spinner?: boolean;
 }
 
 export interface WordState {

@@ -81,7 +81,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 # restart the session — replies start weaving Spanish (default: es, level 2)
 ```
 
-Zero setup: the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:pause` / `/langcouch:resume`, and add your own language with `/langcouch:add-language <language>`.
+Zero setup: the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, and add your own language with `/langcouch:add-language <language>`.
 ### Manual hook install
 
 ```bash
@@ -122,11 +122,29 @@ A duplicate-delivery guard keeps the counting honest if both paths fire for the 
 | `level <1-10\|up\|down>` | weaving intensity |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
 | `pause` / `resume` | kill switch for weaving |
+| `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
 | `instruction` | print the weave instruction (without marking exposures) |
 | `hook` | CLI-hook mode (marks exposures and scans your prompt for recalls; exits 0 on any error so it never breaks the host session) |
 | `install claude [--scope project\|user]` | register the UserPromptSubmit hook |
 | `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for opencode |
 | `install codex` | experimental: self-serve section in AGENTS.md |
+
+## Spinner tips (opt-in)
+
+While Claude Code is thinking, its spinner rotates tips. `/langcouch:spinner on` adds up to 5 words you are currently learning there (`LangCouch · frío = cold`), refreshed at every session start. It is a free bonus: spinner tips do not count as exposures.
+
+A plugin cannot ship spinner tips itself, so this writes to your `~/.claude/settings.json`, carefully:
+
+- **Off by default.** Installing LangCouch never touches your settings.
+- **Only our lines.** Every added tip starts with `LangCouch · `; your own tips, `excludeDefault` and every other key are left alone. If the file is not valid JSON, nothing is written.
+- **Backup + atomic write.** The original file is copied to `~/.langcouch/settings.backup.json` before the first change.
+- **Clean off.** `/langcouch:spinner off` removes every `LangCouch · ` line by its prefix, and the `spinnerTipsOverride` key too if we created it.
+
+## Uninstall
+
+Claude Code has no uninstall hook, so run `/langcouch:spinner off` **before** removing the plugin (skip it if you never turned the spinner on). Then `/plugin uninstall langcouch` and, optionally, `rm -rf ~/.langcouch`.
+
+Already uninstalled with the spinner on? Delete the lines starting with `LangCouch · ` from `spinnerTipsOverride.tips` in `~/.claude/settings.json`, or reinstall, run `/langcouch:spinner off`, and uninstall again.
 
 ## Development
 
@@ -142,5 +160,6 @@ Contributions welcome — the most valuable one is your language, and [docs/AddL
 
 - Tier 2 vocabulary (→1000 words per language), unlocked at ~80% core absorption
 - Full SM-2 spaced repetition (currently SRS-lite)
+- Spanish gerunds in the spinner verbs ("Pensando…")
 - Gemini CLI adapter
 - More languages — yours? ([docs/AddLanguage.md](docs/AddLanguage.md))

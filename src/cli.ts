@@ -12,6 +12,7 @@ import { buildInstruction } from "./instruction.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { glossFor, grammarStage, isAbsorbed, wordsPerResponse } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
+import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
 import { installClaude } from "../adapters/claude/install.ts";
 import { installCodex } from "../adapters/codex/install.ts";
 import { installOpencode } from "../adapters/opencode/install.ts";
@@ -31,6 +32,15 @@ function makeInstruction(mark: boolean): string {
     saveState(config.lang, state);
   }
   return buildInstruction(config, picks, grammar);
+}
+
+/** Rewrite our spinner tips from current progress; spinner off (or no words) removes them. Returns tips written. */
+function refreshSpinner(on: boolean): number {
+  const config = loadConfig();
+  const before = readSettings();
+  const tips = on ? pickSpinnerWords(loadWordlist(config.lang), loadState(config.lang)).map((w) => tipFor(w, config.native)) : [];
+  writeSettingsIfChanged(before, on ? applySpinnerTips(before, tips) : removeSpinnerTips(before), DATA_DIR);
+  return tips.length;
 }
 
 /** Portable stdin drain (no Bun-only APIs — the plugin path may run under Node). */
@@ -156,6 +166,7 @@ function status(): string {
     grammarLine,
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
+    `Spinner tips: ${config.spinner ? "on" : "off (langcouch spinner on)"}`,
     `Data: ${DATA_DIR}`,
     top ? `Most exposed:\n${top}` : `No exposures yet — run a session with the hook installed.`,
   ]
@@ -216,6 +227,12 @@ try {
         }
       } catch {
         // recall is best-effort too
+      }
+      try {
+        // spinner tips only refresh at session start: one settings write per session, not per prompt
+        if (payload.eventName === "SessionStart" && loadConfig().spinner === true) refreshSpinner(true);
+      } catch {
+        // spinner is a bonus — a broken settings.json must never cost us the instruction
       }
       try {
         console.log(makeInstruction(true));
@@ -325,6 +342,28 @@ try {
       console.log(cmd === "pause" ? "Weaving paused (langcouch resume to turn it back on)" : "Weaving resumed");
       break;
     }
+    case "spinner": {
+      const config = loadConfig();
+      const sub = args[0] ?? "status";
+      if (sub === "on" || sub === "off") {
+        saveConfig({ ...config, spinner: sub === "on" });
+        const n = refreshSpinner(sub === "on");
+        console.log(
+          sub === "on"
+            ? n > 0
+              ? `Spinner tips on: ${n} words in ${claudeSettingsPath()} (refreshed every session start)`
+              : "Spinner tips on — no words in progress yet, they appear after a few replies"
+            : `Spinner tips off: LangCouch lines removed from ${claudeSettingsPath()}`,
+        );
+      } else if (sub === "status") {
+        const n = countOurTips(readSettings());
+        console.log(`Spinner tips: ${config.spinner ? "on" : "off"} · ${n} LangCouch lines in ${claudeSettingsPath()}`);
+      } else {
+        console.error("usage: langcouch spinner <on|off|status>");
+        process.exit(1);
+      }
+      break;
+    }
     case "status":
       console.log(args.includes("--absorbed") ? absorbedListView() : status());
       break;
@@ -363,6 +402,7 @@ try {
           "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.langcouch/wordlists/)",
           "  level <1-10|up|down>      weaving intensity",
           "  quiz [n]                  absorption check (default 5 words)",
+          "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
           "  instruction               print the weave instruction (without marking exposures)",
           "  hook                      CLI-hook mode (marks exposures, always exit 0)",
           "  install claude [--scope project|user]   register the hook in Claude Code",

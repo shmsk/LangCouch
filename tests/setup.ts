@@ -6,3 +6,5 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 process.env.LANGCOUCH_DIR = mkdtempSync(join(tmpdir(), "langcouch-test-"));
+// Spinner tests must never touch the real ~/.claude/settings.json.
+process.env.LANGCOUCH_CLAUDE_SETTINGS = join(process.env.LANGCOUCH_DIR, "claude-settings.json");
