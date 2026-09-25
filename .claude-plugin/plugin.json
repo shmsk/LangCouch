@@ -1,7 +1,7 @@
 {
   "name": "langcouch",
   "description": "Learn a language passively while you work — diglot weave woven into Claude Code replies",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Kirill Shumskii",
     "url": "https://github.com/shmsk"

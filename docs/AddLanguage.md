@@ -106,6 +106,18 @@ Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (
 - [ ] Live smoke test output pasted
 - [ ] Forced compromises listed: homonym-driven substitutions (rule 4), id collisions (rule 5), periphrastic forms (rule 6), count of <3-char recall-dead entries (rule 8)
 
+## Adding a regional variant (pt-BR, pt-PT, es-MX, …)
+
+Some learners want one regional standard specifically: Brazilian Portuguese says *trem* and *celular*, European Portuguese says *comboio* and *telemóvel*. A variant is **not** a full copy of the language. It is a small file holding only the words that differ from the base language; every other concept comes from the base.
+
+- **Code**: BCP 47, `<base>-<REGION>` (`pt-BR`, `es-MX`, `es-419`). Case doesn't matter on the command line (`lang pt-br` works); the file name uses the canonical form, `pt-BR.json`. The name comes from `Intl.DisplayNames` ("Brazilian Portuguese"), nothing to register.
+- **File**: `~/.langcouch/wordlists/pt-BR.json` for yourself, `wordlists/pt-BR.json` for a PR. The base (`pt`) must exist, bundled or local.
+- **Content**: go through the base wordlist and add an entry only where the variant's everyday word differs. Rules 1–8 above apply to each entry. Don't copy a base word into the variant: the validator rejects entries identical to the base.
+- **Grammar**: optional `grammar/pt-BR.json`; without one, the variant uses the base's grammar.
+- **Validate**: `langcouch validate pt-BR --full` (repo: `bun tests/validate-wordlist.ts pt-BR --full`). Duplicates and coverage are checked on the merged result, so a variant word that clashes with another base word is caught.
+- **Audit**: run Step 6 on the variant entries plus the base entries you considered and kept. The question for the auditor is "is this what a speaker of that region says every day?"
+- **Progress** is separate per variant (`state.pt-BR.json`): switching from `pt` to `pt-BR` starts fresh, and `pt` progress is kept.
+
 ## Also possible: adding native-language glosses
 
 Learners see translations in their own language via `config.native`. To support a new *native* language, add a `"<code>": "…"` key to the `gloss` object of every concept in `concepts.json` (keep `en` and existing keys). The same quality rules and audit flow apply; validate with `bun tests/validate-wordlist.ts`.

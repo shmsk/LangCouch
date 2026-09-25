@@ -72,27 +72,58 @@ export function loadConcepts(): Concept[] {
   return conceptsCache;
 }
 
+/**
+ * Canonical spelling of a language code, BCP 47 style: base lowercase, region uppercase,
+ * anything else lowercase ("PT_br" → "pt-BR"). File names and state keys use this form.
+ */
+export function normalizeLang(code: string): string {
+  const [base = "", ...rest] = code.trim().split(/[-_]/);
+  const tail = rest.map((t) => (/^([a-z]{2}|\d{3})$/i.test(t) ? t.toUpperCase() : t.toLowerCase()));
+  return [base.toLowerCase(), ...tail].join("-");
+}
+
+/** Base language of a regional variant ("pt-BR" → "pt"); null for a plain code. */
+export function baseLang(lang: string): string | null {
+  const i = lang.indexOf("-");
+  return i > 0 ? lang.slice(0, i) : null;
+}
+
 /** First existing `<lang>.json`: the user dir wins over the bundled one. */
 function resolveData(userDir: string, bundledDir: string, lang: string): string | null {
   for (const dir of [userDir, bundledDir]) {
-    const path = join(dir, `${lang}.json`);
+    const path = join(dir, `${normalizeLang(lang)}.json`);
     if (existsSync(path)) return path;
   }
   return null;
 }
 
-/** Path of the wordlist that will actually be used for a language, or null. */
+/** Path of the wordlist file for exactly this code (for a variant: its overlay), or null. */
 export function wordlistPath(lang: string): string | null {
   return resolveData(USER_WORDLISTS_DIR, WORDLISTS_DIR, lang);
 }
 
-/** Raw concept→lemma mapping for a language. */
-export function loadWordMapping(lang: string): WordMapping {
-  const path = wordlistPath(lang);
-  if (!path) {
+/**
+ * Files that make up a language, base first. A regional variant (`pt-BR`) is a sparse
+ * overlay: only the words that differ from its base (`pt`), which supplies the rest.
+ */
+export function wordlistLayers(lang: string): string[] {
+  const own = wordlistPath(lang);
+  if (!own) {
     throw new Error(`langcouch: no wordlist for "${lang}" in ${USER_WORDLISTS_DIR} or ${WORDLISTS_DIR}`);
   }
-  return readJson<WordMapping>(path, `wordlist ${lang}`);
+  const base = baseLang(normalizeLang(lang));
+  if (!base) return [own];
+  const basePath = wordlistPath(base);
+  if (!basePath) {
+    throw new Error(`langcouch: "${lang}" is a variant of "${base}", but there is no ${base} wordlist to build on`);
+  }
+  return [basePath, own];
+}
+
+/** Raw concept→lemma mapping for a language (a variant's overlay merged over its base). */
+export function loadWordMapping(lang: string): WordMapping {
+  const layers = wordlistLayers(lang).map((path) => readJson<WordMapping>(path, `wordlist ${lang}`));
+  return Object.assign({}, ...layers) as WordMapping;
 }
 
 /** Concepts joined with their lemmas in the target language. */
@@ -108,9 +139,10 @@ export function loadWordlist(lang: string): Word[] {
   return words;
 }
 
-/** Grammar constructions for a language; [] when the language has no grammar file yet. */
+/** Grammar constructions for a language; a variant without its own file uses its base's; [] when none exists. */
 export function loadGrammar(lang: string): GrammarItem[] {
-  const path = resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, lang);
+  const base = baseLang(normalizeLang(lang));
+  const path = resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, lang) ?? (base ? resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, base) : null);
   if (!path) return [];
   return readJson<GrammarItem[]>(path, `grammar ${lang}`);
 }
@@ -136,7 +168,7 @@ export function availableLangs(): string[] {
 export function langsWithState(): string[] {
   if (!existsSync(DATA_DIR)) return [];
   return readdirSync(DATA_DIR)
-    .map((f) => /^state\.([a-z-]+)\.json$/.exec(f)?.[1])
+    .map((f) => /^state\.([a-z]+(?:-[A-Za-z0-9]+)*)\.json$/.exec(f)?.[1])
     .filter((l): l is string => Boolean(l))
     .sort();
 }

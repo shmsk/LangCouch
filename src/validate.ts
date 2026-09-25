@@ -22,13 +22,39 @@ export function validateConcepts(conceptsPath: string): { concepts: Map<string, 
   return { concepts, errors };
 }
 
+/**
+ * A language to validate: its files base first. One path for a plain language;
+ * two for a regional variant — the base, then the sparse overlay (`pt.json`, `pt-BR.json`).
+ */
+export type ValidationTarget = string[];
+
+function readMapping(path: string): WordMapping {
+  return JSON.parse(readFileSync(path, "utf8")) as WordMapping;
+}
+
+/** Overlay-only checks: it must stay a diff — known concepts, no copies of the base word. */
+function validateOverlay(overlay: WordMapping, base: WordMapping, concepts: Map<string, Concept>): string[] {
+  const errors: string[] = [];
+  for (const [id, lemma] of Object.entries(overlay)) {
+    if (!concepts.has(id)) errors.push(`"${id}": unknown concept (not in concepts.json)`);
+    else if (base[id] === lemma) errors.push(`"${id}": "${lemma}" is the same as the base word — drop it from the variant file`);
+  }
+  return errors;
+}
+
+/**
+ * Validate one language. For a variant the mechanical rules (coverage, duplicates,
+ * id collisions) run on the merged result, so a variant word that clashes with a base word is caught.
+ */
 export function validateMapping(
-  path: string,
+  target: ValidationTarget,
   concepts: Map<string, Concept>,
   requireFull: boolean,
-): { count: number; missing: string[]; errors: string[] } {
-  const mapping = JSON.parse(readFileSync(path, "utf8")) as WordMapping;
-  const errors: string[] = [];
+): { count: number; overrides: number | null; missing: string[]; errors: string[] } {
+  const layers = target.map(readMapping);
+  const mapping = Object.assign({}, ...layers) as WordMapping;
+  const overlay = layers.length > 1 ? layers[layers.length - 1]! : null;
+  const errors: string[] = overlay ? validateOverlay(overlay, layers[0]!, concepts) : [];
   const entries = Object.entries(mapping);
   if (entries.length < 300) errors.push(`only ${entries.length} entries, need ≥300`);
 
@@ -51,11 +77,11 @@ export function validateMapping(
       if (concepts.has(lemma) && lemma !== id) errors.push(`"${id}": lemma "${lemma}" collides with another concept id`);
     }
   }
-  return { count: entries.length, missing, errors };
+  return { count: entries.length, overrides: overlay ? Object.keys(overlay).length : null, missing, errors: [...new Set(errors)] };
 }
 
-/** Validate concepts plus each mapping, printing a report. Returns true when everything passed. */
-export function runValidation(conceptsPath: string, paths: string[], requireFull: boolean): boolean {
+/** Validate concepts plus each language, printing a report. Returns true when everything passed. */
+export function runValidation(conceptsPath: string, targets: ValidationTarget[], requireFull: boolean): boolean {
   let failed = false;
   const { concepts, errors: conceptErrors } = validateConcepts(conceptsPath);
   if (conceptErrors.length) {
@@ -65,13 +91,15 @@ export function runValidation(conceptsPath: string, paths: string[], requireFull
     console.log(`${conceptsPath} OK: ${concepts.size} concepts, unique ids, all POS valid`);
   }
 
-  for (const path of paths) {
-    const { count, missing, errors } = validateMapping(path, concepts, requireFull);
+  for (const target of targets) {
+    const path = target[target.length - 1]!;
+    const { count, overrides, missing, errors } = validateMapping(target, concepts, requireFull);
+    const variant = overrides === null ? "" : ` (variant: ${overrides} overrides over ${target[0]})`;
     if (errors.length) {
       failed = true;
-      console.error(`${path} FAILED:\n` + errors.map((e) => `  - ${e}`).join("\n"));
+      console.error(`${path}${variant} FAILED:\n` + errors.map((e) => `  - ${e}`).join("\n"));
     } else {
-      console.log(`${path} OK: ${count} entries, no duplicates, all concepts known, coverage ${count}/${concepts.size}${missing.length ? "" : " (full)"}`);
+      console.log(`${path}${variant} OK: ${count} entries, no duplicates, all concepts known, coverage ${count}/${concepts.size}${missing.length ? "" : " (full)"}`);
     }
   }
   return !failed;

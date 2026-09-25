@@ -11,5 +11,6 @@ Follow `${CLAUDE_PLUGIN_ROOT}/docs/AddLanguage.md` (path "For yourself"), readin
 - Write the wordlist to `~/.langcouch/wordlists/<code>.json` (and an optional grammar file to `~/.langcouch/grammar/<code>.json`), never inside `${CLAUDE_PLUGIN_ROOT}`. Files in the plugin folder are replaced on every plugin update.
 - Validate with `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full` and fix every reported error until it passes.
 - Then run `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh lang <code>` to switch to it.
+- If the user asks for a regional variant ("Brazilian Portuguese", `pt-BR`, "Mexican Spanish") of a language that already exists, follow the doc's "Adding a regional variant" section instead: the file `~/.langcouch/wordlists/<base>-<REGION>.json` holds only the words that differ from the base.
 
 Done means: the validator passes with full coverage, `lang` shows `<code> (local)` as current, and you tell the user how many entries needed forced compromises. Mention that they can share the language with everyone by opening a PR at https://github.com/shmsk/LangCouch with the same file under `wordlists/`.

@@ -1,7 +1,10 @@
 #!/usr/bin/env bun
 import { createInterface } from "node:readline/promises";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, userLangs, wordlistPath, langsWithState, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { basename } from "node:path";
+import { readFileSync } from "node:fs";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
+import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
 import { pickGrammar, markGrammarShown, isGrammarKey, grammarProgress, type GrammarItem } from "./grammar.ts";
 import { pickWords, markExposed, unlockedWords, tierProgress } from "./scheduler.ts";
@@ -64,6 +67,15 @@ async function readHookPayload(): Promise<HookPayload> {
     };
   } catch {
     return { ...empty, prompt: raw }; // plain-text stdin still counts as a prompt
+  }
+}
+
+/** How many words a variant's own file changes; "?" if it can't be read — listing must never crash. */
+function overrideCount(lang: string): string {
+  try {
+    return String(Object.keys(JSON.parse(readFileSync(wordlistPath(lang)!, "utf8")) as object).length);
+  } catch {
+    return "?";
   }
 }
 
@@ -255,17 +267,22 @@ try {
     }
     case "lang": {
       const config = loadConfig();
-      const code = args[0];
-      if (!code) {
+      if (!args[0]) {
         const local = new Set(userLangs());
-        const rows = availableLangs().map((l) => `  ${l === config.lang ? "→" : " "} ${l}${local.has(l) ? " (local)" : ""}`);
+        const rows = availableLangs().map((l) => {
+          const base = baseLang(l);
+          const variant = base ? ` — variant of ${base}, ${overrideCount(l)} words differ` : "";
+          return `  ${l === config.lang ? "→" : " "} ${l} ${langName(l)}${variant}${local.has(l) ? " (local)" : ""}`;
+        });
         console.log(`Available languages:\n${rows.join("\n")}`);
         break;
       }
+      const code = normalizeLang(args[0]);
       if (!availableLangs().includes(code)) {
         console.error(`langcouch: no wordlist for "${code}" — available: ${availableLangs().join(", ")}`);
         process.exit(1);
       }
+      loadWordlist(code); // fail now, not in the hook, if a variant's base is missing or a file is broken
       saveConfig({ ...config, lang: code });
       console.log(`Language: ${config.lang} → ${code} (progress is per-language, ${config.lang} is kept)`);
       break;
@@ -276,12 +293,22 @@ try {
         console.error(`usage: langcouch validate <code|path.json> [--full] — user languages live in ${USER_WORDLISTS_DIR}`);
         process.exit(1);
       }
-      const path = target.endsWith(".json") ? target : wordlistPath(target);
-      if (!path) {
-        console.error(`langcouch: no wordlist for "${target}" — put it at ${USER_WORDLISTS_DIR}/${target}.json`);
-        process.exit(1);
+      let layers: string[];
+      if (target.endsWith(".json")) {
+        // An explicit variant file (…/pt-BR.json) is still checked merged over its installed base.
+        const base = baseLang(normalizeLang(basename(target, ".json")));
+        const basePath = base ? wordlistPath(base) : null;
+        if (base && !basePath) throw new Error(`langcouch: ${target} is a variant of "${base}", but there is no ${base} wordlist to build on`);
+        layers = basePath ? [basePath, target] : [target];
+      } else {
+        const code = normalizeLang(target);
+        if (!wordlistPath(code)) {
+          console.error(`langcouch: no wordlist for "${code}" — put it at ${USER_WORDLISTS_DIR}/${code}.json`);
+          process.exit(1);
+        }
+        layers = wordlistLayers(code);
       }
-      if (!runValidation(CONCEPTS_PATH, [path], args.includes("--full"))) process.exit(1);
+      if (!runValidation(CONCEPTS_PATH, [layers], args.includes("--full"))) process.exit(1);
       break;
     }
     case "pause":
@@ -325,7 +352,7 @@ try {
           "  init                      create ~/.langcouch",
           "  pause / resume            turn weaving off/on",
           "  status [--absorbed]       level, core/grammar progress; --absorbed lists absorbed words",
-          "  lang [code]               switch language / list available",
+          "  lang [code]               switch language / list available (regional variants too: pt-BR)",
           "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.langcouch/wordlists/)",
           "  level <1-10|up|down>      weaving intensity",
           "  quiz [n]                  absorption check (default 5 words)",
