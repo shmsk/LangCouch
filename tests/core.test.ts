@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { pickWords, markExposed, unlockedWords } from "../src/scheduler.ts";
-import { buildInstruction } from "../src/instruction.ts";
+import { buildInstruction, langName } from "../src/instruction.ts";
 import { wordsPerResponse, grammarStage, isAbsorbed, NO_RECALL_EXPOSURES, type Word, type State } from "../src/types.ts";
 
 const mkWord = (id: string, tier = 1): Word => ({ id, target: id, pos: "noun", tier, gloss: { ru: `ru-${id}`, en: `en-${id}` } });
@@ -92,6 +92,12 @@ describe("instruction", () => {
   test("instruction surface is English-only with en glosses", () => {
     const text = buildInstruction({ lang: "es", native: "en", level: 8 }, picks);
     expect(text).not.toMatch(/[а-яА-Я]/);
+  });
+
+  test("language name comes from the ISO code, no registry to edit", () => {
+    expect(buildInstruction({ lang: "tr", native: "en", level: 2 }, picks)).toContain("with Turkish ones");
+    expect(langName("ka")).toBe("Georgian");
+    expect(langName("zz-not-a-code!")).toBe("zz-not-a-code!");
   });
 
   test("grammar stages escalate with level", () => {

@@ -57,7 +57,12 @@ export function saveState(lang: string, state: State): void {
 
 const REPO_ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
 export const WORDLISTS_DIR = join(REPO_ROOT, "wordlists");
-const CONCEPTS_PATH = join(REPO_ROOT, "concepts.json");
+const GRAMMAR_DIR = join(REPO_ROOT, "grammar");
+// User-added languages live next to progress, so they survive plugin updates
+// (the plugin itself is replaced wholesale per version). A user file overrides a bundled one.
+export const USER_WORDLISTS_DIR = join(DATA_DIR, "wordlists");
+const USER_GRAMMAR_DIR = join(DATA_DIR, "grammar");
+export const CONCEPTS_PATH = join(REPO_ROOT, "concepts.json");
 
 let conceptsCache: Concept[] | null = null;
 
@@ -67,11 +72,25 @@ export function loadConcepts(): Concept[] {
   return conceptsCache;
 }
 
+/** First existing `<lang>.json`: the user dir wins over the bundled one. */
+function resolveData(userDir: string, bundledDir: string, lang: string): string | null {
+  for (const dir of [userDir, bundledDir]) {
+    const path = join(dir, `${lang}.json`);
+    if (existsSync(path)) return path;
+  }
+  return null;
+}
+
+/** Path of the wordlist that will actually be used for a language, or null. */
+export function wordlistPath(lang: string): string | null {
+  return resolveData(USER_WORDLISTS_DIR, WORDLISTS_DIR, lang);
+}
+
 /** Raw concept→lemma mapping for a language. */
 export function loadWordMapping(lang: string): WordMapping {
-  const path = join(WORDLISTS_DIR, `${lang}.json`);
-  if (!existsSync(path)) {
-    throw new Error(`langcouch: no wordlist for "${lang}" at ${path}`);
+  const path = wordlistPath(lang);
+  if (!path) {
+    throw new Error(`langcouch: no wordlist for "${lang}" in ${USER_WORDLISTS_DIR} or ${WORDLISTS_DIR}`);
   }
   return readJson<WordMapping>(path, `wordlist ${lang}`);
 }
@@ -89,21 +108,28 @@ export function loadWordlist(lang: string): Word[] {
   return words;
 }
 
-const GRAMMAR_DIR = join(REPO_ROOT, "grammar");
-
 /** Grammar constructions for a language; [] when the language has no grammar file yet. */
 export function loadGrammar(lang: string): GrammarItem[] {
-  const path = join(GRAMMAR_DIR, `${lang}.json`);
-  if (!existsSync(path)) return [];
+  const path = resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, lang);
+  if (!path) return [];
   return readJson<GrammarItem[]>(path, `grammar ${lang}`);
 }
 
-/** Language codes that ship a wordlist (scan of wordlists/*.json). */
-export function availableLangs(): string[] {
-  return readdirSync(WORDLISTS_DIR)
+function langsIn(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
     .filter((f) => f.endsWith(".json"))
-    .map((f) => f.slice(0, -".json".length))
-    .sort();
+    .map((f) => f.slice(0, -".json".length));
+}
+
+/** Language codes the user added in ~/.langcouch/wordlists/. */
+export function userLangs(): string[] {
+  return langsIn(USER_WORDLISTS_DIR).sort();
+}
+
+/** Every usable language code: bundled plus user-added, deduped. */
+export function availableLangs(): string[] {
+  return [...new Set([...langsIn(WORDLISTS_DIR), ...langsIn(USER_WORDLISTS_DIR)])].sort();
 }
 
 /** Language codes that have accumulated local state (scan of state.<lang>.json). */

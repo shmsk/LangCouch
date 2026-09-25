@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import { createInterface } from "node:readline/promises";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, langsWithState, DATA_DIR } from "./store.ts";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, userLangs, wordlistPath, langsWithState, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { runValidation } from "./validate.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
 import { pickGrammar, markGrammarShown, isGrammarKey, grammarProgress, type GrammarItem } from "./grammar.ts";
 import { pickWords, markExposed, unlockedWords, tierProgress } from "./scheduler.ts";
@@ -256,8 +257,9 @@ try {
       const config = loadConfig();
       const code = args[0];
       if (!code) {
-        const rows = availableLangs().map((l) => `  ${l === config.lang ? "→" : " "} ${l}`);
-        console.log(`Available languages (wordlists/):\n${rows.join("\n")}`);
+        const local = new Set(userLangs());
+        const rows = availableLangs().map((l) => `  ${l === config.lang ? "→" : " "} ${l}${local.has(l) ? " (local)" : ""}`);
+        console.log(`Available languages:\n${rows.join("\n")}`);
         break;
       }
       if (!availableLangs().includes(code)) {
@@ -266,6 +268,20 @@ try {
       }
       saveConfig({ ...config, lang: code });
       console.log(`Language: ${config.lang} → ${code} (progress is per-language, ${config.lang} is kept)`);
+      break;
+    }
+    case "validate": {
+      const target = args.find((a) => !a.startsWith("--"));
+      if (!target) {
+        console.error(`usage: langcouch validate <code|path.json> [--full] — user languages live in ${USER_WORDLISTS_DIR}`);
+        process.exit(1);
+      }
+      const path = target.endsWith(".json") ? target : wordlistPath(target);
+      if (!path) {
+        console.error(`langcouch: no wordlist for "${target}" — put it at ${USER_WORDLISTS_DIR}/${target}.json`);
+        process.exit(1);
+      }
+      if (!runValidation(CONCEPTS_PATH, [path], args.includes("--full"))) process.exit(1);
       break;
     }
     case "pause":
@@ -310,6 +326,7 @@ try {
           "  pause / resume            turn weaving off/on",
           "  status [--absorbed]       level, core/grammar progress; --absorbed lists absorbed words",
           "  lang [code]               switch language / list available",
+          "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.langcouch/wordlists/)",
           "  level <1-10|up|down>      weaving intensity",
           "  quiz [n]                  absorption check (default 5 words)",
           "  instruction               print the weave instruction (without marking exposures)",

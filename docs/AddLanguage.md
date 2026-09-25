@@ -1,16 +1,20 @@
 # Adding a language to LangCouch
 
-This document is written for an AI coding agent (Claude Code, Codex, etc.) — a human can follow it too. Following it end-to-end produces a complete, validated language contribution in one PR.
+This document is written for an AI coding agent (Claude Code, Codex, etc.) — a human can follow it too. Following it end-to-end produces a complete, validated language, either just for yourself or as a PR for everyone.
 
 ## What you are building
 
-LangCouch weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file** (plus, optionally, a grammar file) and add **one line of code**.
+LangCouch weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file** (plus, optionally, a grammar file). No code changes: the language name is derived from its ISO code.
 
 Inputs you need before starting:
 - the ISO 639-1 language code (`tr`, `de`, `fr`, …) — called `<code>` below
-- the English name of the language (`Turkish`, `German`, …)
 
-Prerequisites: a clone of this repo and [bun](https://bun.sh) (`bun install`).
+## Two ways to add a language
+
+- **For yourself** (Claude Code plugin users): run `/langcouch:add-language <language>`, or follow this doc and put the file at `~/.langcouch/wordlists/<code>.json` (grammar: `~/.langcouch/grammar/<code>.json`). It lives next to your progress and survives plugin updates. No clone needed; validate with `langcouch validate <code> --full` (inside Claude Code: `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full`). Never write into the plugin folder (`~/.claude/plugins/cache/…`): it is replaced on every update.
+- **For everyone** (a PR): work in a clone of this repo with [bun](https://bun.sh) (`bun install`), put the file at `wordlists/<code>.json`, and follow every step below including the PR checklist.
+
+A file in `~/.langcouch/wordlists/` overrides a bundled one with the same code, so you can also fix a word locally.
 
 ## Step 1 — Read the concept inventory
 
@@ -27,7 +31,7 @@ Open `concepts.json` (repo root). Each entry is:
 
 A complete contribution covers **every** concept.
 
-## Step 2 — Create `wordlists/<code>.json`
+## Step 2 — Create `<code>.json`
 
 A flat JSON object, one line per entry, concept id → word:
 
@@ -49,13 +53,9 @@ Translation rules (the validator enforces the mechanical ones):
 7. Native script, lowercase by the language's own convention (this matters for recall matching — e.g. Turkish dotted/dotless i). Where correct orthography and what users actually type diverge, **the typed form wins**.
 8. No transliterations of English, no offensive words. Words shorter than 3 characters are fine when they're the natural choice — they just never trigger prompt-recall (see FAQ); mention roughly how many such entries you have in the PR.
 
-## Step 3 — Register the language name
+## Step 3 — Language name: nothing to register
 
-Add one entry to `LANG_NAMES` in `src/instruction.ts`:
-
-```ts
-const LANG_NAMES: Record<string, string> = { es: "Spanish", pt: "Portuguese", tr: "Turkish", ... };
-```
+The instruction names the language via `Intl.DisplayNames` (`ka` → Georgian). Use a standard ISO 639-1 code and it just works; there is no code to edit.
 
 ## Step 4 (optional) — `grammar/<code>.json`
 
@@ -72,7 +72,7 @@ Grammar constructions unlock at higher levels. Mirror the schema of `grammar/es.
 All three must pass; paste their output into your PR description:
 
 ```bash
-bun tests/validate-wordlist.ts <code> --full   # every concept covered, no duplicates
+bun tests/validate-wordlist.ts <code> --full   # every concept covered, no duplicates (for yourself: langcouch validate <code> --full)
 bunx tsc --noEmit                              # typecheck
 bun test                                       # unit tests
 ```
@@ -100,7 +100,7 @@ Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (
 
 ## Step 8 — PR checklist
 
-- [ ] Files touched are exactly: `wordlists/<code>.json`, one `LANG_NAMES` line, and optionally `grammar/<code>.json`
+- [ ] Files touched are exactly: `wordlists/<code>.json` and optionally `grammar/<code>.json`
 - [ ] Output of all three Step 5 commands pasted
 - [ ] Audit summary: model used, findings applied/rejected
 - [ ] Live smoke test output pasted

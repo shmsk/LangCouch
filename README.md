@@ -46,7 +46,7 @@ The hook runs locally. It reads your prompt only to scan it for words you've alr
 | `pt` | Portuguese | 402 | 100% | — |
 | `tr` | Turkish    | 402 | 100% | — |
 
-Adding your language is one JSON file — see [docs/AddLanguage.md](docs/AddLanguage.md). The doc is written so an AI coding agent can do it end-to-end.
+Adding your language is one JSON file. Just for yourself: run `/langcouch:add-language Georgian` in Claude Code, and the file lands in `~/.langcouch/wordlists/`, where it survives plugin updates. For everyone: open a PR, see [docs/AddLanguage.md](docs/AddLanguage.md). The doc is written so an AI coding agent can do it end-to-end.
 
 ### Supported CLIs
 
@@ -70,7 +70,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 # restart the session — replies start weaving Spanish (default: es, level 2)
 ```
 
-Zero setup: the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:pause` / `/langcouch:resume`.
+Zero setup: the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:pause` / `/langcouch:resume`, and add your own language with `/langcouch:add-language <language>`.
 ### Manual hook install
 
 ```bash
@@ -106,7 +106,8 @@ A duplicate-delivery guard keeps the counting honest if both paths fire for the 
 |---|---|
 | `init` | create the config (idempotent) |
 | `status` | level and progress for every language with state |
-| `lang [code]` | switch target language / list available ones |
+| `lang [code]` | switch target language / list available ones (your own are marked `local`) |
+| `validate <code> [--full]` | check a wordlist, e.g. one you added in `~/.langcouch/wordlists/` |
 | `level <1-10\|up\|down>` | weaving intensity |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
 | `pause` / `resume` | kill switch for weaving |
