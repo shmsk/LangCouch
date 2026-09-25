@@ -50,14 +50,14 @@ function validateOverlay(overlay: WordMapping, base: WordMapping, concepts: Map<
 }
 
 /**
- * Validate one language. For a variant the mechanical rules (coverage, duplicates,
- * id collisions) run on the merged result, so a variant word that clashes with a base word is caught.
+ * Validate one language. For a variant the mechanical rules (coverage, shared words)
+ * run on the merged result, so a variant word that clashes with base words is caught.
  */
 export function validateMapping(
   target: ValidationTarget,
   concepts: Map<string, Concept>,
   requireFull: boolean,
-): { count: number; overrides: number | null; missing: string[]; errors: string[] } {
+): { count: number; overrides: number | null; missing: string[]; shared: string[]; errors: string[] } {
   const layers = target.map(readMapping);
   const mapping = Object.assign({}, ...layers) as WordMapping;
   const overlay = layers.length > 1 ? layers[layers.length - 1]! : null;
@@ -70,21 +70,28 @@ export function validateMapping(
     errors.push(`missing ${missing.length} concepts: ${missing.slice(0, 10).join(", ")}${missing.length > 10 ? ", …" : ""}`);
   }
 
-  const seenLemmas = new Map<string, string>();
+  const byLemma = new Map<string, string[]>();
   for (const [id, lemma] of entries) {
     if (!concepts.has(id)) errors.push(`"${id}": unknown concept (not in concepts.json)`);
     if (typeof lemma !== "string" || !lemma) errors.push(`"${id}": empty lemma`);
     else {
       if (lemma.split(" ").length > 3) errors.push(`"${id}" (${lemma}): longer than 3 tokens`);
-      const prior = seenLemmas.get(lemma);
-      if (prior) errors.push(`"${id}": duplicate lemma "${lemma}" (also "${prior}")`);
-      seenLemmas.set(lemma, id);
-      // A lemma spelled like a DIFFERENT concept's id makes state files ambiguous to read
-      // (is "son" the Turkish word or the concept?). Forbid it.
-      if (concepts.has(lemma) && lemma !== id) errors.push(`"${id}": lemma "${lemma}" collides with another concept id`);
+      byLemma.set(lemma, [...(byLemma.get(lemma) ?? []), id]);
     }
   }
-  return { count: entries.length, overrides: overlay ? Object.keys(overlay).length : null, missing, errors: [...new Set(errors)] };
+  // A language may use one word for two concepts when that is genuinely its everyday
+  // word for both (es mañana = morning and tomorrow). Three or more is a lazy list, not a language.
+  const shared = [...byLemma].filter(([, ids]) => ids.length > 1);
+  for (const [lemma, ids] of shared) {
+    if (ids.length > 2) errors.push(`"${lemma}" is used by ${ids.length} concepts (${ids.join(", ")}); at most 2 may share a word`);
+  }
+  return {
+    count: entries.length,
+    overrides: overlay ? Object.keys(overlay).length : null,
+    missing,
+    shared: shared.map(([lemma, ids]) => `${lemma} (${ids.join(", ")})`),
+    errors: [...new Set(errors)],
+  };
 }
 
 /** Validate concepts plus each language, printing a report. Returns true when everything passed. */
@@ -100,13 +107,15 @@ export function runValidation(conceptsPath: string, targets: ValidationTarget[],
 
   for (const target of targets) {
     const path = target[target.length - 1]!;
-    const { count, overrides, missing, errors } = validateMapping(target, concepts, requireFull);
+    const { count, overrides, missing, shared, errors } = validateMapping(target, concepts, requireFull);
     const variant = overrides === null ? "" : ` (variant: ${overrides} overrides over ${target[0]})`;
     if (errors.length) {
       failed = true;
       console.error(`${path}${variant} FAILED:\n` + errors.map((e) => `  - ${e}`).join("\n"));
     } else {
-      console.log(`${path}${variant} OK: ${count} entries, no duplicates, all concepts known, coverage ${count}/${concepts.size}${missing.length ? "" : " (full)"}`);
+      console.log(`${path}${variant} OK: ${count} entries, all concepts known, coverage ${count}/${concepts.size}${missing.length ? "" : " (full)"}`);
+      // not an error — listed so a reviewer can check each one is a real shared word
+      if (shared.length) console.log(`  ${shared.length} shared words: ${shared.join("; ")}`);
     }
   }
   return !failed;

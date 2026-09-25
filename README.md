@@ -43,7 +43,7 @@ The hook runs locally. It reads your prompt only to scan it for words you've alr
 | Code | Language | Words | Tier-1 coverage | Grammar constructions |
 |---|---|---|---|---|
 | `en` | English (US)    | 402 | 100% | — |
-| `en-GB` | British English | variant: 8 words over `en` | 100% | — |
+| `en-GB` | British English | variant: 9 words over `en` | 100% | — |
 | `de` | German     | 402 | 100% | — |
 | `fr` | French     | 402 | 100% | — |
 | `it` | Italian    | 402 | 100% | — |

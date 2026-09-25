@@ -16,7 +16,7 @@ Before opening the issue, please confirm:
 
 ## Notes for reviewers
 
-- Any forced compromises (homonyms, id collisions, periphrastic forms) — list them here so the second-model auditor reviews them deliberately.
+- Any forced compromises (shared words, periphrastic forms) — list them here so the second-model auditor reviews them deliberately.
 - Native-language glosses you're adding (e.g. `de`, `fr`) — gloss keys are added to `concepts.json`, not to wordlists.
 - Roughly how many entries are short (<3 chars, won't trigger prompt-recall)?
 

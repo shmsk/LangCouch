@@ -47,8 +47,8 @@ Translation rules (the validator enforces the mechanical ones):
 1. **Most common everyday word** for the concept, matching its `pos`. No rare, literary, or archaic words — pick what a beginner hears daily.
 2. **Lemma / citation form**: nouns in singular, verbs in the language's dictionary form (infinitive where that is the convention), adjectives in the base (masculine singular where applicable).
 3. **Single word strongly preferred**; hard maximum 3 space-separated tokens.
-4. **No duplicate words across concepts.** The weave shows the word alone, so two concepts sharing one word would be indistinguishable — if two concepts share their most natural word, keep it for the more basic/frequent concept and use the next-most-common synonym for the other. When your language genuinely has no synonym (homonym-heavy languages hit this), pick the closest natural alternative and **list every such forced compromise in your PR description** so the auditor reviews them deliberately instead of flagging them back.
-5. **A word must not be spelled like a different concept's id.** The validator rejects it (it would confuse the state-migration heuristic). Example: Turkish "son" (end) collides with the concept id `son` — use the next synonym, same procedure as rule 4.
+4. **The natural word wins, even when two concepts share it.** If your language really uses one everyday word for two concepts (Spanish *mañana* = morning and tomorrow, Turkish *ay* = moon and month), use it for both; don't swap in a rare synonym to keep them apart. LangCouch handles it: a batch shows the word once, a recall credits both concepts, and the quiz accepts either meaning. At most 2 concepts may share a word (the validator enforces it), and it prints every shared word, so **list them in your PR** for the auditor to confirm each is real.
+5. **Keep noun and verb apart by citation form where the language has one.** English writes verbs as `to work`, `to love`, so the verb entry never reads like the noun; the weave inflects it in context anyway (*worked*, *she loves*). Where the language has no such form, rule 4 applies.
 6. **Content words only.** If the natural translation is a particle or function word, choose the nearest content-word synonym. When your language expresses a concept grammatically rather than lexically (no verb "to have", modality as a suffix, comparatives needing a particle), use the closest common periphrastic or derived form — that is expected, not a violation; note it in the PR.
 7. Native script, lowercase by the language's own convention (this matters for recall matching — e.g. Turkish dotted/dotless i). Where correct orthography and what users actually type diverge, **the typed form wins**.
 8. No transliterations of English, no offensive words. Words shorter than 3 characters are fine when they're the natural choice — they just never trigger prompt-recall (see FAQ); mention roughly how many such entries you have in the PR.
@@ -72,7 +72,7 @@ Grammar constructions unlock at higher levels. Mirror the schema of `grammar/es.
 All three must pass; paste their output into your PR description:
 
 ```bash
-bun tests/validate-wordlist.ts <code> --full   # every concept covered, no duplicates (for yourself: langcouch validate <code> --full)
+bun tests/validate-wordlist.ts <code> --full   # every concept covered, shared words listed (for yourself: langcouch validate <code> --full)
 bunx tsc --noEmit                              # typecheck
 bun test                                       # unit tests
 ```
@@ -104,7 +104,7 @@ Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (
 - [ ] Output of all three Step 5 commands pasted
 - [ ] Audit summary: model used, findings applied/rejected
 - [ ] Live smoke test output pasted
-- [ ] Forced compromises listed: homonym-driven substitutions (rule 4), id collisions (rule 5), periphrastic forms (rule 6), count of <3-char recall-dead entries (rule 8)
+- [ ] Listed: shared words (rule 4), periphrastic forms (rule 6), count of <3-char recall-dead entries (rule 8)
 
 ## Adding a regional variant (pt-BR, pt-PT, es-MX, …)
 
@@ -124,7 +124,7 @@ Learners see translations in their own language via `config.native`. To support 
 
 ## FAQ / known limitations
 
-- **Why no duplicate words?** Progress and recall detection key on the word as it appears; duplicates would merge two concepts' progress.
+- **Why at most 2 concepts per word?** Progress is kept per concept, but a recall of a shared word credits every concept that uses it. Two is a real homonym; more means the list is dodging the work.
 - **Multi-token entries** are never counted by the prompt-recall scanner (it matches single tokens only) — another reason to prefer single words.
 - **Words shorter than 3 characters** are never counted as recalls (noise filter).
 - **Case folding**: recall matching lowercases with default Unicode rules; store words pre-lowercased in your language's own convention (Turkish `İstanbul` → dotted lowercase `i̇stanbul` differs from `istanbul` — prefer the form users actually type).

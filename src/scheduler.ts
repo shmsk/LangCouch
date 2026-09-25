@@ -104,12 +104,22 @@ export function pickWords(words: Word[], state: State, n: number): Pick[] {
   const reviewSlots = Math.min(absorbed.length, Math.floor(n * 0.2));
   const freshSlots = Math.min(fresh.length, n - reviewSlots);
 
-  const picks = [...fresh.slice(0, freshSlots), ...absorbed.slice(0, reviewSlots)];
+  // Two concepts may share a word (es mañana = morning, tomorrow); one batch shows it once,
+  // or the weave list would read "mañana = morning; mañana = tomorrow".
+  const picks: Word[] = [];
+  const targets = new Set<string>();
+  const take = (pool: Word[], limit: number) => {
+    for (const w of pool) {
+      if (picks.length >= limit) break;
+      if (picks.includes(w) || targets.has(w.target)) continue;
+      picks.push(w);
+      targets.add(w.target);
+    }
+  };
+  take(fresh, freshSlots);
+  take(absorbed, freshSlots + reviewSlots);
   // top up from whichever pool still has words, if one ran dry
-  if (picks.length < n) {
-    const rest = [...fresh.slice(freshSlots), ...absorbed.slice(reviewSlots)];
-    picks.push(...rest.slice(0, n - picks.length));
-  }
+  take([...fresh, ...absorbed], n);
 
   return picks.map((word) => ({ word, exposures: exposures(word) }));
 }

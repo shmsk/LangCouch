@@ -84,7 +84,7 @@ describe("regional variants (pt-BR over pt)", () => {
     expect(langsWithState()).toContain("pt-BR");
   });
 
-  test("validator: merged duplicates and base copies are caught", () => {
+  test("validator: merged over-shared words and base copies are caught", () => {
     const { concepts } = validateConcepts(CONCEPTS_PATH);
     const base = join(WORDLISTS_DIR, "pt.json");
     reset();
@@ -93,11 +93,16 @@ describe("regional variants (pt-BR over pt)", () => {
     expect(ok.errors).toEqual([]);
     expect(ok.overrides).toBe(2);
 
-    writeVariant("pt-BR", { phone: bundledPt.house!, house: bundledPt.house!, nope: "x" });
+    writeVariant("pt-BR", { phone: bundledPt.house!, car: bundledPt.house!, house: bundledPt.house!, nope: "x" });
     const bad = validateMapping([base, join(userWordlists, "pt-BR.json")], concepts, true);
-    expect(bad.errors.some((e) => e.includes("duplicate lemma"))).toBe(true);
+    expect(bad.errors.some((e) => e.includes("at most 2 may share a word"))).toBe(true);
     expect(bad.errors.some((e) => e.includes("same as the base word"))).toBe(true);
     expect(bad.errors.some((e) => e.includes('"nope": unknown concept'))).toBe(true);
+
+    writeVariant("pt-BR", { phone: bundledPt.house! });
+    const pair = validateMapping([base, join(userWordlists, "pt-BR.json")], concepts, true);
+    expect(pair.errors).toEqual([]);
+    expect(pair.shared.some((s) => s.startsWith(`${bundledPt.house} (`))).toBe(true);
   });
 
   test("CLI: lang pt-br switches, lists the variant, validate passes", () => {

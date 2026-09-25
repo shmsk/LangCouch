@@ -229,9 +229,11 @@ try {
       const words = loadWordlist(config.lang);
       const state = loadState(config.lang);
       const n = Math.max(1, Math.trunc(Number(args[0])) || 5);
+      const seenTargets = new Set<string>();
       const candidates = words
         .filter((w) => (state[w.id]?.exposures ?? 0) > 0)
         .sort((a, b) => (state[b.id]?.exposures ?? 0) - (state[a.id]?.exposures ?? 0))
+        .filter((w) => !seenTargets.has(w.target) && seenTargets.add(w.target)) // a shared word is asked once
         .slice(0, n);
       if (candidates.length === 0) {
         console.log("Nothing to quiz — no exposures yet. Work with the hook installed first.");
@@ -242,8 +244,11 @@ try {
       let correct = 0;
       for (const w of candidates) {
         const answer = await rl.question(`${w.target} → `);
-        const ok = checkAnswer(answer, w, config.lang);
-        applyQuizResult(state, w.id, ok);
+        // "mañana → tomorrow" and "mañana → morning" are both right; credit the concept(s) the answer names
+        const matched = words.filter((x) => x.target === w.target && checkAnswer(answer, x, config.lang));
+        const ok = matched.length > 0;
+        if (ok) for (const x of matched) applyQuizResult(state, x.id, true);
+        else applyQuizResult(state, w.id, false);
         if (ok) correct++;
         const shown = glossFor(w, config.native, config.lang);
         const own = baseLang(config.lang) ?? config.lang;

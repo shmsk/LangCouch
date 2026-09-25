@@ -128,3 +128,18 @@ describe("glossFor", () => {
     expect(glossFor(w, "ru", "en")).toBe("дом");
   });
 });
+
+describe("shared words", () => {
+  test("a batch never shows the same word twice (es mañana = morning, tomorrow)", () => {
+    const shared: Word[] = [
+      { ...mkWord("morning"), target: "mañana" },
+      { ...mkWord("tomorrow"), target: "mañana" },
+      ...words.slice(0, 5),
+    ];
+    const picks = pickWords(shared, {}, 6);
+    const targets = picks.map((p) => p.word.target);
+    expect(targets.filter((t) => t === "mañana")).toHaveLength(1);
+    expect(new Set(targets).size).toBe(targets.length);
+    expect(picks).toHaveLength(6);
+  });
+});

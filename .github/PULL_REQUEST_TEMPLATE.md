@@ -18,10 +18,10 @@ All boxes must be ticked before review.
 ## If this PR adds or edits data
 
 - [ ] A second-model audit has run (see docs/AddLanguage.md, Step 6) and findings are triaged
-- [ ] Every forced compromise (homonym, id-collision, periphrastic form, <3-char entry) is listed below so the auditor reviews it deliberately
+- [ ] Every forced compromise (shared word, periphrastic form, <3-char entry) is listed below so the auditor reviews it deliberately
 
 <!-- List compromises here, one per line:
-     - <concept id>: <what and why> (e.g. "son: Turkish 'son' collides with concept id `son`, used the next synonym 'bitiş'")
+     - <concept id>: <what and why> (e.g. "morning, tomorrow: Spanish 'mañana' is the everyday word for both")
 -->
 
 ## If this PR changes the hook path
