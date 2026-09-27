@@ -32,3 +32,26 @@ jobs:
         run: |
           echo '{"session_id":"ci","hook_event_name":"UserPromptSubmit","prompt":"hi"}' | node src/cli.ts hook > out.txt
           grep -q "<langcouch>" out.txt
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    env:
+      LANGCOUCH_DIR: ${{ runner.temp }}/langcouch
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Plugin finds its wordlists on a Windows path (bun and Node)
+        run: |
+          bun src/cli.ts init
+          bun src/cli.ts lang pt
+          node src/cli.ts lang es
+      - name: Hook runs through the shell wrapper
+        run: |
+          echo '{"session_id":"ci","hook_event_name":"UserPromptSubmit","prompt":"hi"}' | sh scripts/hook.sh > out.txt
+          grep -q "<langcouch>" out.txt

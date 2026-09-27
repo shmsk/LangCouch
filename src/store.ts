@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import type { Concept, Config, State, Word, WordMapping } from "./types.ts";
 import type { GrammarItem } from "./grammar.ts";
@@ -55,7 +56,7 @@ export function saveState(lang: string, state: State): void {
   writeFileSync(STATE_PATH(lang), JSON.stringify(state, null, 2));
 }
 
-const REPO_ROOT = join(dirname(new URL(import.meta.url).pathname), "..");
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const WORDLISTS_DIR = join(REPO_ROOT, "wordlists");
 const GRAMMAR_DIR = join(REPO_ROOT, "grammar");
 // User-added languages live next to progress, so they survive plugin updates

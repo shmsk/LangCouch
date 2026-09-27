@@ -4,10 +4,11 @@
 // --full: missing concepts are errors, not info — required for new-language contributions (docs/AddLanguage.md).
 import { readdirSync } from "node:fs";
 import { basename, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { runValidation } from "../src/validate.ts";
 import { baseLang, normalizeLang } from "../src/store.ts";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const WORDLISTS_DIR = join(ROOT, "wordlists");
 const CONCEPTS_PATH = join(ROOT, "concepts.json");
 

@@ -1,12 +1,13 @@
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { writeAgentsSection } from "../shared/agents-section.ts";
 
 const PLUGIN_MARKER = "/* langcouch */";
 
 function cliPath(): string {
-  return join(dirname(new URL(import.meta.url).pathname), "..", "..", "src", "cli.ts");
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "src", "cli.ts");
 }
 
 /**
@@ -32,7 +33,7 @@ export function stampCliPath(template: string, cliPath: string): string {
 }
 
 function pluginTemplate(): string {
-  const raw = readFileSync(join(dirname(new URL(import.meta.url).pathname), "plugin.template.ts"), "utf8");
+  const raw = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "plugin.template.ts"), "utf8");
   return stampCliPath(raw, cliPath());
 }
 

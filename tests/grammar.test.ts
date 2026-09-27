@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { pickGrammar, markGrammarShown, absorbedByPos, grammarKey, type GrammarItem } from "../src/grammar.ts";
 import { buildInstruction } from "../src/instruction.ts";
 import { pickWords } from "../src/scheduler.ts";
@@ -72,7 +73,7 @@ describe("instruction with grammar data", () => {
 
 describe("grammar/es.json", () => {
   test("8-12 starter constructions with valid schema", () => {
-    const list = JSON.parse(readFileSync(new URL("../grammar/es.json", import.meta.url).pathname, "utf8")) as GrammarItem[];
+    const list = JSON.parse(readFileSync(fileURLToPath(new URL("../grammar/es.json", import.meta.url)), "utf8")) as GrammarItem[];
     expect(list.length).toBeGreaterThanOrEqual(8);
     expect(list.length).toBeLessThanOrEqual(12);
     const ids = new Set(list.map((g) => g.id));

@@ -1,10 +1,11 @@
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { addHooks } from "../shared/json-hooks.ts";
 import { removeAgentsSection } from "../shared/agents-section.ts";
 
 function cliPath(): string {
-  return join(dirname(new URL(import.meta.url).pathname), "..", "..", "src", "cli.ts");
+  return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "src", "cli.ts");
 }
 
 /**

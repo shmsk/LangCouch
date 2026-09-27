@@ -2,6 +2,7 @@ import { describe, expect, test, beforeEach, afterEach } from "bun:test";
 import { mkdtempSync, readFileSync, existsSync, rmSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { installOpencode, stampCliPath } from "../adapters/opencode/install.ts";
 
 const PLUGIN_MARKER = "/* langcouch */";
@@ -81,7 +82,7 @@ describe("installOpencode", () => {
     const match = /const CLI_PATH = "([^"]+)"/.exec(plugin);
     expect(match).not.toBeNull();
     const stamped = match![1];
-    expect(stamped).toBe(resolve(join(dirname(new URL(import.meta.url).pathname), "..", "src", "cli.ts")));
+    expect(stamped).toBe(resolve(join(dirname(fileURLToPath(import.meta.url)), "..", "src", "cli.ts")));
   });
 });
 
