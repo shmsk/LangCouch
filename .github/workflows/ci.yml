@@ -38,9 +38,8 @@ jobs:
     defaults:
       run:
         shell: bash
-    env:
-      LANGCOUCH_DIR: ${{ runner.temp }}/langcouch
     steps:
+      - run: echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
