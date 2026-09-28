@@ -30,6 +30,8 @@ export interface Word {
   pos: Pos;
   tier: number;
   gloss: Record<string, string>;
+  /** Regional variant only: the base's lemma when this one differs (es-419 carro → es coche). */
+  baseTarget?: string;
 }
 
 export interface Config {

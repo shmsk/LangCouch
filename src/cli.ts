@@ -2,7 +2,7 @@
 import { createInterface } from "node:readline/promises";
 import { basename } from "node:path";
 import { readFileSync } from "node:fs";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
 import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
@@ -101,6 +101,15 @@ function safeWordlist(lang: string): Word[] {
   }
 }
 
+/** Concepts a variant shares with its base, null if unreadable — status must never crash. */
+function safeShared(lang: string): Set<string> | null {
+  try {
+    return sharedWithBase(lang);
+  } catch {
+    return null;
+  }
+}
+
 /** Load grammar, degrading to [] if the file is missing or malformed — status must never crash. */
 function safeGrammar(lang: string): GrammarItem[] {
   try {
@@ -153,6 +162,14 @@ function status(): string {
         (stage < 2 ? " · weaving starts at level 4" : "")
       : null;
 
+  // A regional variant shares progress with its base; only its own words are new to learn.
+  const variantBase = baseLang(config.lang);
+  const shared = variantBase ? safeShared(config.lang) : null;
+  const regional = words.filter((w) => !shared?.has(w.id));
+  const regionalLine = shared
+    ? `Regional (vs ${variantBase}): ${regional.filter((w) => isAbsorbed(state[w.id])).length}/${regional.length} absorbed · ${words.length - regional.length} words share progress with ${variantBase}`
+    : null;
+
   const others = langsWithState().filter((l) => l !== config.lang);
   const langRows = [config.lang, ...others].map((lang) => {
     const s = langSummary(lang);
@@ -163,6 +180,7 @@ function status(): string {
   return [
     `langcouch — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response)`,
     coreLine,
+    regionalLine,
     grammarLine,
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,

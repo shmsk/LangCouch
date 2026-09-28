@@ -5,6 +5,9 @@ import type { GrammarItem } from "./grammar.ts";
 
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
 
+/** Where a base language's spelling is the norm, for the variant contrast ("Spain: coche"). */
+const BASE_REGION: Record<string, string> = { es: "Spain", pt: "Portugal", en: "US" };
+
 /** English name of a language code (tr → Turkish); unknown codes come back as-is. */
 export function langName(code: string): string {
   try {
@@ -22,7 +25,9 @@ export function langName(code: string): string {
  */
 export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null): string {
   const name = langName(config.lang);
-  const vocab = picks.map((p) => `${p.word.target} = ${glossFor(p.word, config.native, config.lang)}`).join("; ");
+  const base = config.lang.split("-")[0]!;
+  const contrast = (target: string | undefined) => (target ? `, ${BASE_REGION[base] ?? langName(base)}: ${target}` : "");
+  const vocab = picks.map((p) => `${p.word.target} = ${glossFor(p.word, config.native, config.lang)}${contrast(p.word.baseTarget)}`).join("; ");
   const stage = grammarStage(config.level);
 
   const lines = [

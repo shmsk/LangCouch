@@ -8,6 +8,7 @@ import {
   baseLang,
   langsWithState,
   loadGrammar,
+  loadState,
   loadWordlist,
   normalizeLang,
   saveState,
@@ -16,7 +17,9 @@ import {
   CONCEPTS_PATH,
 } from "../src/store.ts";
 import { validateConcepts, validateMapping } from "../src/validate.ts";
-import { langName } from "../src/instruction.ts";
+import { buildInstruction, langName } from "../src/instruction.ts";
+import { pickWords, tierProgress } from "../src/scheduler.ts";
+import { isAbsorbed } from "../src/types.ts";
 
 const userWordlists = join(dir, "wordlists");
 const userGrammar = join(dir, "grammar");
@@ -135,5 +138,78 @@ describe("native gloss keys", () => {
     const { errors } = validateConcepts(path);
     expect(errors.some((e) => e.startsWith(`gloss.xx missing on ${list.length - 1} concepts`))).toBe(true);
     rmSync(path);
+  });
+});
+
+// Someone who learned the base and switches to a variant keeps the shared words;
+// only the variant's own lemmas are new. Same rule for every variant, checked on two.
+describe.each([
+  { variant: "es-419", base: "es", shared: "house", regional: "car", own: "carro", baseWord: "coche", region: "Spain" },
+  { variant: "pt-BR", base: "pt", shared: "house", regional: "train", own: "trem", baseWord: "comboio", region: "Portugal" },
+])("variant progress shares the base pool ($variant over $base)", ({ variant, base, shared, regional, own, baseWord, region }) => {
+  const absorbed = { exposures: 3, recalls: 2, lastSeen: "2026-09-01T00:00:00Z" };
+  const statePath = (l: string) => join(dir, `state.${l}.json`);
+  const readFile = (l: string) => JSON.parse(readFileSync(statePath(l), "utf8"));
+  function clean() {
+    reset();
+    for (const l of [variant, base]) rmSync(statePath(l), { force: true });
+  }
+
+  test("an absorbed shared word stays absorbed, a differing one starts fresh", () => {
+    clean();
+    saveState(base, { [shared]: absorbed, [regional]: absorbed });
+    const state = loadState(variant);
+    expect(isAbsorbed(state[shared])).toBe(true);
+    expect(state[regional]).toBeUndefined(); // knowing coche is not knowing carro
+    const words = loadWordlist(variant);
+    const t1 = words.filter((w) => w.tier === 1);
+    expect(tierProgress(words, state)[0]!.absorbed).toBe(t1.filter((w) => isAbsorbed(state[w.id])).length);
+  });
+
+  test("progress made in the variant lands in the right file", () => {
+    clean();
+    saveState(base, { [regional]: absorbed });
+    const state = loadState(variant);
+    state[shared] = { exposures: 5, lastSeen: "2026-09-02T00:00:00Z" };
+    state[regional] = { exposures: 1, lastSeen: "2026-09-02T00:00:00Z" };
+    saveState(variant, state);
+    expect(readFile(base)[shared].exposures).toBe(5); // shared word counts for the base too
+    expect(readFile(base)[regional]).toEqual(absorbed); // the base's own coche untouched
+    expect(readFile(variant)).toEqual({ [regional]: state[regional] });
+    expect(loadState(base)[shared]?.exposures).toBe(5);
+  });
+
+  test("a legacy variant file folds into the base without losing progress", () => {
+    clean();
+    saveState(base, { [shared]: { exposures: 4, lastSeen: "2026-08-01T00:00:00Z" } });
+    writeFileSync(statePath(variant), JSON.stringify({ [shared]: { exposures: 2, recalls: 1, lastSeen: "2026-09-01T00:00:00Z" } }));
+    const merged = loadState(variant)[shared]!;
+    expect(merged).toEqual({ exposures: 4, recalls: 1, lastSeen: "2026-09-01T00:00:00Z" });
+    saveState(variant, loadState(variant));
+    expect(readFile(variant)[shared]).toBeUndefined();
+    expect(readFile(base)[shared]).toEqual(merged);
+  });
+
+  test("regional words carry the base lemma, lead the picks, and show as a contrast", () => {
+    clean();
+    const words = loadWordlist(variant);
+    expect(words.find((w) => w.id === regional)?.baseTarget).toBe(baseWord);
+    expect(words.find((w) => w.id === shared)?.baseTarget).toBeUndefined();
+    const regionalCount = words.filter((w) => w.baseTarget).length;
+    const picks = pickWords(words, {}, regionalCount);
+    expect(picks.every((p) => p.word.baseTarget)).toBe(true);
+    const text = buildInstruction({ lang: variant, native: "en", level: 2 }, picks);
+    expect(text).toContain(`${own} = ${words.find((w) => w.id === regional)!.gloss.en}, ${region}: ${baseWord}`);
+  });
+
+  test("status reports the regional split", () => {
+    clean();
+    const cfg = join(dir, "config.json");
+    const before = existsSync(cfg) ? readFileSync(cfg, "utf8") : null;
+    writeFileSync(cfg, JSON.stringify({ lang: variant, native: "en", level: 2 }));
+    const { out } = cli("status");
+    if (before === null) rmSync(cfg);
+    else writeFileSync(cfg, before);
+    expect(out).toMatch(new RegExp(`Regional \\(vs ${base}\\): 0/\\d+ absorbed · \\d+ words share progress with ${base}`));
   });
 });

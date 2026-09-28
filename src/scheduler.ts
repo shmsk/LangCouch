@@ -83,7 +83,8 @@ export function unlockedWords(words: Word[], state: State): Word[] {
  * Pick N words for one instruction.
  *
  * Strategy (SRS-lite, full SM-2 is post-MVP):
- * - fresh words (not absorbed per the recall formula) come first, least-exposed first
+ * - fresh words (not absorbed per the recall formula) come first, least-exposed first;
+ *   in a regional variant its own words (carro, not casa) lead the fresh pool
  * - among equals, least-recently-seen first, so consecutive calls rotate
  *   instead of hammering the same batch
  * - up to 20% of the picks are a review tail: absorbed words that haven't
@@ -93,9 +94,11 @@ export function pickWords(words: Word[], state: State, n: number): Pick[] {
   const seenAt = (w: Word) => state[w.id]?.lastSeen ?? "";
   const exposures = (w: Word) => state[w.id]?.exposures ?? 0;
 
+  // Regional words (a variant's own lemmas) lead: after a switch they are the actual difference to learn.
+  const regional = (w: Word) => (w.baseTarget === undefined ? 1 : 0);
   const fresh = words
     .filter((w) => !isAbsorbed(state[w.id]))
-    .sort((a, b) => exposures(a) - exposures(b) || seenAt(a).localeCompare(seenAt(b)));
+    .sort((a, b) => regional(a) - regional(b) || exposures(a) - exposures(b) || seenAt(a).localeCompare(seenAt(b)));
 
   const absorbed = words
     .filter((w) => isAbsorbed(state[w.id]))

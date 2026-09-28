@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
-import type { Concept, Config, State, Word, WordMapping } from "./types.ts";
+import type { Concept, Config, State, Word, WordMapping, WordState } from "./types.ts";
 import type { GrammarItem } from "./grammar.ts";
 
 export const DATA_DIR = process.env.LANGCOUCH_DIR ?? join(homedir(), ".langcouch");
@@ -46,14 +46,73 @@ export function saveConfig(config: Config): void {
   writeFileSync(CONFIG_PATH(), JSON.stringify(config, null, 2));
 }
 
-export function loadState(lang: string): State {
+function readStateFile(lang: string): State {
   if (!existsSync(STATE_PATH(lang))) return {};
   return readJson<State>(STATE_PATH(lang), `state ${lang}`);
 }
 
-export function saveState(lang: string, state: State): void {
+function writeStateFile(lang: string, state: State): void {
   mkdirSync(DATA_DIR, { recursive: true });
   writeFileSync(STATE_PATH(lang), JSON.stringify(state, null, 2));
+}
+
+/** Two records of one word, folded without losing progress (legacy variant files met their base). */
+function mergeWordState(a: WordState | undefined, b: WordState | undefined): WordState | undefined {
+  if (!a || !b) return a ?? b;
+  const recalls = Math.max(a.recalls ?? 0, b.recalls ?? 0);
+  return {
+    exposures: Math.max(a.exposures, b.exposures),
+    lastSeen: a.lastSeen > b.lastSeen ? a.lastSeen : b.lastSeen,
+    ...(recalls > 0 ? { recalls } : {}),
+  };
+}
+
+/**
+ * Concept ids a regional variant spells exactly like its base, or null for a plain code
+ * (or a variant whose wordlists are missing — then its state file stands alone, as before).
+ * Their progress lives in the base's state file, one pool for both codes: someone who
+ * learned `es` and switches to `es-419` keeps casa, and only carro/computadora/… start fresh.
+ * Everything else (regional words, grammar keys) stays in the variant's own file.
+ */
+export function sharedWithBase(lang: string): Set<string> | null {
+  const code = normalizeLang(lang);
+  const base = baseLang(code);
+  if (!base || !wordlistPath(code) || !wordlistPath(base)) return null;
+  const [basePath, ownPath] = wordlistLayers(code) as [string, string];
+  const baseMap = readJson<WordMapping>(basePath, `wordlist ${base}`);
+  const ownMap = readJson<WordMapping>(ownPath, `wordlist ${code}`);
+  return new Set(Object.keys(baseMap).filter((id) => ownMap[id] === undefined || ownMap[id] === baseMap[id]));
+}
+
+export function loadState(lang: string): State {
+  const own = readStateFile(lang);
+  const shared = sharedWithBase(lang);
+  if (!shared) return own;
+  const base = readStateFile(baseLang(normalizeLang(lang))!);
+  const state: State = {};
+  for (const [key, s] of Object.entries(own)) if (!shared.has(key)) state[key] = s;
+  for (const id of shared) {
+    const s = mergeWordState(base[id], own[id]);
+    if (s) state[id] = s;
+  }
+  return state;
+}
+
+export function saveState(lang: string, state: State): void {
+  const shared = sharedWithBase(lang);
+  if (!shared) return writeStateFile(lang, state);
+  const baseCode = baseLang(normalizeLang(lang))!;
+  const base = readStateFile(baseCode);
+  const own: State = {};
+  let touchedBase = false;
+  for (const [key, s] of Object.entries(state)) {
+    if (shared.has(key)) {
+      base[key] = s;
+      touchedBase = true;
+    } else own[key] = s;
+  }
+  if (touchedBase) writeStateFile(baseCode, base);
+  writeStateFile(lang, own); // shared entries leave the variant file: a legacy copy is folded in once
 }
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -135,12 +194,15 @@ export function loadWordMapping(lang: string): WordMapping {
 /** Concepts joined with their lemmas in the target language. */
 export function loadWordlist(lang: string): Word[] {
   const mapping = loadWordMapping(lang);
+  const base = baseLang(normalizeLang(lang));
+  const baseMapping = base ? loadWordMapping(base) : {};
   const concepts = new Map(loadConcepts().map((c) => [c.id, c]));
   const words: Word[] = [];
   for (const [id, lemma] of Object.entries(mapping)) {
     const c = concepts.get(id);
     if (!c) throw new Error(`langcouch: wordlist ${lang} maps unknown concept "${id}" — run tests/validate-wordlist.ts`);
-    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss });
+    const baseTarget = baseMapping[id];
+    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(baseTarget && baseTarget !== lemma ? { baseTarget } : {}) });
   }
   return words;
 }
