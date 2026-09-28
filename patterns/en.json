@@ -1,0 +1,79 @@
+[
+  {
+    "id": "tion",
+    "from": { "ru": "-ция" },
+    "to": "-tion",
+    "examples": [
+      { "target": "revolution", "gloss": { "ru": "революция" } },
+      { "target": "nation", "gloss": { "ru": "нация" } },
+      { "target": "information", "gloss": { "ru": "информация" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-tion"
+  },
+  {
+    "id": "al",
+    "from": { "ru": "-альный" },
+    "to": "-al",
+    "examples": [
+      { "target": "national", "gloss": { "ru": "национальный" } },
+      { "target": "original", "gloss": { "ru": "оригинальный" } },
+      { "target": "regional", "gloss": { "ru": "региональный" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-al"
+  },
+  {
+    "id": "ism",
+    "from": { "ru": "-изм" },
+    "to": "-ism",
+    "examples": [
+      { "target": "realism", "gloss": { "ru": "реализм" } },
+      { "target": "racism", "gloss": { "ru": "расизм" } },
+      { "target": "tourism", "gloss": { "ru": "туризм" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-ism"
+  },
+  {
+    "id": "ist",
+    "from": { "ru": "-ист" },
+    "to": "-ist",
+    "examples": [
+      { "target": "tourist", "gloss": { "ru": "турист" } },
+      { "target": "pianist", "gloss": { "ru": "пианист" } },
+      { "target": "optimist", "gloss": { "ru": "оптимист" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-ist"
+  },
+  {
+    "id": "ic",
+    "from": { "ru": "-ический" },
+    "to": "-ical",
+    "examples": [
+      { "target": "logical", "gloss": { "ru": "логический" } },
+      { "target": "practical", "gloss": { "ru": "практический" } },
+      { "target": "critical", "gloss": { "ru": "критический" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-ical"
+  },
+  {
+    "id": "ity",
+    "from": { "ru": "-итет" },
+    "to": "-ity",
+    "examples": [
+      { "target": "university", "gloss": { "ru": "университет" } },
+      { "target": "mentality", "gloss": { "ru": "менталитет" } },
+      { "target": "priority", "gloss": { "ru": "приоритет" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-ity"
+  },
+  {
+    "id": "irovat",
+    "from": { "ru": "-ировать" },
+    "to": "-ate",
+    "examples": [
+      { "target": "illustrate", "gloss": { "ru": "иллюстрировать" } },
+      { "target": "demonstrate", "gloss": { "ru": "демонстрировать" } },
+      { "target": "coordinate", "gloss": { "ru": "координировать" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/-ate"
+  }
+]

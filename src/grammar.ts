@@ -1,4 +1,4 @@
-import type { Pos, State, Word } from "./types.ts";
+import type { GrammarStage, Pos, State, Word } from "./types.ts";
 import { isAbsorbed } from "./types.ts";
 
 export interface GrammarItem {
@@ -9,7 +9,16 @@ export interface GrammarItem {
   exampleGloss: string;
   /** Unlocked when the user has absorbed at least absorbedCount words of this POS */
   unlock: { pos: Pos; absorbedCount: number };
+  /** Earliest grammar stage that weaves it: 2 = collocations (default), 3 = sentence-level */
+  stage?: 2 | 3;
+  /** Regional variant only: the base's way of saying it ("vosotros trabajáis" next to "ustedes trabajan") */
+  baseExample?: string;
+  /** Where the rule was checked (dictionary or grammar URL) */
+  source?: string;
 }
+
+/** Whether the construction belongs to this grammar stage or an earlier one. */
+const inStage = (g: GrammarItem, stage: GrammarStage) => (g.stage ?? 2) <= stage;
 
 /** Grammar exposures share the word state file under a "g:" prefix — never collides with words. */
 export const grammarKey = (id: string) => `g:${id}`;
@@ -23,13 +32,18 @@ export function absorbedByPos(words: Word[], state: State): Record<Pos, number> 
   return counts;
 }
 
-/** Pick the least-shown unlocked construction; null when nothing is unlocked yet. */
-export function pickGrammar(items: GrammarItem[], words: Word[], state: State): GrammarItem | null {
+/**
+ * Pick the least-shown unlocked construction; null when nothing is unlocked yet.
+ * A variant's own constructions (those with a baseExample) go first: the learner
+ * already knows the shared ones from the base.
+ */
+export function pickGrammar(items: GrammarItem[], words: Word[], state: State, stage: GrammarStage = 3): GrammarItem | null {
   const counts = absorbedByPos(words, state);
-  const unlocked = items.filter((g) => counts[g.unlock.pos] >= g.unlock.absorbedCount);
+  const unlocked = items.filter((g) => inStage(g, stage) && counts[g.unlock.pos] >= g.unlock.absorbedCount);
   if (unlocked.length === 0) return null;
   const shown = (g: GrammarItem) => state[grammarKey(g.id)]?.exposures ?? 0;
-  return unlocked.sort((a, b) => shown(a) - shown(b))[0] ?? null;
+  const regional = (g: GrammarItem) => (g.baseExample === undefined ? 1 : 0);
+  return unlocked.sort((a, b) => regional(a) - regional(b) || shown(a) - shown(b))[0] ?? null;
 }
 
 export interface GrammarProgress {
@@ -48,13 +62,13 @@ export interface GrammarProgress {
  * "mastered" signal — only "shown N times" (exposures) and "unlocked / not".
  * `next` is the locked construction with the smallest remaining POS-absorb gap.
  */
-export function grammarProgress(items: GrammarItem[], words: Word[], state: State): GrammarProgress {
+export function grammarProgress(items: GrammarItem[], words: Word[], state: State, stage: GrammarStage = 3): GrammarProgress {
   const counts = absorbedByPos(words, state);
-  const isUnlocked = (g: GrammarItem) => counts[g.unlock.pos] >= g.unlock.absorbedCount;
+  const isUnlocked = (g: GrammarItem) => inStage(g, stage) && counts[g.unlock.pos] >= g.unlock.absorbedCount;
   const introduced = Object.keys(state).filter((k) => isGrammarKey(k) && (state[k]?.exposures ?? 0) > 0).length;
   const next =
     items
-      .filter((g) => !isUnlocked(g))
+      .filter((g) => inStage(g, stage) && !isUnlocked(g))
       .map((g) => ({ pattern: g.pattern, pos: g.unlock.pos, have: counts[g.unlock.pos], need: g.unlock.absorbedCount }))
       .sort((a, b) => a.need - a.have - (b.need - b.have))[0] ?? null;
   return { total: items.length, unlockedCount: items.filter(isUnlocked).length, introduced, next };

@@ -2,8 +2,9 @@ import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
-import type { Concept, Config, State, Word, WordMapping, WordState } from "./types.ts";
-import type { GrammarItem } from "./grammar.ts";
+import type { Concept, Config, FalseFriend, State, Word, WordMapping, WordState } from "./types.ts";
+import { grammarKey, type GrammarItem } from "./grammar.ts";
+import { patternKey, type Pattern } from "./patterns.ts";
 
 export const DATA_DIR = process.env.LANGCOUCH_DIR ?? join(homedir(), ".langcouch");
 const CONFIG_PATH = () => join(DATA_DIR, "config.json");
@@ -72,7 +73,9 @@ function mergeWordState(a: WordState | undefined, b: WordState | undefined): Wor
  * (or a variant whose wordlists are missing — then its state file stands alone, as before).
  * Their progress lives in the base's state file, one pool for both codes: someone who
  * learned `es` and switches to `es-419` keeps casa, and only carro/computadora/… start fresh.
- * Everything else (regional words, grammar keys) stays in the variant's own file.
+ * Grammar works the same way: base constructions the variant's overlay leaves alone are
+ * shared as their "g:" keys. Everything else (regional words and constructions) stays in
+ * the variant's own file.
  */
 export function sharedWithBase(lang: string): Set<string> | null {
   const code = normalizeLang(lang);
@@ -81,7 +84,12 @@ export function sharedWithBase(lang: string): Set<string> | null {
   const [basePath, ownPath] = wordlistLayers(code) as [string, string];
   const baseMap = readJson<WordMapping>(basePath, `wordlist ${base}`);
   const ownMap = readJson<WordMapping>(ownPath, `wordlist ${code}`);
-  return new Set(Object.keys(baseMap).filter((id) => ownMap[id] === undefined || ownMap[id] === baseMap[id]));
+  const shared = new Set(Object.keys(baseMap).filter((id) => ownMap[id] === undefined || ownMap[id] === baseMap[id]));
+  const overridden = new Set(grammarFile(code).map((g) => g.id));
+  for (const g of grammarFile(base)) if (!overridden.has(g.id)) shared.add(grammarKey(g.id));
+  const ownRules = new Set(patternsFile(code).map((p) => p.id));
+  for (const p of patternsFile(base)) if (!ownRules.has(p.id)) shared.add(patternKey(p.id));
+  return shared;
 }
 
 export function loadState(lang: string): State {
@@ -122,7 +130,34 @@ const GRAMMAR_DIR = join(REPO_ROOT, "grammar");
 // (the plugin itself is replaced wholesale per version). A user file overrides a bundled one.
 export const USER_WORDLISTS_DIR = join(DATA_DIR, "wordlists");
 const USER_GRAMMAR_DIR = join(DATA_DIR, "grammar");
+const PATTERNS_DIR = join(REPO_ROOT, "patterns");
+const USER_PATTERNS_DIR = join(DATA_DIR, "patterns");
+const FALSE_FRIENDS_DIR = join(REPO_ROOT, "falseFriends");
+const USER_FALSE_FRIENDS_DIR = join(DATA_DIR, "falseFriends");
 export const CONCEPTS_PATH = join(REPO_ROOT, "concepts.json");
+const CHANGELOG_PATH = join(REPO_ROOT, "CHANGELOG.md");
+
+/** Version of the installed plugin, from its package.json. */
+export const PLUGIN_VERSION: string = readJson<{ version: string }>(join(REPO_ROOT, "package.json"), "package.json").version;
+
+/**
+ * The changelog entries for one version, one line each, markdown emphasis stripped;
+ * [] when CHANGELOG.md or the section is missing. Continuation lines join their bullet.
+ */
+export function changelogFor(version: string, path: string = CHANGELOG_PATH): string[] {
+  if (!existsSync(path)) return [];
+  const lines = readFileSync(path, "utf8").split(/\r?\n/);
+  const start = lines.findIndex((l) => l.startsWith(`## [${version}]`));
+  if (start < 0) return [];
+  const items: string[] = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.startsWith("## ")) break;
+    const item = line.match(/^(?:- |(\d+)\. )(.*)$/); // bullets, and numbered Upgrade notes steps
+    if (item) items.push((item[1] ? `${item[1]}. ` : "") + item[2]!.trim());
+    else if (/^\s+\S/.test(line) && items.length > 0) items[items.length - 1] += ` ${line.trim()}`;
+  }
+  return items.map((i) => i.replace(/\*/g, ""));
+}
 
 let conceptsCache: Concept[] | null = null;
 
@@ -196,23 +231,82 @@ export function loadWordlist(lang: string): Word[] {
   const mapping = loadWordMapping(lang);
   const base = baseLang(normalizeLang(lang));
   const baseMapping = base ? loadWordMapping(base) : {};
+  const code = normalizeLang(lang);
+  const rude = new Map(
+    (base ? loadFalseFriends(base) : [])
+      .filter((f) => f.register === "vulgar" && f.vulgarIn?.includes(code))
+      .map((f) => [f.target, f.note ?? `vulgar in ${regionName(code)}`]),
+  );
   const concepts = new Map(loadConcepts().map((c) => [c.id, c]));
   const words: Word[] = [];
   for (const [id, lemma] of Object.entries(mapping)) {
     const c = concepts.get(id);
     if (!c) throw new Error(`langcouch: wordlist ${lang} maps unknown concept "${id}" — run tests/validate-wordlist.ts`);
     const baseTarget = baseMapping[id];
-    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(baseTarget && baseTarget !== lemma ? { baseTarget } : {}) });
+    const differs = baseTarget !== undefined && baseTarget !== lemma;
+    const baseNote = differs ? rude.get(baseTarget) : undefined;
+    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(differs ? { baseTarget } : {}), ...(baseNote ? { baseNote } : {}) });
   }
   return words;
 }
 
-/** Grammar constructions for a language; a variant without its own file uses its base's; [] when none exists. */
+/** False friends and rude words for exactly this code; [] when there is no file. */
+export function loadFalseFriends(lang: string): FalseFriend[] {
+  const path = resolveData(USER_FALSE_FRIENDS_DIR, FALSE_FRIENDS_DIR, lang);
+  return path ? readJson<FalseFriend[]>(path, `falseFriends ${lang}`) : [];
+}
+
+/** False friends that concern a learner of `lang`: its own file plus, for a variant, its base's. */
+export function falseFriendsFor(lang: string): FalseFriend[] {
+  const base = baseLang(normalizeLang(lang));
+  return [...(base ? loadFalseFriends(base) : []), ...loadFalseFriends(lang)];
+}
+
+function patternsFile(lang: string): Pattern[] {
+  const path = resolveData(USER_PATTERNS_DIR, PATTERNS_DIR, lang);
+  return path ? readJson<Pattern[]>(path, `patterns ${lang}`) : [];
+}
+
+/** Word-building rules for a language, in teaching order; a variant's file overlays its base's by id. */
+export function loadPatterns(lang: string): Pattern[] {
+  const base = baseLang(normalizeLang(lang));
+  const own = patternsFile(lang);
+  if (!base) return own;
+  const byId = new Map(patternsFile(base).map((p) => [p.id, p]));
+  for (const p of own) byId.set(p.id, p);
+  return [...byId.values()];
+}
+
+const REGION_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
+
+/** English name of a variant's region ("es-419" → "Latin America"); the code itself when unknown. */
+function regionName(code: string): string {
+  const region = code.split("-")[1];
+  try {
+    return (region && REGION_NAMES.of(region)) || code;
+  } catch {
+    return code;
+  }
+}
+
+/** Constructions from exactly this code's grammar file (for a variant: its overlay); [] when there is none. */
+function grammarFile(lang: string): GrammarItem[] {
+  const path = resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, lang);
+  return path ? readJson<GrammarItem[]>(path, `grammar ${lang}`) : [];
+}
+
+/**
+ * Grammar constructions for a language; [] when none exists. A variant's file is an
+ * overlay, like its wordlist: an item with a base id replaces that item in place,
+ * a new id is added after the base's.
+ */
 export function loadGrammar(lang: string): GrammarItem[] {
   const base = baseLang(normalizeLang(lang));
-  const path = resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, lang) ?? (base ? resolveData(USER_GRAMMAR_DIR, GRAMMAR_DIR, base) : null);
-  if (!path) return [];
-  return readJson<GrammarItem[]>(path, `grammar ${lang}`);
+  const own = grammarFile(lang);
+  if (!base) return own;
+  const byId = new Map(grammarFile(base).map((g) => [g.id, g]));
+  for (const g of own) byId.set(g.id, g);
+  return [...byId.values()];
 }
 
 function langsIn(dir: string): string[] {

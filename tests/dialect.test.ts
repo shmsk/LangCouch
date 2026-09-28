@@ -8,6 +8,8 @@ import {
   baseLang,
   langsWithState,
   loadGrammar,
+  loadFalseFriends,
+  loadWordMapping,
   loadState,
   loadWordlist,
   normalizeLang,
@@ -19,6 +21,7 @@ import {
 import { validateConcepts, validateMapping } from "../src/validate.ts";
 import { buildInstruction, langName } from "../src/instruction.ts";
 import { pickWords, tierProgress } from "../src/scheduler.ts";
+import { pickGrammar, grammarKey } from "../src/grammar.ts";
 import { isAbsorbed } from "../src/types.ts";
 
 const userWordlists = join(dir, "wordlists");
@@ -73,13 +76,15 @@ describe("regional variants (pt-BR over pt)", () => {
     expect(() => wordlistLayers("xx-YY")).toThrow(/variant of "xx"/);
   });
 
-  test("grammar falls back to the base, a variant file overrides it", () => {
+  test("grammar falls back to the base, a variant file overlays it", () => {
     reset();
-    expect(loadGrammar("es-MX")).toEqual(loadGrammar("es"));
+    const base = loadGrammar("es");
+    expect(loadGrammar("es-MX")).toEqual(base);
     const item = { id: "g1", pattern: "p", exampleTarget: "t", exampleGloss: "g", unlock: { pos: "noun" as const, absorbedCount: 1 } };
+    const replaced = { ...base[0]!, exampleTarget: "otra" };
     mkdirSync(userGrammar, { recursive: true });
-    writeFileSync(join(userGrammar, "es-MX.json"), JSON.stringify([item]));
-    expect(loadGrammar("es-MX")).toEqual([item]);
+    writeFileSync(join(userGrammar, "es-MX.json"), JSON.stringify([item, replaced]));
+    expect(loadGrammar("es-MX")).toEqual([replaced, ...base.slice(1), item]);
   });
 
   test("progress is kept in its own state file and shows up in status", () => {
@@ -211,5 +216,86 @@ describe.each([
     if (before === null) rmSync(cfg);
     else writeFileSync(cfg, before);
     expect(out).toMatch(new RegExp(`Regional \\(vs ${base}\\): 0/\\d+ absorbed · \\d+ words share progress with ${base}`));
+  });
+});
+
+describe("regional grammar (es-419 over es)", () => {
+  const statePath = (l: string) => join(dir, `state.${l}.json`);
+  const readFile = (l: string) => JSON.parse(readFileSync(statePath(l), "utf8"));
+  const seen = { exposures: 2, lastSeen: "2026-09-01T00:00:00Z" };
+  function clean() {
+    reset();
+    for (const l of ["es", "es-419"]) rmSync(statePath(l), { force: true });
+  }
+  // every word absorbed, so every construction's POS threshold is met
+  const words = loadWordlist("es-419");
+  const allAbsorbed = Object.fromEntries(words.map((w) => [w.id, { exposures: 3, recalls: 2, lastSeen: "2026-09-01T00:00:00Z" }]));
+
+  test("the overlay adds regional constructions after the base's, each with a source", () => {
+    const base = loadGrammar("es");
+    const grammar = loadGrammar("es-419");
+    expect(grammar.slice(0, base.length)).toEqual(base);
+    const regional = grammar.filter((g) => g.baseExample);
+    expect(regional.map((g) => g.id)).toEqual(["plural-you", "recent-past"]);
+    for (const g of regional) expect(g.source).toMatch(/^https:\/\//);
+  });
+
+  test("regional constructions are picked first, and only from their stage on", () => {
+    const grammar = loadGrammar("es-419");
+    expect(pickGrammar(grammar, words, allAbsorbed, 2)?.id).toBe("plural-you"); // recent-past is stage 3
+    const shownOnce = { ...allAbsorbed, [grammarKey("plural-you")]: seen };
+    expect(pickGrammar(grammar, words, shownOnce, 3)?.id).toBe("recent-past");
+    expect(pickGrammar(loadGrammar("es"), words, allAbsorbed, 2)?.baseExample).toBeUndefined();
+  });
+
+  test("shared construction progress lives with the base, regional stays in the variant", () => {
+    clean();
+    saveState("es", { [grammarKey("def-article")]: seen });
+    const state = loadState("es-419");
+    expect(state[grammarKey("def-article")]).toEqual(seen); // learned in es, known in es-419
+    state[grammarKey("plural-you")] = seen;
+    saveState("es-419", state);
+    expect(readFile("es-419")).toEqual({ [grammarKey("plural-you")]: seen });
+    expect(readFile("es")[grammarKey("plural-you")]).toBeUndefined();
+  });
+
+  test("the instruction shows the Spain form next to the regional one", () => {
+    const grammar = loadGrammar("es-419").find((g) => g.id === "plural-you")!;
+    const picks = pickWords(words, {}, 5);
+    const text = buildInstruction({ lang: "es-419", native: "en", level: 5 }, picks, grammar);
+    expect(text).toContain("e.g. ustedes trabajan (you all work; Spain: vosotros trabajáis)");
+    expect(buildInstruction({ lang: "es-419", native: "en", level: 10 }, pickWords(words, {}, 12), grammar).length).toBeLessThanOrEqual(2400);
+  });
+});
+
+describe("rude words", () => {
+  const bundled = availableLangs();
+
+  test("every falseFriends entry is sourced, and vulgar ones say where", () => {
+    for (const lang of bundled) {
+      for (const f of loadFalseFriends(lang)) {
+        expect(f.source).toMatch(/^https:\/\//);
+        if (f.register === "vulgar") expect(f.vulgarIn?.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  test("no language teaches a word that is rude in that language", () => {
+    for (const lang of bundled) {
+      const base = baseLang(lang);
+      const rude = [...loadFalseFriends(lang), ...(base ? loadFalseFriends(base) : [])]
+        .filter((f) => f.register === "vulgar" && (f.vulgarIn ?? []).includes(lang))
+        .map((f) => f.target);
+      const lemmas = new Set(Object.values(loadWordMapping(lang)));
+      expect(rude.filter((w) => lemmas.has(w))).toEqual([]); // es-419 must keep tomar over coger
+    }
+  });
+
+  test("the Spain contrast for tomar warns about coger", () => {
+    const tomar = loadWordlist("es-419").find((w) => w.target === "tomar")!;
+    expect(tomar.baseNote).toBe("vulgar in much of Latin America");
+    const text = buildInstruction({ lang: "es-419", native: "en", level: 2 }, [{ word: tomar, exposures: 0 }]);
+    expect(text).toContain("tomar = to take, Spain: coger (vulgar in much of Latin America)");
+    expect(loadWordlist("es").find((w) => w.target === "coger")?.baseNote).toBeUndefined(); // fine in Spain
   });
 });

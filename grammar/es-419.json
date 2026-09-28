@@ -1,0 +1,4 @@
+[
+  { "id": "plural-you", "pattern": "plural 'you' is always ustedes + 3rd person plural verb (vosotros is not used)", "exampleTarget": "ustedes trabajan", "exampleGloss": "you all work", "baseExample": "vosotros trabajáis", "unlock": { "pos": "verb", "absorbedCount": 12 }, "source": "https://en.wikipedia.org/wiki/Spanish_dialects_and_varieties" },
+  { "id": "recent-past", "pattern": "preterite, not the perfect, for anything finished, even today (hoy + preterite)", "exampleTarget": "hoy trabajé", "exampleGloss": "I worked today", "baseExample": "hoy he trabajado", "stage": 3, "unlock": { "pos": "verb", "absorbedCount": 20 }, "source": "https://en.wikipedia.org/wiki/Spanish_dialects_and_varieties" }
+]

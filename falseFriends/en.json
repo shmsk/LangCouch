@@ -1,0 +1,7 @@
+[
+  { "target": "magazine", "means": "журнал", "register": "neutral", "looksLike": { "ru": "магазин" }, "source": "https://en.wiktionary.org/wiki/magazine" },
+  { "target": "accurate", "means": "точный", "register": "neutral", "looksLike": { "ru": "аккуратный" }, "source": "https://en.wiktionary.org/wiki/accurate" },
+  { "target": "fabric", "means": "ткань", "register": "neutral", "looksLike": { "ru": "фабрика" }, "source": "https://en.wiktionary.org/wiki/fabric" },
+  { "target": "genial", "means": "дружелюбный", "register": "neutral", "looksLike": { "ru": "гениальный" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/genial" },
+  { "target": "sympathy", "means": "сочувствие", "register": "neutral", "looksLike": { "ru": "симпатия" }, "source": "https://en.wiktionary.org/wiki/sympathy" }
+]

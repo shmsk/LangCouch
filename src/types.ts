@@ -32,6 +32,29 @@ export interface Word {
   gloss: Record<string, string>;
   /** Regional variant only: the base's lemma when this one differs (es-419 carro → es coche). */
   baseTarget?: string;
+  /** Regional variant only: a warning about baseTarget here ("vulgar in much of Latin America"). */
+  baseNote?: string;
+}
+
+/**
+ * A word that misleads: it looks like a native word but means something else (neutral),
+ * or it is rude somewhere (vulgar). Vulgar entries are never teaching content; they only
+ * warn and guard the data. Lives in falseFriends/<lang>.json, keyed by the word's language.
+ */
+export interface FalseFriend {
+  target: string;
+  means: string;
+  register: "neutral" | "vulgar";
+  /** Native words it looks like, by native-language code ({ en: "embarrassed" }) */
+  looksLike?: Record<string, string>;
+  /** Language codes (a variant, or a native language) where the word is rude */
+  vulgarIn?: string[];
+  /** Id of the word-building rule it poses as (patterns/<lang>.json) */
+  pattern?: string;
+  /** How the warning reads; default "vulgar in <region>" */
+  note?: string;
+  /** Where it was checked (dictionary URL) */
+  source: string;
 }
 
 export interface Config {
@@ -45,6 +68,8 @@ export interface Config {
   enabled?: boolean;
   /** Spanish words in the Claude Code spinner tips. Opt-in; toggled by `spinner on|off`. */
   spinner?: boolean;
+  /** Last plugin version whose changelog `status` has shown; a newer one shows once. */
+  seenVersion?: string;
 }
 
 export interface WordState {
@@ -55,7 +80,10 @@ export interface WordState {
   recalls?: number;
 }
 
-/** Keyed by concept id (grammar constructions use a "g:" prefix). */
+/** True for state keys that track words; constructions ("g:") and rules ("p:") carry a prefix. */
+export const isWordKey = (key: string) => !key.includes(":");
+
+/** Keyed by concept id (grammar constructions use a "g:" prefix, word-building rules "p:"). */
 export type State = Record<string, WordState>;
 
 /**

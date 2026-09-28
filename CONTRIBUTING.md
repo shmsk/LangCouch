@@ -23,3 +23,8 @@ All three must be green before a PR. CI runs the same commands.
 - The hook contract is sacred: `langcouch hook` never breaks the host session — on any error it prints nothing and exits 0.
 - All product surfaces (CLI output, docs, code comments, weave instructions) are English-only. Wordlist/gloss data and README translations (`README.<lang>.md`, which follow `README.md`) are the only places other languages appear.
 - Data changes should come with a second-model audit (see docs/AddLanguage.md, Step 6).
+- **Updates must not break what people already have.** Users update in place and keep their `~/.langcouch` (config, progress, their own languages). Support data written by 0.4.0 and every later version; older formats need no care. Concretely:
+  - Read old data, don't reject it: a missing field gets a default, an unknown field is kept, and a format change migrates on first save without losing progress (0.3.7 folded variant progress into the base this way).
+  - `tests/upgrade.test.ts` runs every folder in `tests/fixtures/<version>/`: status and the hook must work on it, and no word, construction or rule may lose progress. When a release changes what goes on disk, add `tests/fixtures/<new version>/`, and never edit an old one.
+  - Before a release, run the new code on a copy of a real `~/.langcouch` written by the previous release (`LANGCOUCH_DIR=<copy> bun src/cli.ts status`, then a few `hook` calls).
+  - If an update ever needs the user to do something, the CHANGELOG entry gets an **Upgrade notes** section with numbered steps: what to run, where, and how to tell it worked. Write the steps so a person and an AI agent can both follow them without guessing.

@@ -1,0 +1,11 @@
+[
+  {"target":"coger","means":"to take","register":"vulgar","vulgarIn":["es-419"],"note":"vulgar in much of Latin America","source":"https://en.wiktionary.org/wiki/coger"},
+  {"target":"actual","means":"current","register":"neutral","looksLike":{"en":"actual"},"pattern":"al","source":"https://en.wiktionary.org/wiki/actual"},
+  {"target":"embarazada","means":"pregnant","register":"neutral","looksLike":{"en":"embarrassed"},"source":"https://en.wiktionary.org/wiki/embarazado"},
+  {"target":"éxito","means":"success","register":"neutral","looksLike":{"en":"exit"},"source":"https://en.wiktionary.org/wiki/%C3%A9xito"},
+  {"target":"lectura","means":"reading","register":"neutral","looksLike":{"en":"lecture"},"source":"https://en.wiktionary.org/wiki/lectura"},
+  {"target":"sensible","means":"sensitive","register":"neutral","looksLike":{"en":"sensible"},"source":"https://en.wiktionary.org/wiki/sensible"},
+  {"target":"decepción","means":"disappointment","register":"neutral","looksLike":{"en":"deception"},"pattern":"tion","source":"https://en.wiktionary.org/wiki/decepci%C3%B3n"},
+  {"target":"realizar","means":"to carry out","register":"neutral","looksLike":{"en":"realize"},"pattern":"izovat","source":"https://en.wiktionary.org/wiki/realizar"},
+  {"target":"familia","means":"family","register":"neutral","looksLike":{"ru":"фамилия"},"source":"https://en.wiktionary.org/wiki/familia"}
+]

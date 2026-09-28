@@ -2,15 +2,16 @@
 import { createInterface } from "node:readline/promises";
 import { basename } from "node:path";
 import { readFileSync } from "node:fs";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, loadPatterns, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
 import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
-import { pickGrammar, markGrammarShown, isGrammarKey, grammarProgress, type GrammarItem } from "./grammar.ts";
+import { pickGrammar, markGrammarShown, grammarProgress, type GrammarItem } from "./grammar.ts";
+import { pickPattern, markPatternShown, patternCue, patternProgress, PATTERN_MIN_LEVEL, type Pattern } from "./patterns.ts";
 import { pickWords, markExposed, unlockedWords, tierProgress } from "./scheduler.ts";
 import { buildInstruction } from "./instruction.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
-import { glossFor, grammarStage, isAbsorbed, wordsPerResponse } from "./types.ts";
+import { glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
 import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
 import { installClaude } from "../adapters/claude/install.ts";
@@ -24,14 +25,18 @@ function makeInstruction(mark: boolean): string {
   const state = loadState(config.lang);
   const picks = pickWords(unlockedWords(words, state), state, wordsPerResponse(config.level));
   if (picks.length === 0) return "";
-  const grammar = grammarStage(config.level) >= 2 ? pickGrammar(loadGrammar(config.lang), words, state) : null;
+  const stage = grammarStage(config.level);
+  const grammar = stage >= 2 ? pickGrammar(loadGrammar(config.lang), words, state, stage) : null;
+  const rule = config.level >= PATTERN_MIN_LEVEL ? pickPattern(loadPatterns(config.lang), config.native, state) : null;
   if (mark) {
     const now = new Date().toISOString();
     markExposed(state, picks, now);
     if (grammar) markGrammarShown(state, grammar, now);
+    if (rule) markPatternShown(state, rule, now);
     saveState(config.lang, state);
   }
-  return buildInstruction(config, picks, grammar);
+  const cue = rule ? patternCue(rule, config.native, normalizeLang(config.lang), falseFriendsFor(config.lang)) : null;
+  return buildInstruction(config, picks, grammar, cue);
 }
 
 /** Rewrite our spinner tips from current progress; spinner off (or no words) removes them. Returns tips written. */
@@ -110,6 +115,15 @@ function safeShared(lang: string): Set<string> | null {
   }
 }
 
+/** Load word-building rules, degrading to [] like safeGrammar. */
+function safePatterns(lang: string): Pattern[] {
+  try {
+    return loadPatterns(lang);
+  } catch {
+    return [];
+  }
+}
+
 /** Load grammar, degrading to [] if the file is missing or malformed — status must never crash. */
 function safeGrammar(lang: string): GrammarItem[] {
   try {
@@ -121,18 +135,30 @@ function safeGrammar(lang: string): GrammarItem[] {
 
 function langSummary(lang: string): { dict: string; touched: number; absorbed: number } {
   const state = loadState(lang);
-  const entries = Object.entries(state).filter(([k, s]) => !isGrammarKey(k) && inProgress(s));
+  const entries = Object.entries(state).filter(([k, s]) => isWordKey(k) && inProgress(s));
   const words = safeWordlist(lang);
   const dict = words.length > 0 ? String(words.length) : "—";
   return { dict, touched: entries.length, absorbed: entries.filter(([, s]) => isAbsorbed(s)).length };
 }
 
+/**
+ * "What's new" for a version `status` hasn't shown yet: all of its changelog entries.
+ * Marks the version seen, so it shows once per update.
+ */
+function whatsNew(config: Config): string | null {
+  if (config.seenVersion === PLUGIN_VERSION) return null;
+  saveConfig({ ...config, seenVersion: PLUGIN_VERSION });
+  const items = changelogFor(PLUGIN_VERSION);
+  return items.length > 0 ? `What's new in ${PLUGIN_VERSION}:\n${items.map((i) => `  • ${i}`).join("\n")}` : null;
+}
+
 function status(): string {
   const config = loadConfig();
+  const news = whatsNew(config);
   const words = safeWordlist(config.lang);
   const state = loadState(config.lang);
   const byId = new Map(words.map((w) => [w.id, w.target]));
-  const touched = Object.entries(state).filter(([k, s]) => !isGrammarKey(k) && inProgress(s));
+  const touched = Object.entries(state).filter(([k, s]) => isWordKey(k) && inProgress(s));
   const absorbed = touched.filter(([, s]) => isAbsorbed(s));
   const top = touched
     .sort((a, b) => b[1].exposures - a[1].exposures)
@@ -153,13 +179,21 @@ function status(): string {
 
   // Grammar progress: "shown"/"unlocked", never "mastered". Below level 4 no
   // construction is woven, so note when weaving actually starts.
-  const gp = grammarProgress(safeGrammar(config.lang), words, state);
   const stage = grammarStage(config.level);
+  const gp = grammarProgress(safeGrammar(config.lang), words, state, stage < 2 ? 2 : stage); // below stage 2, preview what stage 2 brings
   const grammarLine =
     gp.total > 0
       ? `Grammar (stage ${stage}): ${gp.unlockedCount}/${gp.total} unlocked · ${gp.introduced} introduced` +
         (gp.next ? ` · next: ${gp.next.pattern} (${gp.next.pos} ${gp.next.have}/${gp.next.need})` : "") +
         (stage < 2 ? " · weaving starts at level 4" : "")
+      : null;
+
+  const pp = patternProgress(safePatterns(config.lang), config.native, state);
+  const patternLine =
+    pp.total > 0
+      ? `Word-building rules: ${pp.introduced}/${pp.total} introduced` +
+        (pp.next ? ` · next: ${pp.next.from} → ${pp.next.to}` : "") +
+        (config.level < PATTERN_MIN_LEVEL ? ` · start at level ${PATTERN_MIN_LEVEL}` : "")
       : null;
 
   // A regional variant shares progress with its base; only its own words are new to learn.
@@ -179,9 +213,11 @@ function status(): string {
 
   return [
     `langcouch — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response)`,
+    news,
     coreLine,
     regionalLine,
     grammarLine,
+    patternLine,
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
     `Spinner tips: ${config.spinner ? "on" : "off (langcouch spinner on)"}`,

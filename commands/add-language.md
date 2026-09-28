@@ -8,7 +8,7 @@ Add the language "$ARGUMENTS" to LangCouch for this user.
 
 Follow `${CLAUDE_PLUGIN_ROOT}/docs/AddLanguage.md` (path "For yourself"), reading the concept inventory from `${CLAUDE_PLUGIN_ROOT}/concepts.json`. Differences from a repo contribution:
 
-- Write the wordlist to `~/.langcouch/wordlists/<code>.json` (and an optional grammar file to `~/.langcouch/grammar/<code>.json`), never inside `${CLAUDE_PLUGIN_ROOT}`. Files in the plugin folder are replaced on every plugin update.
+- Write the wordlist to `~/.langcouch/wordlists/<code>.json`, and any optional file next to it under `~/.langcouch/grammar/`, `~/.langcouch/patterns/` or `~/.langcouch/falseFriends/` (each `<code>.json`, see the doc's Steps 4 and 4b), never inside `${CLAUDE_PLUGIN_ROOT}`. Files in the plugin folder are replaced on every plugin update.
 - Validate with `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full` and fix every reported error until it passes.
 - Then run `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh lang <code>` to switch to it.
 - If the user asks for a regional variant ("Brazilian Portuguese", `pt-BR`, "Mexican Spanish") of a language that already exists, follow the doc's "Adding a regional variant" section instead: the file `~/.langcouch/wordlists/<base>-<REGION>.json` holds only the words that differ from the base.

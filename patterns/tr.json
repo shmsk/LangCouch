@@ -1,0 +1,37 @@
+[
+  { "id": "ist", "from": { "en": "-ist", "ru": "-ист" }, "to": "-ist",
+    "examples": [
+      { "target": "turist", "gloss": { "en": "tourist", "ru": "турист" } },
+      { "target": "aktivist", "gloss": { "en": "activist", "ru": "активист" } },
+      { "target": "sosyalist", "gloss": { "en": "socialist", "ru": "социалист" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/turist#Turkish" },
+  { "id": "ism", "from": { "en": "-ism", "ru": "-изм" }, "to": "-izm",
+    "examples": [
+      { "target": "turizm", "gloss": { "en": "tourism", "ru": "туризм" } },
+      { "target": "kapitalizm", "gloss": { "en": "capitalism", "ru": "капитализм" } },
+      { "target": "sosyalizm", "gloss": { "en": "socialism", "ru": "социализм" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/turizm#Turkish" },
+  { "id": "ic", "from": { "en": "-ic", "ru": "-ический" }, "to": "-ik",
+    "examples": [
+      { "target": "klasik", "gloss": { "en": "classic", "ru": "классический" } },
+      { "target": "otomatik", "gloss": { "en": "automatic", "ru": "автоматический" } },
+      { "target": "pratik", "gloss": { "en": "practical", "ru": "практический" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/klasik#Turkish" },
+  { "id": "tion", "from": { "en": "-tion", "ru": "-ция" }, "to": "-syon",
+    "examples": [
+      { "target": "istasyon", "gloss": { "en": "station", "ru": "станция" } },
+      { "target": "pozisyon", "gloss": { "en": "position", "ru": "позиция" } },
+      { "target": "operasyon", "gloss": { "en": "operation", "ru": "операция" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/Category:Turkish_terms_suffixed_with_-syon" },
+  { "id": "al", "from": { "en": "-al", "ru": "-альный" }, "to": "-al",
+    "examples": [
+      { "target": "normal", "gloss": { "en": "normal", "ru": "нормальный" } },
+      { "target": "sosyal", "gloss": { "en": "social", "ru": "социальный" } },
+      { "target": "orijinal", "gloss": { "en": "original", "ru": "оригинальный" } }
+    ],
+    "source": "https://en.wiktionary.org/wiki/sosyal#Turkish" }
+]

@@ -4,7 +4,7 @@ English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
 
 **Learn a language without getting off the couch — or leaving your terminal.**
 
-LangCouch weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to collocations and simple constructions. No lessons. Immersion instead of studying.
+LangCouch weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "why is the deploy failing?"
 > Agent: "Port 8080 is still held by a **viejo** (old) process from your **primero** (first) run this morning. Kill it with `lsof -ti :8080 | xargs kill` and the deploy will go through **ahora** (now)."
@@ -99,23 +99,23 @@ flowchart LR
 - **Per-language progress**: state lives in `~/.langcouch/state.<lang>.json`, keyed by concept id — progress survives lemma fixes and can be compared across languages ("you know *sun* in 3 of 5")
 - **SRS-lite**: least-shown words first, rotation, absorbed words drop into a ≤20% review tail
 - **Recall signal**: exposure is not knowledge — a word counts as absorbed only after you actively use it (it shows up in your own prompt, or you pass a `quiz`) or after a much larger passive dose
-- **Levels 1–10**: words → collocations (4+) → simple constructions (7+), driven by `grammar/<lang>.json` unlock rules
+- **Levels 1–10**: words from level 1; [word-building rules](#word-building-rules) from level 2 (`patterns/<lang>.json`); collocations from 4 and simple sentences from 7, using the constructions in `grammar/<lang>.json` where a language has them
 - **Native language**: when you learn your own native language (e.g. `en` with native `en`), glosses fall back to another language
 
 ## Supported languages
 
-| Language | Code | Words | Grammar constructions |
-|---|---|---|---|
-| English (US) | `en` | 402 | — |
-| English (UK) | `en-GB` | 402, same as US except 9 (*colour*, *centre*, *film*…) | — |
-| German | `de` | 402 | — |
-| French | `fr` | 402 | — |
-| Italian | `it` | 402 | — |
-| Spanish (Spain) | `es` | 402 | 10 |
-| Spanish (Latin America) | `es-419` | 402, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 |
-| Portuguese (Portugal) | `pt` | 402 | — |
-| Portuguese (Brazil) | `pt-BR` | 402, same as Portugal except 8 (*trem*, *celular*, *cachorro*…) | — |
-| Turkish | `tr` | 402 | — |
+| Language | Code | Words | Grammar constructions | Word-building rules |
+|---|---|---|---|---|
+| English (US) | `en` | 402 | — | 7 (for Russian speakers) |
+| English (UK) | `en-GB` | 402, same as US except 9 (*colour*, *centre*, *film*…) | — | 7 (from US) |
+| German | `de` | 402 | — | 8 |
+| French | `fr` | 402 | — | 8 |
+| Italian | `it` | 402 | — | 8 |
+| Spanish (Spain) | `es` | 402 | 10 | 8 |
+| Spanish (Latin America) | `es-419` | 402, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) |
+| Portuguese (Portugal) | `pt` | 402 | — | 8 |
+| Portuguese (Brazil) | `pt-BR` | 402, same as Portugal except 8 (*trem*, *celular*, *cachorro*…) | — | 8 (from Portugal) |
+| Turkish | `tr` | 402 | — | 5 |
 
 The code is what you pass to switch languages, e.g. `/langcouch:lang es-419` (or simply `/langcouch:lang latam`).
 
@@ -123,7 +123,22 @@ Every bundled list went through a second-model audit (a different vendor than th
 
 Adding your language is one JSON file. Just for yourself: run `/langcouch:add-language Georgian` in Claude Code, and the file lands in `~/.langcouch/wordlists/`, where it survives plugin updates. For everyone: open a PR, see [docs/AddLanguage.md](docs/AddLanguage.md). The doc is written so an AI coding agent can do it end-to-end.
 
-Regional variants work the same way: `pt-BR.json` lists only the words where Brazilian Portuguese differs from `pt`, the rest comes from the base, and progress is tracked separately. `/langcouch:add-language Brazilian Portuguese` builds one; `/langcouch:lang pt-br` switches to it.
+Regional variants work the same way: `pt-BR.json` lists only the words where Brazilian Portuguese differs from `pt`, and the rest comes from the base. `/langcouch:add-language Brazilian Portuguese` builds one; `/langcouch:lang pt-br` switches to it.
+
+Switching to a variant doesn't start you over. Every word spelled the same in both shares one progress pool, so if you learned Spain Spanish and move to `es-419`, you keep *casa* and all the rest and only learn the 9 words that differ. Those come first, next to the Spain word: *carro = car, Spain: coche*. Grammar works the same way: the regional constructions (*ustedes trabajan*, not *vosotros trabajáis*) come first. Where the base word is rude in the variant's region, the contrast says so: *tomar = to take, Spain: coger (vulgar in much of Latin America)*.
+
+## Word-building rules
+
+Many words are built the same way in several languages. *Revolution* is *revolución* in Spanish, *revolução* in Portuguese, *rivoluzione* in Italian, *révolution* in French and *революция* in Russian. Learn the rule *-tion → -ción* once, and you can read hundreds of Spanish words you already half-know. That gets the weave to phrases sooner.
+
+- **When:** from level 2 (the default), every reply teaches one rule with an example: *-tion → -ción (revolución = revolution)*.
+- **Beyond the word list:** a reply that teaches a rule may also use one more word built by it, even if that word isn't one of your ~400.
+- **Your side of the rule:** the suffix is shown in your native language. An English speaker sees *-tion → -ción*, a Russian speaker sees *-ция → -ción*. Some rules exist for one side only: *-ly → -mente* for English speakers, *-ировать → -ieren* (*kopieren*) for Russian speakers.
+- **Progress:** a rule counts as introduced after three replies, and then the next one starts. `status` shows it as *Word-building rules: 1/8 introduced*.
+- **False friends:** a rule warns about words that look like it but mean something else, e.g. *actual = current* next to *-al*.
+- **Where the data lives:** rules in `patterns/<lang>.json`, false friends and rude words in `falseFriends/<lang>.json`. The table in [Supported languages](#supported-languages) shows how many rules each language has. Every rule and example was checked against a dictionary (mostly Wiktionary) and then audited by a second model from another vendor.
+
+What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update, `status` shows the new version's changes once.
 
 ## Supported CLIs
 
@@ -182,6 +197,7 @@ The most valuable contribution is your language, and [docs/AddLanguage.md](docs/
 
 ## Roadmap
 
+- Grammar constructions beyond Spanish (pt, it, fr, de, en, tr), with regional overlays for pt-BR and en-GB
 - Tier 2 vocabulary (→1000 words per language), unlocked at ~80% core absorption
 - Full SM-2 spaced repetition (currently SRS-lite)
 - Spanish gerunds in the spinner verbs ("Pensando…")

@@ -4,14 +4,14 @@ This document is written for an AI coding agent (Claude Code, Codex, etc.) — a
 
 ## What you are building
 
-LangCouch weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file** (plus, optionally, a grammar file). No code changes: the language name is derived from its ISO code.
+LangCouch weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file**. Three more are optional: grammar constructions, word-building rules and false friends. No code changes: the language name is derived from its ISO code.
 
 Inputs you need before starting:
 - the ISO 639-1 language code (`tr`, `de`, `fr`, …) — called `<code>` below
 
 ## Two ways to add a language
 
-- **For yourself** (Claude Code plugin users): run `/langcouch:add-language <language>`, or follow this doc and put the file at `~/.langcouch/wordlists/<code>.json` (grammar: `~/.langcouch/grammar/<code>.json`). It lives next to your progress and survives plugin updates. No clone needed; validate with `langcouch validate <code> --full` (inside Claude Code: `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full`). Never write into the plugin folder (`~/.claude/plugins/cache/…`): it is replaced on every update.
+- **For yourself** (Claude Code plugin users): run `/langcouch:add-language <language>`, or follow this doc and put the file at `~/.langcouch/wordlists/<code>.json` (optional files go next to it: `~/.langcouch/grammar/`, `~/.langcouch/patterns/`, `~/.langcouch/falseFriends/`, each as `<code>.json`). It lives next to your progress and survives plugin updates. No clone needed; validate with `langcouch validate <code> --full` (inside Claude Code: `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full`). Never write into the plugin folder (`~/.claude/plugins/cache/…`): it is replaced on every update.
 - **For everyone** (a PR): work in a clone of this repo with [bun](https://bun.sh) (`bun install`), put the file at `wordlists/<code>.json`, and follow every step below including the PR checklist.
 
 A file in `~/.langcouch/wordlists/` overrides a bundled one with the same code, so you can also fix a word locally.
@@ -67,6 +67,30 @@ Grammar constructions unlock at higher levels. Mirror the schema of `grammar/es.
 
 8–12 constructions, ordered easy → hard with rising `absorbedCount` thresholds (compare `grammar/es.json`). `pattern` and `exampleGloss` are in English; `exampleTarget` must use words from your wordlist. Skip this step if unsure — languages work without a grammar file.
 
+## Step 4b (optional) — `patterns/<code>.json` and `falseFriends/<code>.json`
+
+Word-building rules teach one suffix that turns a whole family of known words into your language: *-tion → -ción* makes *revolución*, *información*, *nación* readable at once. One rule per reply, from level 2. Mirror `patterns/es.json`:
+
+```json
+{ "id": "tion", "from": { "en": "-tion", "ru": "-ция" }, "to": "-ción", "examples": [ { "target": "revolución", "gloss": { "en": "revolution", "ru": "революция" } } ], "source": "https://en.wiktionary.org/wiki/-ci%C3%B3n" }
+```
+
+- `id`: reuse the ids other languages use (`tion`, `ity`, `al`, `ism`, `ist`, `ic`, `ly`, `ate`, `irovat`, `izovat`), so a learner's rules line up across languages.
+- `from`: the suffix in each native language that has a real parallel. Leave a key out when it has none (`ly` has no `ru`); the learner then sees the English side, or nothing for a ru-only rule.
+- `examples`: exactly 3 common words with the same meaning in every native language, and each gloss should itself show the native suffix (*revolución = революция*).
+- `source`: a URL that backs the correspondence, usually the Wiktionary page of the suffix.
+- 5–8 rules, most reliable first; the file order is the teaching order. Drop a rule whose exceptions outnumber its matches.
+
+False friends warn about words that look like a rule but mean something else. Mirror `falseFriends/es.json`:
+
+```json
+{ "target": "actual", "means": "current", "register": "neutral", "looksLike": { "en": "actual" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/actual" }
+```
+
+`pattern` ties it to a rule; only false friends with a `pattern` are shown, next to that rule. A word that is rude somewhere gets `"register": "vulgar"` and `"vulgarIn": ["<code>"]` for the codes where it is rude. Such words are never taught; the tests fail if one is a lemma or an example in those codes, and the instruction tells the agent to avoid it. Never put a vulgar word in `examples`.
+
+Check every example and false friend against a live dictionary, then run the Step 6 audit on these files too.
+
 ## Step 5 — Validate
 
 All three must pass; paste their output into your PR description:
@@ -100,7 +124,7 @@ Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (
 
 ## Step 8 — PR checklist
 
-- [ ] Files touched are exactly: `wordlists/<code>.json` and optionally `grammar/<code>.json`
+- [ ] Files touched are exactly: `wordlists/<code>.json` and optionally `grammar/<code>.json`, `patterns/<code>.json`, `falseFriends/<code>.json`
 - [ ] Output of all three Step 5 commands pasted
 - [ ] Audit summary: model used, findings applied/rejected
 - [ ] Live smoke test output pasted
@@ -113,10 +137,12 @@ Some learners want one regional standard specifically: Brazilian Portuguese says
 - **Code**: BCP 47, `<base>-<REGION>` (`pt-BR`, `es-MX`, `es-419`). Case doesn't matter on the command line (`lang pt-br` works); the file name uses the canonical form, `pt-BR.json`. The name comes from `Intl.DisplayNames` ("Brazilian Portuguese"), nothing to register.
 - **File**: `~/.langcouch/wordlists/pt-BR.json` for yourself, `wordlists/pt-BR.json` for a PR. The base (`pt`) must exist, bundled or local.
 - **Content**: go through the base wordlist and add an entry only where the variant's everyday word differs. Rules 1–8 above apply to each entry. Don't copy a base word into the variant: the validator rejects entries identical to the base.
-- **Grammar**: optional `grammar/pt-BR.json`; without one, the variant uses the base's grammar.
+- **Grammar**: optional `grammar/pt-BR.json`, an overlay on the base's grammar. An item with a base `id` replaces that item, a new `id` is added. Give a regional item `baseExample` (the base's way of saying it), and it is taught first with a contrast: *ustedes trabajan (Spain: vosotros trabajáis)*. See `grammar/es-419.json`.
+- **Word-building rules**: a variant uses its base's `patterns/` file; add `patterns/<code>.json` only for rules that differ.
+- **Rude words**: if a base word is rude in the variant's region, add it to the base's `falseFriends/<base>.json` with `"vulgarIn": ["<code>"]`. The contrast then warns about it (*Spain: coger (vulgar in much of Latin America)*), and the tests fail if the variant ever teaches it.
 - **Validate**: `langcouch validate pt-BR --full` (repo: `bun tests/validate-wordlist.ts pt-BR --full`). Duplicates and coverage are checked on the merged result, so a variant word that clashes with another base word is caught.
 - **Audit**: run Step 6 on the variant entries plus the base entries you considered and kept. The question for the auditor is "is this what a speaker of that region says every day?"
-- **Progress** is separate per variant (`state.pt-BR.json`): switching from `pt` to `pt-BR` starts fresh, and `pt` progress is kept.
+- **Progress** is shared with the base for every word spelled the same, and for shared grammar and rules. Switching from `pt` to `pt-BR` keeps all of it; only the variant's own words and constructions start fresh, and they come first.
 
 ## Also possible: adding native-language glosses
 

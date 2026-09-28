@@ -1,0 +1,8 @@
+[
+  { "target": "Gift", "means": "poison", "register": "neutral", "looksLike": { "en": "gift" }, "source": "https://en.wiktionary.org/wiki/Gift" },
+  { "target": "aktuell", "means": "current", "register": "neutral", "looksLike": { "en": "actual" }, "source": "https://en.wiktionary.org/wiki/aktuell" },
+  { "target": "eventuell", "means": "possibly, perhaps", "register": "neutral", "looksLike": { "en": "eventually" }, "source": "https://en.wiktionary.org/wiki/eventuell" },
+  { "target": "Chef", "means": "boss", "register": "neutral", "looksLike": { "en": "chef" }, "source": "https://en.wiktionary.org/wiki/Chef" },
+  { "target": "bekommen", "means": "to receive, to get", "register": "neutral", "looksLike": { "en": "become" }, "source": "https://en.wiktionary.org/wiki/bekommen" },
+  { "target": "Handy", "means": "mobile phone", "register": "neutral", "looksLike": { "en": "handy" }, "source": "https://en.wiktionary.org/wiki/Handy" }
+]

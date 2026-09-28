@@ -1,0 +1,7 @@
+[
+  {"target":"esquisito","means":"strange, weird","register":"neutral","looksLike":{"en":"exquisite"},"source":"https://en.wiktionary.org/wiki/esquisito#Portuguese"},
+  {"target":"atual","means":"current, present-day","register":"neutral","looksLike":{"en":"actual"},"pattern":"al","source":"https://en.wiktionary.org/wiki/atual#Portuguese"},
+  {"target":"simpático","means":"nice, friendly","register":"neutral","looksLike":{"en":"sympathetic"},"pattern":"ic","source":"https://en.wiktionary.org/wiki/simpático#Portuguese"},
+  {"target":"parente","means":"relative, family member","register":"neutral","looksLike":{"en":"parent"},"source":"https://en.wiktionary.org/wiki/parente#Portuguese"},
+  {"target":"realizar","means":"to carry out, accomplish","register":"neutral","looksLike":{"en":"realize"},"pattern":"izovat","source":"https://en.wiktionary.org/wiki/realizar#Portuguese"}
+]

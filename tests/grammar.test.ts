@@ -47,13 +47,14 @@ describe("instruction with grammar data", () => {
   const config = { lang: "es", native: "ru", level: 5 };
   const picks = pickWords(words, {}, wordsPerResponse(5));
 
-  test("stage 2-3 uses the construction instead of hardcoded lines", () => {
+  test("stage 2-3 uses the construction instead of the collocation line", () => {
     const text = buildInstruction(config, picks, items[0]!);
     expect(text).toContain("gender + article el/la");
     expect(text).toContain("la casa");
     expect(text).not.toContain("short collocations"); // hardcode replaced
     const lvl8 = buildInstruction({ ...config, level: 8 }, picks, items[0]!);
-    expect(lvl8).not.toContain("whole simple sentence");
+    expect(lvl8).toContain("whole simple sentence"); // stage 3 keeps its sentence
+    expect(lvl8).toContain("using the construction above in it");
   });
 
   test("no grammar → old hardcoded behaviour intact (es fallback unbroken)", () => {
