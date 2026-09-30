@@ -148,11 +148,10 @@ jobs:
         host: [hermes, openclaw]
         model: ["deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3-flash"]
     env:
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       MODEL: ${{ matrix.model }}
+    # The key is given to the one step that calls the model, never to install
+    # steps: package install scripts must not see it. It is never written to disk.
     steps:
-      - name: Key present
-        run: test -n "$OPENROUTER_API_KEY" || { echo "OPENROUTER_API_KEY secret is not set"; exit 1; }
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - uses: astral-sh/setup-uv@v6
@@ -179,13 +178,15 @@ jobs:
           npm install -g "openclaw@$OPENCLAW_VERSION"
           bun src/cli.ts install openclaw
           mkdir -p "$OPENCLAW_HOME/.openclaw"
-          # key goes in via env.vars (documented path); written by bun so it never hits the log
-          bun -e 'await Bun.write(process.env.OPENCLAW_HOME + "/.openclaw/openclaw.json", JSON.stringify({ env: { vars: { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY } }, agents: { defaults: { model: { primary: "openrouter/" + process.env.MODEL } } } }))'
+          printf '{"agents":{"defaults":{"model":{"primary":"openrouter/%s"}}}}\n' "$MODEL" > "$OPENCLAW_HOME/.openclaw/openclaw.json"
           openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force
           openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
           openclaw plugins enable langcouch --accept-capabilities
       - name: A real model weaves (one retry, replies vary)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
+          test -n "$OPENROUTER_API_KEY" || { echo "OPENROUTER_API_KEY secret is not set"; exit 1; }
           for attempt in 1 2; do
             if [ "${{ matrix.host }}" = hermes ]; then
               hermes -z "$LIVE_PROMPT" --provider openrouter -m "$MODEL" > reply.txt || true
