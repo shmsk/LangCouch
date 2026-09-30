@@ -198,10 +198,17 @@ describe("algorithm 3 instruction", () => {
     const known = long.slice(12, 60);
     const text = buildInstruction(config, picks, grammar, rule, 3, known);
     expect(text.length).toBeLessThanOrEqual(INSTRUCTION_BUDGET);
-    for (const part of ["New, translation inline:", "Familiar, no translation in the text:", "Nudge, the one exception:", "end the reply with one line", "Known, no translation anywhere:", "Word-building rule", "whole simple sentence", "written entirely in English"])
+    for (const part of ["New, translation inline:", "Familiar, no translation in the text:", "Nudge, the one exception:", "close with one line of only those used", "Known, no translation anywhere:", "Word-building rule", "whole simple sentence", "written entirely in English"])
       expect(text).toContain(part);
     const knownLine = text.split("\n").find((l) => l.startsWith("Known"))!;
-    expect(knownLine.split(",").length).toBeGreaterThanOrEqual(10);
+    expect(knownLine.split(",").length).toBeGreaterThanOrEqual(8);
+  });
+
+  test("a typical reply offers most of the known sample", () => {
+    const picks = es.slice(0, 12).map((word, i) => ({ word, exposures: 3, step: i < 8 ? 0 : 3, nudge: i === 11 }));
+    const text = buildInstruction(config, picks, loadGrammar("es")[0]!, null, 3, es.slice(12, 42));
+    expect(text.length).toBeLessThanOrEqual(INSTRUCTION_BUDGET);
+    expect(text.split("\n").find((l) => l.startsWith("Known"))!.split(",").length).toBeGreaterThanOrEqual(25);
   });
 
   test("absorbed words that came due are reviewed without a translation", () => {

@@ -141,7 +141,7 @@ export function parseJudge(text: string, letters: Record<string, string>): Recor
 
 export const JUDGE_SYSTEM = "You are a strict, fair evaluator of assistant replies. Reply with JSON only.";
 
-export function judgePrompt(task: string, served: string[], answers: Record<string, string>, nudge: string[] = []): string {
+export function judgePrompt(task: string, served: string[], answers: Record<string, string>, nudge: string[] = [], known: string[] = []): string {
   const blocks = Object.entries(answers).map(([l, a]) => `=== Answer ${l} ===\n${a}`).join("\n\n");
   return [
     "Several assistants answered the same task. Each was also asked to weave a few Spanish words into its English prose, as passive language practice, in the format **word** (translation).",
@@ -153,6 +153,7 @@ export function judgePrompt(task: string, served: string[], answers: Record<stri
       ? [
           `- Exception: the assistants were allowed to work in ${nudge.join(", ")} even where they do not fit, as ONE short aside or metaphor in their own words, or in one closing line. A brief, clearly separate aside like that is not a penalty; a long detour, or those words inside code, facts or text the user will copy, is.`,
           "- Some words were meant to appear in bold without a translation, and a closing line like `word = translation` is part of the format. Neither is a penalty.",
+          ...(known.length ? [`- The learner already knows these words, and the assistants were allowed to use them in bold with no translation, where they fit: ${known.join(", ")}. Using one is not off-list; forcing one in still is a weave fault.`] : []),
         ]
       : []),
     'Return only JSON: {"A": {"answer": n, "weave": n, "why": "one line, only when a score is 2 or lower"}, ...}',

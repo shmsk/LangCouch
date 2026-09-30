@@ -110,20 +110,20 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
 
   const head = [
     `<langcouch>`,
-    `Passive language immersion (diglot weave): in the prose of your reply, replace up to ~${picks.length} common words with ${name} ones, ONLY from the words below.`,
+    `Language immersion (diglot weave): in your reply's prose, use up to ~${picks.length} ${name} words for common ones, ONLY from those below.`,
     ...(fresh.length ? [`New, translation inline: ${fresh.map(item).join("; ")}`] : []),
     ...(familiar.length ? [`Familiar, no translation in the text: ${familiar.map(item).join("; ")}`] : []),
   ];
   const knownAt = head.length; // the known line goes here, filled last to fit the budget
   const lines = [
     ...head,
-    `Use a word only where your reply already needs that meaning; skip the rest. A few words, or none, is fine.`,
+    `Use a word only where your reply already needs that meaning; skip the rest. A few words, or none, is fine. Never write a sentence, metaphor or example just to host a word${nudge.length ? " (the nudge aside)" : ""}.`,
     ...(nudge.length
       ? [`Nudge, the one exception: work in ${nudge.map(item).join("; ")} even if unneeded, as a short aside or metaphor in your own words or one closing line after the answer; never in code, facts, numbers or names.`]
       : []),
     `Format: bold every woven word. New and nudge words: **word** (translation) the first time, then **word**; familiar and known: just **word**.`,
-    ...(familiar.length ? [`If you used familiar words, end the reply with one line of just those: ${familiar[0] ? item(familiar[0]) : ""} · …`] : []),
-    `Inflect the words to fit the context (plural, gender: casas, bonitas) — the lemma must stay recognizable.`,
+    ...(familiar.length ? [`If you used familiar words, close with one line of only those used: ${familiar[0] ? item(familiar[0]) : ""} · …; none used, no line.`] : []),
+    `Inflect words to fit (casas, bonitas), keeping the lemma recognizable.`,
   ];
 
   if (stage >= 2 && grammar) {
@@ -133,15 +133,15 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   }
   if (stage >= 3) {
     const withConstruction = grammar ? ", using the construction above in it" : "";
-    lines.push(`If it fits, once insert a whole simple sentence in the language (5-8 listed or basic words)${withConstruction}, its translation right after in parentheses.`);
+    lines.push(`If it fits, once, in your own words and never in text the user will copy, insert a whole simple sentence in the language (5-8 listed or basic words)${withConstruction}, its translation right after in parentheses.`);
   }
   if (rule) {
     const notThese = rule.notThese.length > 0 ? ` False friends, not this rule: ${rule.notThese.join("; ")}.` : "";
     const avoid = rule.avoid.length > 0 ? ` Never use: ${rule.avoid.join(", ")}.` : "";
-    lines.push(`Word-building rule: ${rule.from} → ${rule.to} (e.g. ${rule.example}). If your reply needs a word built by this rule, use one, even if it is not on the list, translation in parentheses — only when its meaning matches exactly.${notThese}${avoid}`);
+    lines.push(`Word-building rule: ${rule.from} → ${rule.to} (e.g. ${rule.example}). If the reply needs such a word, use one even if unlisted, translated in parentheses, only when the meaning matches exactly.${notThese}${avoid}`);
   }
   lines.push(
-    `Forbidden: touching code blocks, inline code, identifiers, commands, paths, URLs, quotes, or technical terms; translating the whole reply; weaving words not listed here${rule ? " (the one rule word aside)" : ""}.`,
+    `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply or weave unlisted words${rule ? " (the rule word aside)" : ""}.`,
     `Anything the user will copy or send (post, email, message, summary, document, commit message) is written entirely in ${native}, no ${name}: weave only in your text around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
     `</langcouch>`,

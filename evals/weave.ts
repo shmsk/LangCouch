@@ -5,6 +5,7 @@
  *   bun evals/weave.ts [--algo 1|2|3] [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
  *   bun evals/weave.ts --rescore evals/out/<run>      re-score saved replies, no calls
  *   bun evals/weave.ts --fill evals/out/<run>         re-ask failed replies, re-judge their groups
+ *   bun evals/weave.ts --rejudge evals/out/<run>      re-judge every group (after a judge-prompt change)
  *
  * Backends:
  *   opus (or any id without a slash) → local `claude --print`, billed to the
@@ -214,10 +215,27 @@ async function judgeGroup(rows: Row[], stage: string, topic: string, prompt: str
   const letters = letterMap(group.map((r) => r.model), `${stage}/${topic}/${rep}`);
   const answers = Object.fromEntries(Object.entries(letters).map(([l, m]) => [l, group.find((r) => r.model === m)!.reply]));
   const served = group[0]?.spec.served.map((s) => s.target) ?? [];
-  const a = await ask(JUDGE_MODEL, JUDGE_SYSTEM, judgePrompt(prompt, served, answers, group[0]?.spec.nudge ?? []), key);
+  const a = await ask(JUDGE_MODEL, JUDGE_SYSTEM, judgePrompt(prompt, served, answers, group[0]?.spec.nudge ?? [], group[0]?.spec.known ?? []), key);
   const j: Judged = { stage, topic, rep, letters, verdicts: a.error ? {} : parseJudge(a.text, letters), error: a.error };
   if (!a.error && Object.keys(j.verdicts).length !== group.length) j.error = `parsed ${Object.keys(j.verdicts).length}/${group.length}: ${a.text.slice(0, 200)}`;
   return j;
+}
+
+/** Re-judge every group of a run (after a judge-prompt change), keeping the replies. */
+async function rejudge(runDir: string) {
+  const judgeFile = join(runDir, "judge.jsonl");
+  const rows = readJsonl<Row>(join(runDir, "replies.jsonl"));
+  const topics = new Map(readJson<Topic[]>("topics.json").map((t) => [t.id, t]));
+  const keys = [...new Set(rows.map((r) => `${r.stage}/${r.topic}/${r.rep}`))];
+  const key = JUDGE_MODEL.includes("/") ? openrouterKey() : "";
+  const fresh = await pool(keys.map((k) => async () => {
+    const [stage, topic, rep] = k.split("/");
+    const j = await judgeGroup(rows, stage!, topic!, topics.get(topic!)!.prompt, Number(rep), key);
+    process.stderr.write(`${j.error ? "✗" : "✓"} rejudge ${k}${j.error ? ` ${j.error}` : ""}\n`);
+    return j;
+  }), 1);
+  writeFileSync(judgeFile, fresh.map((j) => JSON.stringify(j)).join("\n") + "\n");
+  rescore(runDir);
 }
 
 /** Re-ask every failed reply of a run, then re-judge the groups that changed. Rewrites the run files in place. */
@@ -274,6 +292,8 @@ async function main() {
   if (rescoreDir) return rescore(rescoreDir);
   const fillDir = arg("fill");
   if (fillDir) return fill(fillDir);
+  const rejudgeDir = arg("rejudge");
+  if (rejudgeDir) return rejudge(rejudgeDir);
 
   const models = (arg("models") ?? DEFAULT_MODELS.join(",")).split(",");
   const reps = Number(arg("reps") ?? 2);
