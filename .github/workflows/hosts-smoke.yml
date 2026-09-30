@@ -42,8 +42,15 @@ env:
 
 jobs:
   hermes-fake:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -55,7 +62,10 @@ jobs:
           echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
       - run: bun install
       - name: Install Hermes Agent
-        run: uv tool install --python 3.12 "hermes-agent==$HERMES_VERSION" && hermes --version
+        run: |
+          uv tool install --python 3.12 "hermes-agent==$HERMES_VERSION"
+          uv tool dir --bin >> "$GITHUB_PATH"
+      - run: hermes --version
       - name: Install the LangCouch plugin
         run: |
           bun src/cli.ts init && bun src/cli.ts level 5
@@ -73,13 +83,14 @@ jobs:
           EOF
       - name: Start the fake model
         run: |
-          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
           for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/fake-llm.out"; exit 1
       - name: Plugin registered its hook and command
         run: |
           HERMES_PLUGINS_DEBUG=1 hermes plugins list 2>&1 | tee "$RUNNER_TEMP/plugins.txt"
-          "$(uv tool dir)/hermes-agent/bin/python" - <<'EOF'
+          PY="$(uv tool dir)/hermes-agent/bin/python"; [ -x "$PY" ] || PY="$(uv tool dir)/hermes-agent/Scripts/python.exe"
+          "$PY" - <<'EOF'
           from hermes_cli.plugins import discover_plugins, get_plugin_manager, get_plugin_commands
           discover_plugins()
           hooks, cmds = list(get_plugin_manager()._hooks), list(get_plugin_commands())
@@ -100,8 +111,15 @@ jobs:
           tail -n 200 "$HERMES_HOME"/logs/*.log 2>/dev/null || true
 
   openclaw-fake:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -147,7 +165,7 @@ jobs:
           grep -q before_prompt_build "$RUNNER_TEMP/inspect.json"
       - name: Start the fake model
         run: |
-          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
           for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/fake-llm.out"; exit 1
       - name: One turn against the fake model
@@ -161,8 +179,15 @@ jobs:
           openclaw plugins doctor --json || true
 
   codex-fake:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -195,7 +220,7 @@ jobs:
           EOF
       - name: Start the fake model
         run: |
-          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
           for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/fake-llm.out"; exit 1
       - name: One turn against the fake model
@@ -208,8 +233,15 @@ jobs:
         run: cat "$RUNNER_TEMP/fake-llm.out" || true
 
   opencode-fake:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     env:
       OPENCODE_DISABLE_MODELS_FETCH: "1"
     steps:
@@ -251,7 +283,7 @@ jobs:
           EOF
       - name: Start the fake model
         run: |
-          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
           for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
           cat "$RUNNER_TEMP/fake-llm.out"; exit 1
       - name: One turn against the fake model
