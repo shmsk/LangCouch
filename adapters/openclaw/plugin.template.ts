@@ -1,0 +1,143 @@
+import { spawnSync } from "node:child_process";
+
+/* langcouch */
+
+/**
+ * LangCouch adapter for OpenClaw (native plugin).
+ *
+ * `langcouch install openclaw` stamps this file as index.ts into a plugin
+ * directory next to openclaw.plugin.json + package.json; the user links it
+ * with `openclaw plugins install --link`.
+ *
+ * - before_prompt_build: shells out to `langcouch hook` with the current user
+ *   message and returns the <langcouch> block as prependContext, the same
+ *   position as the Claude Code UserPromptSubmit hook and the opencode plugin.
+ * - /langcouch <args>: routes to the CLI and replies without calling the LLM.
+ *
+ * Turn-scoped dedup: OpenClaw re-runs before_prompt_build on retries and
+ * rebuilds of one admitted request. currentUserMessageId is stable across
+ * those, so we key on it per session and weave a given request once; without
+ * that, each retry would mark exposures again and corrupt the SRS counts.
+ *
+ * Sacred hook contract (matches src/cli.ts): never break the host session.
+ * Every failure path is a silent no-op. Runtime detection mirrors
+ * scripts/hook.sh: bun, Node >= 23, Node 22.6+ with --experimental-strip-types.
+ *
+ * Deliberately no import from the OpenClaw SDK: the plugin directory lives
+ * outside the host's node_modules, and the entry is a plain object of the
+ * shape definePluginEntry() accepts, so nothing has to resolve at load time.
+ */
+
+const CLI_PATH = "__LANGCOUCH_CLI_PATH__"; // replaced at install time
+
+export type SpawnFn = (
+  cmd: string,
+  args: string[],
+  opts: { input: string; encoding: "utf8"; timeout: number; stdio: ["pipe", "pipe", "pipe"] },
+) => { error?: unknown; status: number | null; stdout?: string; stderr?: string };
+
+const defaultSpawn: SpawnFn = (cmd, args, opts) =>
+  spawnSync(cmd, args, opts) as { error?: unknown; status: number | null; stdout?: string; stderr?: string };
+
+type RunResult = { status: number | null; stdout: string; stderr: string };
+
+/** Run the CLI with the first runtime that starts. null if none did. */
+function runCli(args: string[], input: string, spawn: SpawnFn): RunResult | null {
+  const opts = { input, encoding: "utf8" as const, timeout: 5000, stdio: ["pipe", "pipe", "pipe"] as ["pipe", "pipe", "pipe"] };
+  const attempt = (cmd: string, argv: string[]): RunResult | null => {
+    const r = spawn(cmd, argv, opts);
+    if (r.error) return null;
+    return { status: r.status, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
+  };
+
+  const viaBun = attempt("bun", [CLI_PATH, ...args]);
+  if (viaBun) return viaBun;
+
+  const v = spawn("node", ["-v"], { ...opts, input: "" }).stdout?.trim() ?? "";
+  const m = /^v(\d+)\.(\d+)/.exec(v);
+  if (!m) return null;
+  const major = Number(m[1]);
+  const minor = Number(m[2]);
+  if (major >= 23) return attempt("node", [CLI_PATH, ...args]);
+  if (major === 22 && minor >= 6) return attempt("node", ["--experimental-strip-types", CLI_PATH, ...args]);
+  return null;
+}
+
+export function runHook(prompt: string, sessionId: string, spawn: SpawnFn = defaultSpawn): string {
+  const payload = JSON.stringify({ prompt, session_id: sessionId, hook_event_name: "UserPromptSubmit" });
+  const r = runCli(["hook"], payload, spawn);
+  return r && r.status === 0 ? r.stdout.trim() : "";
+}
+
+// Subcommands safe to run from a chat; quiz is interactive, init/install touch host config.
+const COMMANDS = ["lang", "level", "pause", "resume", "status", "validate", "instruction"];
+
+export function runCommand(rawArgs: string, spawn: SpawnFn = defaultSpawn): string {
+  const args = rawArgs.trim().split(/\s+/).filter(Boolean);
+  if (!args[0] || !COMMANDS.includes(args[0])) return `Usage: /langcouch <${COMMANDS.join("|")}> [args]`;
+  const r = runCli(args, "", spawn);
+  if (!r) return "LangCouch: the CLI did not run. It needs bun or Node.js >= 22.6.";
+  // errors (bad language code, wrong level) come back on stderr
+  return r.stdout.trim() || r.stderr.trim() || "ok";
+}
+
+/** Minimal slice of the OpenClaw plugin API this adapter uses. */
+export type PromptBuildEvent = { prompt: string; currentUserMessage?: string; currentUserMessageId?: string };
+export type AgentContext = { sessionId?: string; sessionKey?: string };
+export type PluginApi = {
+  on(
+    hook: "before_prompt_build",
+    handler: (event: PromptBuildEvent, ctx: AgentContext) => { prependContext: string } | undefined,
+  ): void;
+  registerCommand(def: {
+    name: string;
+    description: string;
+    acceptsArgs?: boolean;
+    handler: (ctx: { args?: string }) => { text: string };
+  }): void;
+};
+
+/** Build the plugin entry with an optional spawn function (tests inject a fake). */
+export function buildPlugin(spawn: SpawnFn = defaultSpawn) {
+  return {
+    id: "langcouch",
+    name: "LangCouch",
+    description: "Learn a language while you work (diglot weave in agent replies)",
+    register(api: PluginApi) {
+      // session → last woven request id
+      const lastHandled = new Map<string, string>();
+
+      api.on("before_prompt_build", (event, ctx) => {
+        try {
+          const prompt = event.currentUserMessage ?? event.prompt ?? "";
+          const sessionId = ctx?.sessionId ?? ctx?.sessionKey ?? "";
+          const requestId = event.currentUserMessageId;
+          if (requestId) {
+            if (lastHandled.get(sessionId) === requestId) return undefined;
+            // mark before spawning: a "no words due" turn must not re-fire on retry
+            lastHandled.set(sessionId, requestId);
+          }
+          const block = runHook(prompt, sessionId, spawn);
+          return block ? { prependContext: block } : undefined;
+        } catch {
+          return undefined; // never break the host session
+        }
+      });
+
+      api.registerCommand({
+        name: "langcouch",
+        description: "LangCouch: lang, level, pause, resume, status",
+        acceptsArgs: true,
+        handler: (ctx) => {
+          try {
+            return { text: runCommand(ctx?.args ?? "", spawn) };
+          } catch {
+            return { text: "LangCouch: command failed." };
+          }
+        },
+      });
+    },
+  };
+}
+
+export default buildPlugin();

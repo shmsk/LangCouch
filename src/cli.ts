@@ -17,6 +17,8 @@ import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOur
 import { installClaude } from "../adapters/claude/install.ts";
 import { installCodex } from "../adapters/codex/install.ts";
 import { installOpencode } from "../adapters/opencode/install.ts";
+import { installHermes } from "../adapters/hermes/install.ts";
+import { installOpenclaw } from "../adapters/openclaw/install.ts";
 
 function makeInstruction(mark: boolean): string {
   const config = loadConfig();
@@ -443,8 +445,12 @@ try {
           process.exit(1);
         }
         console.log(installOpencode(scope));
+      } else if (args[0] === "hermes") {
+        console.log(installHermes());
+      } else if (args[0] === "openclaw") {
+        console.log(installOpenclaw());
       } else {
-        console.error("usage: langcouch install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user]>");
+        console.error("usage: langcouch install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | hermes | openclaw>");
         process.exit(1);
       }
       break;
@@ -467,6 +473,8 @@ try {
           "  install claude [--scope project|user]   register the hook in Claude Code",
           "  install codex [--scope project|user]   register the hook in Codex CLI (hooks.json)",
           "  install opencode [--scope project|user]   install the plugin + AGENTS.md fallback for opencode",
+          "  install hermes            install the Hermes Agent plugin ($HERMES_HOME/plugins/langcouch)",
+          "  install openclaw          generate the OpenClaw plugin and print the link commands",
         ].join("\n"),
       );
   }

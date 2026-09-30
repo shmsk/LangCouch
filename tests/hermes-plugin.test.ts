@@ -1,0 +1,111 @@
+import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+import { stampCliPath } from "../adapters/shared/stamp.ts";
+
+/**
+ * Runs the real Python template under python3 against a fake CLI (a tiny TS
+ * script run by bun), with a fake Hermes `ctx`. Proves the shim's contract:
+ * what it registers, what it returns, and that failures come back as None.
+ * Skipped when python3 is missing; Hermes itself is never needed.
+ */
+
+const TEMPLATE = join(dirname(fileURLToPath(import.meta.url)), "..", "adapters", "hermes", "plugin.template.py");
+const hasPython = spawnSync("python3", ["--version"]).status === 0;
+
+const HARNESS = `
+import importlib.util, json, sys
+spec = importlib.util.spec_from_file_location("lc", sys.argv[1])
+mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+class Ctx:
+    def __init__(self): self.hooks, self.commands = {}, {}
+    def register_hook(self, name, fn): self.hooks[name] = fn
+    def register_command(self, name, handler, description="", args_hint=""): self.commands[name] = handler
+ctx = Ctx(); mod.register(ctx)
+out = {"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)}
+out["pre_llm_call"] = ctx.hooks["pre_llm_call"](session_id="s1", user_message="hola", conversation_history=[], is_first_turn=True, model="m", platform="cli")
+out["cmd"] = ctx.commands["langcouch"](sys.argv[2])
+print(json.dumps(out))
+`;
+
+let scratch: string;
+
+beforeAll(() => {
+  scratch = mkdtempSync(join(tmpdir(), "langcouch-hermes-plugin-"));
+  writeFileSync(join(scratch, "harness.py"), HARNESS);
+});
+afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+/** Write a fake CLI with the given behavior and the stamped plugin that calls it. */
+function setup(name: string, cliBody: string): string {
+  const cli = join(scratch, `${name}-cli.ts`);
+  writeFileSync(cli, cliBody);
+  const plugin = join(scratch, `${name}.py`);
+  writeFileSync(plugin, stampCliPath(readFileSync(TEMPLATE, "utf8"), cli));
+  return plugin;
+}
+
+function run(plugin: string, cmdArgs: string) {
+  const r = spawnSync("python3", [join(scratch, "harness.py"), plugin, cmdArgs], { encoding: "utf8", timeout: 20000 });
+  if (r.status !== 0) throw new Error(r.stderr);
+  return JSON.parse(r.stdout) as { hooks: string[]; commands: string[]; pre_llm_call: unknown; cmd: string };
+}
+
+const ECHO_CLI = `
+const args = process.argv.slice(2);
+if (args[0] === "hook") {
+  const input = await Bun.stdin.json();
+  console.log("<langcouch>" + input.hook_event_name + "|" + input.session_id + "|" + input.prompt + "</langcouch>");
+} else if (args[0] === "lang" && args[1] === "xx") {
+  console.error("unknown language: xx"); process.exit(1);
+} else {
+  console.log("ran: " + args.join(" "));
+}
+`;
+
+describe.skipIf(!hasPython)("hermes plugin (python3 + fake CLI)", () => {
+  test("registers pre_llm_call and /langcouch", () => {
+    const out = run(setup("reg", ECHO_CLI), "status");
+    expect(out.hooks).toEqual(["pre_llm_call"]);
+    expect(out.commands).toEqual(["langcouch"]);
+  });
+
+  test("pre_llm_call pipes the turn to `hook` and returns the block as context", () => {
+    const out = run(setup("ok", ECHO_CLI), "status");
+    expect(out.pre_llm_call).toEqual({ context: "<langcouch>UserPromptSubmit|s1|hola</langcouch>" });
+  });
+
+  test("empty block → None (no injection)", () => {
+    const out = run(setup("empty", `process.exit(0);`), "status");
+    expect(out.pre_llm_call).toBeNull();
+  });
+
+  test("crashing CLI → None, host turn continues", () => {
+    const out = run(setup("crash", `throw new Error("boom");`), "status");
+    expect(out.pre_llm_call).toBeNull();
+  });
+
+  test("hanging CLI → None after the timeout", () => {
+    const out = run(setup("hang", `await new Promise((r) => setTimeout(r, 60000));`), "status");
+    expect(out.pre_llm_call).toBeNull();
+  }, 30000);
+
+  test("/langcouch routes arguments to the CLI", () => {
+    const out = run(setup("cmd", ECHO_CLI), "level up");
+    expect(out.cmd).toBe("ran: level up");
+  });
+
+  test("/langcouch shows CLI errors from stderr", () => {
+    const out = run(setup("err", ECHO_CLI), "lang xx");
+    expect(out.cmd).toBe("unknown language: xx");
+  });
+
+  test("/langcouch refuses unsafe or unknown subcommands", () => {
+    const plugin = setup("usage", ECHO_CLI);
+    expect(run(plugin, "install claude").cmd).toStartWith("Usage: /langcouch");
+    expect(run(plugin, "").cmd).toStartWith("Usage: /langcouch");
+  });
+});

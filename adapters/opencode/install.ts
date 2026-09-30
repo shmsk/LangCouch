@@ -3,12 +3,11 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { writeAgentsSection } from "../shared/agents-section.ts";
+import { cliPath, stampCliPath, ownershipAction } from "../shared/stamp.ts";
+
+export { stampCliPath };
 
 const PLUGIN_MARKER = "/* langcouch */";
-
-function cliPath(): string {
-  return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "src", "cli.ts");
-}
 
 /**
  * Resolve the user's home directory for the global opencode plugin path.
@@ -18,18 +17,6 @@ function cliPath(): string {
  */
 function userHome(): string {
   return process.env.HOME || homedir();
-}
-
-const PLACEHOLDER = '"__LANGCOUCH_CLI_PATH__"';
-
-/**
- * Stamp the absolute CLI path into the plugin template.
- * Pure function — extracted for testability. Uses a function replacer so `$`
- * characters in the path (e.g. `$HOME`, `$&`) are not interpreted as
- * String.replace pattern variables.
- */
-export function stampCliPath(template: string, cliPath: string): string {
-  return template.replace(PLACEHOLDER, () => JSON.stringify(cliPath));
 }
 
 function pluginTemplate(): string {
@@ -62,16 +49,8 @@ export function installOpencode(scope: "project" | "user"): string {
   const pluginPath = join(pluginDir, "langcouch.ts");
 
   // refresh-in-place: marker comment lets us detect an existing install
-  let pluginAction: "added" | "updated";
   const existing = existsSync(pluginPath) ? readFileSync(pluginPath, "utf8") : "";
-  if (existing.includes(PLUGIN_MARKER)) {
-    pluginAction = "updated";
-  } else if (existing) {
-    // file exists but isn't ours — don't clobber, pick a non-colliding name
-    throw new Error(`langcouch: ${pluginPath} already exists and isn't ours — move it aside and re-run`);
-  } else {
-    pluginAction = "added";
-  }
+  const pluginAction = ownershipAction(existing, PLUGIN_MARKER, pluginPath);
 
   mkdirSync(pluginDir, { recursive: true });
   writeFileSync(pluginPath, pluginTemplate());
