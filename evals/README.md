@@ -2,7 +2,7 @@
 
 LangCouch is only as good as the model's handling of its `<langcouch>` instruction. This eval measures that across models, at three points of a learner's progress, on everyday tasks. It is a development tool: nothing here ships in the plugin.
 
-Results, one file per weave algorithm: [algorithm 1](results/algo-1.md), [algorithm 2](results/algo-2.md), [algorithm 3](results/algo-3.md). Comparison: [below](#algorithms-compared).
+Results, one file per weave algorithm: [algorithm 1](results/algo-1.md), [algorithm 2](results/algo-2.md), [algorithm 3](results/algo-3.md). Comparison: [below](#algorithms-compared). In plain words, model by model: [MODELS.md](MODELS.md).
 
 ## Algorithms
 

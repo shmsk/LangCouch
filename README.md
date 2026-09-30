@@ -11,6 +11,15 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek.
 
+## What's new in 0.6.0
+
+- **Spaced repetition.** Each word comes back after 30 minutes, 8 hours, a day, 4 days, 2 weeks, a month, then 6 months. It moves up a step only when a reply actually used it.
+- **Honest counting.** LangCouch reads the finished reply back, so a word the model skipped isn't counted as learned. It returns on the next turn instead.
+- **Translations fade.** New words come as **casa** (house). Familiar ones come as plain **casa**, with a single `casa = house` line at the end of the reply. Words you know get no translation at all.
+- **Only words that fit.** The model uses a word only where the reply already needs its meaning. A word that keeps getting skipped may go into one short aside, never into code or text you will copy.
+
+We tested this against the old behaviour on four models: answers stayed as good, and the words read more naturally. [How each model does](evals/MODELS.md). `langcouch mode 1` brings the old weave back. If you installed outside the Claude Code plugin, see the [upgrade notes](CHANGELOG.md).
+
 ## Why I built this
 
 I read a lot every day, and these days most of that text is my AI agents' replies in a terminal. Reading in the language you're learning is one of the oldest ways to pick it up, and Toucan does exactly that for web pages in the browser. Nothing did it for the terminal, so I built LangCouch for myself. It's free for anyone who wants it too.
@@ -100,7 +109,7 @@ OpenClaw only runs prompt hooks of plugins you have allowed, so the `allowConver
 
 ## Will it make my agent's answers worse?
 
-It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt, mostly read from the prompt cache: about 1–3% of a typical session ([details](docs/TokenUsage.md)). If you need a clean session, `/langcouch:pause` stops it instantly and `/langcouch:resume` brings it back.
+It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt, mostly read from the prompt cache: about 1–3% of a typical session ([details](docs/TokenUsage.md)). How four models handle it: [evals/MODELS.md](evals/MODELS.md). If you need a clean session, `/langcouch:pause` stops it instantly and `/langcouch:resume` brings it back.
 
 ## How it works
 

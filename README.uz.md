@@ -13,6 +13,15 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi.
 
+## 0.6.0 da nima yangi
+
+- **Oraliqli takrorlash.** Har bir soʻz 30 daqiqa, 8 soat, bir kun, 4 kun, 2 hafta, bir oy va keyin 6 oydan soʻng qaytadi. Javob uni haqiqatan ishlatgandagina soʻz keyingi pogʻonaga oʻtadi.
+- **Halol hisob.** LangCouch tayyor javobni oʻqiydi, shuning uchun model tashlab ketgan soʻz oʻrganilgan deb hisoblanmaydi va keyingi navbatda yana keladi.
+- **Tarjimalar asta-sekin yoʻqoladi.** Yangi soʻz **casa** (house) koʻrinishida keladi. Tanish soʻz shunchaki **casa** boʻlib keladi, javob oxirida esa bitta `casa = house` qatori turadi. Siz biladigan soʻzlarga tarjima berilmaydi.
+- **Faqat mos soʻzlar.** Model soʻzni faqat javobga shu maʼno baribir kerak boʻlgan joyda ishlatadi. Uzoq vaqt tashlab ketilgan soʻz bitta qisqa izohga tushishi mumkin, lekin hech qachon kodga yoki siz nusxa oladigan matnga emas.
+
+Buni toʻrtta modelda eski xatti-harakat bilan solishtirdik: javoblar avvalgidek yaxshi qoldi, soʻzlar esa tabiiyroq oʻqiladi. [Har bir model qanday uddalaydi](evals/MODELS.md) (ingliz tilida). Eski toʻqishni `langcouch mode 1` qaytaradi. LangCouch'ni Claude Code plagini sifatida oʻrnatmagan boʻlsangiz, [yangilanish eslatmalarini](CHANGELOG.md) koʻring.
+
 ## Nega buni yaratdim
 
 Men har kuni koʻp oʻqiyman, va hozir bu matnning katta qismi terminaldagi AI agentlarimning javoblaridir. Oʻrganayotgan tilingizda oʻqish uni oʻzlashtirishning eng qadimiy usullaridan biri, Toucan esa brauzerda veb-sahifalar uchun aynan shuni qiladi. Terminal uchun bunday vosita yoʻq edi, shuning uchun LangCouch'ni oʻzim uchun yaratdim. Uni istagan har bir kishi bepul foydalanishi mumkin.
@@ -102,7 +111,7 @@ OpenClaw prompt hooklarini faqat siz ruxsat bergan plaginlar uchun ishga tushira
 
 ## Bu agentimning javoblarini yomonlashtiradimi?
 
-Yoʻq, aynan shunday boʻlmasligi uchun moʻljallangan. Toʻqish koʻrsatmasi kod bloklari, inline kod, identifikatorlar, buyruqlar, yoʻllar, URL manzillar, iqtiboslar va texnik atamalarga tegishni taqiqlaydi hamda modelga javobning maʼnosi va sifati toʻqishdan har doim ustun ekanini aytadi. Buning narxi — har bir soʻrov uchun bitta qisqa koʻrsatma (≤600 token), u asosan prompt keshidan oʻqiladi: odatiy sessiyaning taxminan 1–3% ([batafsil](docs/TokenUsage.md), ingliz tilida). Toza sessiya kerak boʻlsa, `/langcouch:pause` uni darhol toʻxtatadi, `/langcouch:resume` esa qaytaradi.
+Yoʻq, aynan shunday boʻlmasligi uchun moʻljallangan. Toʻqish koʻrsatmasi kod bloklari, inline kod, identifikatorlar, buyruqlar, yoʻllar, URL manzillar, iqtiboslar va texnik atamalarga tegishni taqiqlaydi hamda modelga javobning maʼnosi va sifati toʻqishdan har doim ustun ekanini aytadi. Buning narxi — har bir soʻrov uchun bitta qisqa koʻrsatma (≤600 token), u asosan prompt keshidan oʻqiladi: odatiy sessiyaning taxminan 1–3% ([batafsil](docs/TokenUsage.md), ingliz tilida). Toʻrtta model buni qanday uddalashi: [evals/MODELS.md](evals/MODELS.md), ingliz tilida. Toza sessiya kerak boʻlsa, `/langcouch:pause` uni darhol toʻxtatadi, `/langcouch:resume` esa qaytaradi.
 
 ## Bu qanday ishlaydi
 
