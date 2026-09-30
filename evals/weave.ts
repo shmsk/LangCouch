@@ -1,11 +1,10 @@
 /**
  * Weave-quality eval: how well do models follow the <langcouch> instruction?
+ * The logic (stages, seed, topics, metrics, judge) is described in evals/README.md.
  *
- *   bun evals/weave.ts [--models a,b] [--reps 2] [--cases id,id] [--dry]
- *   bun evals/weave.ts --rescore evals/out/<run>   (re-score saved replies, no calls)
- *
- * Every model gets the same instructions, built by the real buildInstruction from
- * the Spanish wordlist, prepended to the user message the way the adapters do it.
+ *   bun evals/weave.ts [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
+ *   bun evals/weave.ts --rescore evals/out/<run>      re-score saved replies, no calls
+ *   bun evals/weave.ts --fill evals/out/<run>         re-ask failed replies, re-judge their groups
  *
  * Backends:
  *   opus (or any id without a slash) → local `claude --print`, billed to the
@@ -14,58 +13,33 @@
  *   provider/model → OpenRouter chat/completions. The key comes from the macOS
  *     Keychain (service "langcouch-openrouter"), else OPENROUTER_API_KEY.
  *
- * Writes raw replies to evals/out/<timestamp>/ and prints a table per model.
+ * Writes raw replies and judge verdicts to evals/out/<run>/ and the tables to evals/RESULTS.md.
  */
 import { spawn, execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadWordlist, loadGrammar, loadPatterns, falseFriendsFor } from "../src/store.ts";
-import { buildInstruction } from "../src/instruction.ts";
-import { pickGrammar } from "../src/grammar.ts";
-import { fromFor, patternCue, PATTERN_MIN_LEVEL } from "../src/patterns.ts";
-import { glossFor, grammarStage, wordsPerResponse, type Config, type Word } from "../src/types.ts";
 import { scoreReply, type CaseSpec, type ReplyMetrics } from "./metrics.ts";
+import { liveView, type Lane } from "./progress-view.ts";
+import { buildStage, letterMap, parseJudge, judgePrompt, JUDGE_SYSTEM, type Stage, type Topic, type Built, type Verdict } from "./stages.ts";
 
-const DEFAULT_MODELS = ["opus", "deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3-flash"];
+const DEFAULT_MODELS = ["opus", "deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3-flash", "qwen/qwen3.8-flash"];
+const JUDGE_MODEL = "opus";
 const SYSTEM = "You are a helpful assistant. Answer clearly and concisely.";
-const LANG = "es";
-const NATIVE = "en";
+const DIR = import.meta.dir;
+const RESULTS = join(DIR, "RESULTS.md");
+const FINDINGS_START = "<!-- findings:start -->";
+const FINDINGS_END = "<!-- findings:end -->";
 
-interface Case { id: string; level: number; prompt: string; mustKeep?: string[] }
-interface Built { c: Case; instruction: string; spec: CaseSpec }
 interface Answer { text: string; costUsd?: number; error?: string; ms: number }
+interface Row { model: string; stage: string; topic: string; rep: number; reply: string; error?: string; costUsd?: number; spec: CaseSpec; hasRule: boolean; wantsSentence: boolean; metrics?: ReplyMetrics }
+interface Judged { stage: string; topic: string; rep: number; letters: Record<string, string>; verdicts: Record<string, Verdict>; error?: string }
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
 }
-
-/** Same case → same words for every model: tier-1 words in a fixed slice per case. */
-function build(cases: Case[]): Built[] {
-  const words = loadWordlist(LANG);
-  const seen = new Set<string>();
-  const core = words.filter((w) => w.tier === 1 && !seen.has(w.target) && seen.add(w.target));
-  const patterns = loadPatterns(LANG).filter((p) => fromFor(p, NATIVE) !== null);
-  const ff = falseFriendsFor(LANG);
-  return cases.map((c, i) => {
-    const n = wordsPerResponse(c.level);
-    const start = (i * 13) % Math.max(1, core.length - n);
-    const picked: Word[] = core.slice(start, start + n);
-    const config: Config = { lang: LANG, native: NATIVE, level: c.level };
-    const stage = grammarStage(c.level);
-    const grammar = stage >= 2 ? pickGrammar(loadGrammar(LANG), words, {}, stage) : null;
-    const rule = c.level >= PATTERN_MIN_LEVEL && patterns.length ? patterns[i % patterns.length]! : null;
-    const cue = rule ? patternCue(rule, NATIVE, LANG, ff) : null;
-    const instruction = buildInstruction(config, picked.map((word) => ({ word, exposures: 0 })), grammar, cue);
-    const spec: CaseSpec = {
-      served: picked.map((w) => ({ target: w.target, gloss: glossFor(w, NATIVE, LANG) })),
-      ruleSuffix: cue?.to,
-      mustKeep: c.mustKeep,
-      lexicon: words.map((w) => w.target),
-    };
-    return { c, instruction, spec };
-  });
-}
+const readJson = <T>(file: string): T => JSON.parse(readFileSync(join(DIR, file), "utf8")) as T;
+const readJsonl = <T>(path: string): T[] => (existsSync(path) ? readFileSync(path, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l) as T) : []);
 
 function openrouterKey(): string {
   try {
@@ -77,26 +51,30 @@ function openrouterKey(): string {
   }
 }
 
-async function askOpenrouter(model: string, user: string, key: string): Promise<Answer> {
+async function askOpenrouter(model: string, system: string, user: string, key: string): Promise<Answer> {
   const t = Date.now();
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ model, messages: [{ role: "system", content: SYSTEM }, { role: "user", content: user }], usage: { include: true } }),
-    signal: AbortSignal.timeout(180_000),
-  });
-  const j = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { cost?: number }; error?: { message?: string } };
-  const text = j.choices?.[0]?.message?.content;
-  if (!res.ok || typeof text !== "string") return { text: "", error: j.error?.message ?? `HTTP ${res.status}`, ms: Date.now() - t };
-  return { text, costUsd: j.usage?.cost, ms: Date.now() - t };
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model, messages: [{ role: "system", content: system }, { role: "user", content: user }], usage: { include: true } }),
+      signal: AbortSignal.timeout(300_000),
+    });
+    const j = (await res.json()) as { choices?: { message?: { content?: string } }[]; usage?: { cost?: number }; error?: { message?: string } };
+    const text = j.choices?.[0]?.message?.content;
+    if (!res.ok || typeof text !== "string") return { text: "", error: j.error?.message ?? `HTTP ${res.status}`, ms: Date.now() - t };
+    return { text, costUsd: j.usage?.cost, ms: Date.now() - t };
+  } catch (e) {
+    return { text: "", error: (e as Error).message, ms: Date.now() - t };
+  }
 }
 
 /** Subscription billing: mirrors ~/.claude/LIFEOS/TOOLS/Inference.ts (never --bare). */
-function askClaude(model: string, user: string): Promise<Answer> {
+function askClaude(model: string, system: string, user: string): Promise<Answer> {
   const t = Date.now();
   const env = { ...process.env };
   for (const k of ["CLAUDECODE", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"]) delete env[k];
-  const args = ["--print", "--model", model, "--tools", "", "--output-format", "json", "--setting-sources", "", "--system-prompt", SYSTEM];
+  const args = ["--print", "--model", model, "--tools", "", "--output-format", "json", "--setting-sources", "", "--system-prompt", system];
   return new Promise((resolve) => {
     const proc = spawn("claude", args, { env, stdio: ["pipe", "pipe", "pipe"] });
     let out = "", err = "";
@@ -118,6 +96,15 @@ function askClaude(model: string, user: string): Promise<Answer> {
   });
 }
 
+/** One retry: slow providers time out now and then (a 180 s timeout hit 4 of 120 calls in the first v2 run). */
+async function ask(model: string, system: string, user: string, key: string): Promise<Answer> {
+  const once = () => (model.includes("/") ? askOpenrouter(model, system, user, key) : askClaude(model, system, user));
+  const first = await once();
+  if (!first.error) return first;
+  const second = await once();
+  return second.error ? { ...second, error: `${first.error}; retry: ${second.error}` } : second;
+}
+
 /** Run jobs with at most `limit` in flight. */
 async function pool<T>(jobs: (() => Promise<T>)[], limit: number): Promise<T[]> {
   const out: T[] = new Array(jobs.length);
@@ -128,103 +115,187 @@ async function pool<T>(jobs: (() => Promise<T>)[], limit: number): Promise<T[]> 
   return out;
 }
 
-interface Row { model: string; case: string; rep: number; answer: Answer; metrics?: ReplyMetrics; served: number; hasRule: boolean; wantsSentence: boolean }
+// ---------- report ----------
 
-function summarize(rows: Row[], model: string): string[] {
-  const r = rows.filter((x) => x.model === model);
+const pct = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)}%` : "—");
+const avg = (xs: number[]) => (xs.length ? (xs.reduce((a, b) => a + b, 0) / xs.length).toFixed(1) : "—");
+
+function tableRow(rows: Row[], judged: Judged[], model: string, stage?: string): string[] {
+  const r = rows.filter((x) => x.model === model && (!stage || x.stage === stage));
   const ok = r.filter((x) => x.metrics);
   const m = (x: Row) => x.metrics!;
-  const pct = (a: number, b: number) => (b ? `${Math.round((100 * a) / b)}%` : "—");
   const sum = (f: (x: Row) => number) => ok.reduce((a, x) => a + f(x), 0);
   const ruleRows = ok.filter((x) => x.hasRule), sentRows = ok.filter((x) => x.wantsSentence);
-  const cost = r.reduce((a, x) => a + (x.answer.costUsd ?? 0), 0);
+  const v = judged.filter((j) => !stage || j.stage === stage).map((j) => j.verdicts[model]).filter((x): x is Verdict => !!x);
+  const cost = r.reduce((a, x) => a + (x.costUsd ?? 0), 0);
   return [
     model,
     `${ok.length}/${r.length}`,
-    pct(sum((x) => m(x).woven.length), sum((x) => x.served)),
+    pct(sum((x) => m(x).woven.length), sum((x) => x.spec.served.length)),
     (sum((x) => m(x).offList.length) / (ok.length || 1)).toFixed(1),
-    String(sum((x) => m(x).selfGloss.length)),
-    String(sum((x) => m(x).wrongGloss.length)),
+    String(sum((x) => m(x).selfGloss.length + m(x).wrongGloss.length)),
     String(sum((x) => m(x).unformatted.length)),
     String(ok.filter((x) => m(x).codeTouched.length > 0).length),
-    String(ok.filter((x) => m(x).weaveCount > Math.ceil(x.served * 1.5) + 1).length),
     pct(ruleRows.filter((x) => m(x).ruleUsed).length, ruleRows.length),
     pct(sentRows.filter((x) => m(x).sentence).length, sentRows.length),
-    model.includes("/") ? `$${cost.toFixed(4)}` : "subscription",
+    avg(v.map((x) => x.answer)),
+    avg(v.map((x) => x.weave)),
+    model.includes("/") ? `$${cost.toFixed(3)}` : "subscription",
   ];
 }
 
-async function main() {
-  const models = (arg("models") ?? DEFAULT_MODELS.join(",")).split(",");
-  const reps = Number(arg("reps") ?? 2);
-  const only = arg("cases")?.split(",");
-  const all = JSON.parse(readFileSync(join(import.meta.dir, "cases.json"), "utf8")) as Case[];
-  const built = build(only ? all.filter((c) => only.includes(c.id)) : all);
+const HEAD = ["model", "ok", "coverage", "off-list/reply", "bad gloss", "no gloss", "code/facts touched", "rule used", "sentence", "answer (1-5)", "weave (1-5)", "cost"];
+const md = (rows: string[][]) => [HEAD, HEAD.map(() => "---"), ...rows].map((r) => `| ${r.join(" | ")} |`).join("\n");
 
-  const rows: Row[] = [];
-  if (process.argv.includes("--dry")) {
-    for (const b of built) console.log(`## ${b.c.id} (level ${b.c.level})\n${b.instruction}\n\n${b.c.prompt}\n`);
-    console.log(`${built.length} cases × ${reps} reps × ${models.length} models = ${built.length * reps * models.length} calls`);
-    return;
+function report(rows: Row[], judged: Judged[], models: string[], stages: Stage[], runDir: string): string {
+  let sha = "unknown";
+  try { sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: DIR, encoding: "utf8" }).trim(); } catch { /* not a checkout */ }
+  const parts = [
+    "# Weave eval results",
+    "",
+    `Run \`${runDir.split("/").pop()}\` on commit \`${sha}\`. Logic and metric definitions: [README.md](README.md).`,
+    `Models: ${models.map((m) => `\`${m}\``).join(", ")}. Judge: blind \`${JUDGE_MODEL}\`, scores 1-5.`,
+    "",
+    "## All stages",
+    "",
+    md(models.map((m) => tableRow(rows, judged, m))),
+  ];
+  for (const s of stages) {
+    parts.push("", `## Stage: ${s.id} (${Math.round(s.absorbed * 100)}% absorbed, level ${s.level})`, "", md(models.map((m) => tableRow(rows, judged, m, s.id))));
   }
-
-  const rescore = arg("rescore");
-  if (rescore) {
-    const byId = new Map(built.map((b) => [b.c.id, b]));
-    const models2: string[] = [];
-    for (const file of readdirSync(rescore).filter((f) => f.endsWith(".jsonl"))) {
-      const model = file.replace(/\.jsonl$/, "").replace("_", "/");
-      models2.push(model);
-      for (const l of readFileSync(join(rescore, file), "utf8").trim().split("\n")) {
-        const j = JSON.parse(l) as { case: string; rep: number; reply: string; error?: string; costUsd?: number };
-        const b = byId.get(j.case);
-        if (!b) continue;
-        rows.push({ model, case: j.case, rep: j.rep, answer: { text: j.reply, error: j.error, costUsd: j.costUsd, ms: 0 }, served: b.spec.served.length,
-          hasRule: !!b.spec.ruleSuffix, wantsSentence: grammarStage(b.c.level) >= 3, metrics: j.error ? undefined : scoreReply(j.reply, b.spec) });
-      }
-    }
-    printTable(rows, models2, rescore);
-    return;
-  }
-
-  const key = models.some((m) => m.includes("/")) ? openrouterKey() : "";
-  const outDir = join(import.meta.dir, "out", new Date().toISOString().replace(/[:.]/g, "-"));
-  mkdirSync(outDir, { recursive: true });
-
-  const jobsFor = (model: string) => built.flatMap((b) => Array.from({ length: reps }, (_, rep) => async () => {
-    const user = `${b.instruction}\n\n${b.c.prompt}`;
-    const answer = model.includes("/") ? await askOpenrouter(model, user, key) : await askClaude(model, user);
-    const row: Row = {
-      model, case: b.c.id, rep, answer, served: b.spec.served.length,
-      hasRule: !!b.spec.ruleSuffix, wantsSentence: grammarStage(b.c.level) >= 3,
-      metrics: answer.error ? undefined : scoreReply(answer.text, b.spec),
-    };
-    process.stderr.write(`${answer.error ? "✗" : "✓"} ${model} ${b.c.id}#${rep} ${answer.ms}ms${answer.error ? ` ${answer.error}` : ""}\n`);
-    return row;
-  }));
-
-  // cheap models in parallel; the subscription one strictly one call at a time
-  const results = await Promise.all(models.map((model) => pool(jobsFor(model), model.includes("/") ? 4 : 1)));
-  for (const r of results) rows.push(...r);
-
-  for (const model of models) {
-    const file = join(outDir, `${model.replace(/\//g, "_")}.jsonl`);
-    const lines = rows.filter((r) => r.model === model).map((r) => {
-      const b = built.find((x) => x.c.id === r.case)!;
-      return JSON.stringify({ case: r.case, rep: r.rep, served: b.spec.served, ruleSuffix: b.spec.ruleSuffix, reply: r.answer.text, error: r.answer.error, costUsd: r.answer.costUsd, metrics: r.metrics });
-    });
-    writeFileSync(file, lines.join("\n") + "\n");
-  }
-
-  printTable(rows, models, outDir);
+  const lows = judged.flatMap((j) => Object.entries(j.verdicts).filter(([, v]) => v.why && (v.answer <= 2 || v.weave <= 2)).map(([m, v]) => `- \`${m}\` ${j.stage}/${j.topic}#${j.rep}: answer ${v.answer}, weave ${v.weave}. ${v.why}`));
+  if (lows.length) parts.push("", "## Judge notes (scores of 2 or lower)", "", ...lows);
+  return parts.join("\n");
 }
 
-function printTable(rows: Row[], models: string[], outDir: string) {
-  const head = ["model", "ok", "coverage", "off-list/reply", "self-gloss", "wrong gloss", "unformatted", "code touched", "over-weave", "rule used", "sentence", "cost"];
-  const table = [head, head.map(() => "---"), ...models.map((m) => summarize(rows, m))].map((r) => `| ${r.join(" | ")} |`).join("\n");
-  writeFileSync(join(outDir, "summary.md"), table + "\n");
-  console.log(table);
-  console.log(`\nraw replies: ${outDir}`);
+/** Regenerate RESULTS.md, keeping the hand-written findings between the markers. */
+function writeResults(auto: string) {
+  const old = existsSync(RESULTS) ? readFileSync(RESULTS, "utf8") : "";
+  const s = old.indexOf(FINDINGS_START), e = old.indexOf(FINDINGS_END);
+  const findings = s >= 0 && e > s ? old.slice(s, e + FINDINGS_END.length) : `${FINDINGS_START}\n## Findings\n\n_Written by hand after reading the replies._\n${FINDINGS_END}`;
+  writeFileSync(RESULTS, `${findings}\n\n${auto}\n`);
+}
+
+// ---------- run ----------
+
+async function judgeGroup(rows: Row[], stage: string, topic: string, prompt: string, rep: number, key: string): Promise<Judged> {
+  const group = rows.filter((r) => r.stage === stage && r.topic === topic && r.rep === rep && !r.error);
+  const letters = letterMap(group.map((r) => r.model), `${stage}/${topic}/${rep}`);
+  const answers = Object.fromEntries(Object.entries(letters).map(([l, m]) => [l, group.find((r) => r.model === m)!.reply]));
+  const served = group[0]?.spec.served.map((s) => s.target) ?? [];
+  const a = await ask(JUDGE_MODEL, JUDGE_SYSTEM, judgePrompt(prompt, served, answers), key);
+  const j: Judged = { stage, topic, rep, letters, verdicts: a.error ? {} : parseJudge(a.text, letters), error: a.error };
+  if (!a.error && Object.keys(j.verdicts).length !== group.length) j.error = `parsed ${Object.keys(j.verdicts).length}/${group.length}: ${a.text.slice(0, 200)}`;
+  return j;
+}
+
+/** Re-ask every failed reply of a run, then re-judge the groups that changed. Rewrites the run files in place. */
+async function fill(runDir: string) {
+  const repliesFile = join(runDir, "replies.jsonl"), judgeFile = join(runDir, "judge.jsonl");
+  const rows = readJsonl<Row>(repliesFile);
+  const topics = new Map(readJson<Topic[]>("topics.json").map((t) => [t.id, t]));
+  const cfg = readJson<{ seed: string; stages: Stage[] }>("stages.json");
+  const built = cfg.stages.flatMap((s) => buildStage(s, [...topics.values()], cfg.seed));
+  const failed = rows.filter((r) => r.error);
+  const key = failed.some((r) => r.model.includes("/")) || JUDGE_MODEL.includes("/") ? openrouterKey() : "";
+  const byModel = [...new Set(failed.map((r) => r.model))];
+  await Promise.all(byModel.map((model) => pool(failed.filter((r) => r.model === model).map((r) => async () => {
+    const b = built.find((x) => x.stage.id === r.stage && x.topic.id === r.topic)!;
+    const a = await ask(model, SYSTEM, `${b.instruction}\n\n${b.topic.prompt}`, key);
+    Object.assign(r, { reply: a.text, error: a.error, costUsd: a.costUsd });
+    process.stderr.write(`${a.error ? "✗" : "✓"} refill ${model} ${r.stage}/${r.topic}#${r.rep}${a.error ? ` ${a.error}` : ""}\n`);
+  }), model.includes("/") ? 4 : 1)));
+  writeFileSync(repliesFile, rows.map((r) => JSON.stringify(r)).join("\n") + "\n");
+
+  const judged = readJsonl<Judged>(judgeFile);
+  const stale = new Set(failed.map((r) => `${r.stage}/${r.topic}/${r.rep}`));
+  for (const j of judged.filter((j) => j.error)) stale.add(`${j.stage}/${j.topic}/${j.rep}`);
+  const fresh = await pool([...stale].map((k) => async () => {
+    const [stage, topic, rep] = k.split("/");
+    const j = await judgeGroup(rows, stage!, topic!, topics.get(topic!)!.prompt, Number(rep), key);
+    process.stderr.write(`${j.error ? "✗" : "✓"} rejudge ${k}${j.error ? ` ${j.error}` : ""}\n`);
+    return j;
+  }), 1);
+  const kept = judged.filter((j) => !stale.has(`${j.stage}/${j.topic}/${j.rep}`));
+  writeFileSync(judgeFile, [...kept, ...fresh].map((j) => JSON.stringify(j)).join("\n") + "\n");
+  rescore(runDir);
+}
+
+function rescore(runDir: string) {
+  const rows = readJsonl<Row>(join(runDir, "replies.jsonl")).map((r) => ({ ...r, metrics: r.error ? undefined : scoreReply(r.reply, r.spec) }));
+  const judged = readJsonl<Judged>(join(runDir, "judge.jsonl"));
+  const models = [...new Set(rows.map((r) => r.model))];
+  const stages = readJson<{ stages: Stage[] }>("stages.json").stages.filter((s) => rows.some((r) => r.stage === s.id));
+  const auto = report(rows, judged, models, stages, runDir);
+  writeResults(auto);
+  console.log(auto);
+}
+
+async function main() {
+  const rescoreDir = arg("rescore");
+  if (rescoreDir) return rescore(rescoreDir);
+  const fillDir = arg("fill");
+  if (fillDir) return fill(fillDir);
+
+  const models = (arg("models") ?? DEFAULT_MODELS.join(",")).split(",");
+  const reps = Number(arg("reps") ?? 2);
+  const stageArg = arg("stage") ?? "all";
+  const cfg = readJson<{ seed: string; stages: Stage[] }>("stages.json");
+  const stages = cfg.stages.filter((s) => stageArg === "all" || s.id === stageArg);
+  const topics = readJson<Topic[]>("topics.json");
+  const built: Built[] = stages.flatMap((s) => buildStage(s, topics, cfg.seed));
+
+  if (process.argv.includes("--dry")) {
+    for (const b of built) console.log(`## ${b.stage.id} / ${b.topic.id}\n${b.instruction}\n`);
+    console.log(`${built.length} instructions × ${reps} reps × ${models.length} models = ${built.length * reps * models.length} replies`);
+    return;
+  }
+
+  const key = [...models, JUDGE_MODEL].some((m) => m.includes("/")) ? openrouterKey() : "";
+  const runDir = join(DIR, "out", new Date().toISOString().replace(/[:.]/g, "-"));
+  mkdirSync(runDir, { recursive: true });
+  const repliesFile = join(runDir, "replies.jsonl");
+
+  // brew-style bars on a terminal; plain lines when piped or run in the background
+  const perModel = built.length * reps;
+  const judging = !process.argv.includes("--no-judge");
+  const lanes: Lane[] = [...models, ...(judging ? [`judge (${JUDGE_MODEL}, blind)`] : [])].map((name) => ({ name, done: 0, total: perModel, errors: 0 }));
+  const lane = (name: string) => lanes.find((l) => l.name === name) ?? lanes[lanes.length - 1]!;
+  const tty = process.stderr.isTTY;
+  const view = tty ? liveView(`Weaving ${built.length} instructions × ${reps} reps: ${models.join(", ")}`, () => lanes) : null;
+  const progress = (name: string, line: string, failed: boolean) => {
+    const l = lane(name); l.done++; if (failed) l.errors++;
+    if (!tty) process.stderr.write(line + "\n");
+  };
+
+  const jobsFor = (model: string) => built.flatMap((b) => Array.from({ length: reps }, (_, rep) => async (): Promise<Row> => {
+    const a = await ask(model, SYSTEM, `${b.instruction}\n\n${b.topic.prompt}`, key);
+    const row: Row = { model, stage: b.stage.id, topic: b.topic.id, rep, reply: a.text, error: a.error, costUsd: a.costUsd, spec: b.spec, hasRule: b.hasRule, wantsSentence: b.wantsSentence };
+    appendFileSync(repliesFile, JSON.stringify(row) + "\n");
+    progress(model, `${a.error ? "✗" : "✓"} ${model} ${b.stage.id}/${b.topic.id}#${rep} ${a.ms}ms${a.error ? ` ${a.error}` : ""}`, !!a.error);
+    return { ...row, metrics: a.error ? undefined : scoreReply(a.text, b.spec) };
+  }));
+  // cheap models in parallel; the subscription one strictly one call at a time
+  const rows = (await Promise.all(models.map((m) => pool(jobsFor(m), m.includes("/") ? 4 : 1)))).flat();
+
+  const judged: Judged[] = [];
+  if (!process.argv.includes("--no-judge")) {
+    const judgeFile = join(runDir, "judge.jsonl");
+    const groups = built.flatMap((b) => Array.from({ length: reps }, (_, rep) => ({ b, rep })));
+    const jobs = groups.map(({ b, rep }) => async () => {
+      const j = await judgeGroup(rows, b.stage.id, b.topic.id, b.topic.prompt, rep, key);
+      appendFileSync(judgeFile, JSON.stringify(j) + "\n");
+      progress("judge", `${j.error ? "✗" : "✓"} judge ${j.stage}/${j.topic}#${rep}${j.error ? ` ${j.error}` : ""}`, !!j.error);
+      return j;
+    });
+    judged.push(...(await pool(jobs, JUDGE_MODEL.includes("/") ? 4 : 1)));
+  }
+
+  view?.stop();
+  const auto = report(rows, judged, models, stages, runDir);
+  writeResults(auto);
+  console.log(auto);
+  console.log(`\nraw replies: ${runDir}\nresults: ${RESULTS}`);
 }
 
 await main();

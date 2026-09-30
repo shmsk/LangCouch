@@ -27,11 +27,7 @@ All three must be green before a PR. CI runs the same commands.
 
 ### Weave eval
 
-[`evals/weave.ts`](evals/weave.ts) measures how well a model follows the weave instruction, not just whether it weaves at all. Every model gets the same instructions, built by the real `buildInstruction` from the Spanish wordlist, over the prompts in [`evals/cases.json`](evals/cases.json) (prose, code, shell, git). The metrics in [`evals/metrics.ts`](evals/metrics.ts) are plain checks you can verify by reading a reply: share of listed words woven, words woven that were not on the list, self-glosses like `tiempo (tiempo)`, wrong glosses, listed words left without the `**word** (translation)` format, code or identifiers touched, over-weaving, and whether the rule word and the level 7+ sentence showed up.
-
-- `bun evals/weave.ts --dry` prints the instructions and prompts, no network.
-- `bun evals/weave.ts [--models a,b] [--reps 2] [--cases id,id]` runs it. A model id without a slash (`opus`) goes through your local `claude` CLI and your Claude subscription; `provider/model` goes to OpenRouter, with the key read from the macOS Keychain (`security add-generic-password -s langcouch-openrouter -a "$USER" -w`) or `OPENROUTER_API_KEY`.
-- It prints a table per model and saves the raw replies to `evals/out/` (gitignored). Read some of them: the numbers are a map, not the verdict.
+[`evals/`](evals/README.md) measures how well models follow the weave instruction, at three learner stages and on five everyday topics, with deterministic metrics and a blind judge. How it works and how to run it: [`evals/README.md`](evals/README.md). Latest numbers: [`evals/RESULTS.md`](evals/RESULTS.md).
 
 ## Ground rules
 

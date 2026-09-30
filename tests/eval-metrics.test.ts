@@ -51,6 +51,8 @@ describe("weave eval metrics", () => {
     expect(glossMatches("houses", "house")).toBe(true);
     expect(glossMatches("leaving", "to leave")).toBe(true);
     expect(glossMatches("carry", "to leave")).toBe(false);
+    expect(glossMatches("women", "woman")).toBe(true);
+    expect(glossMatches("teeth", "tooth")).toBe(true);
   });
 
   test("with a lexicon, off-list means a real Spanish word, bolded with or without a gloss", () => {
@@ -67,5 +69,11 @@ describe("weave eval metrics", () => {
   test("a plain Spanish sentence followed by its translation counts", () => {
     expect(scoreReply("El **tren** cuesta **dinero**, la **comida** es buena. (The train costs money; the food is good.)", spec).sentence).toBe(true);
     expect(scoreReply("Take the train to Belém (it is quick and cheap).", spec).sentence).toBe(false);
+  });
+
+  test("words inside the Spanish sentence are not counted as unglossed", () => {
+    const m = scoreReply("**Hoy empieza un día libre en la casa.** (Today begins a free day at home.)", spec);
+    expect(m.sentence).toBe(true);
+    expect(m.unformatted).toEqual([]);
   });
 });

@@ -74,9 +74,11 @@ const ES_FUNCTION = new Set(["el", "la", "los", "las", "es", "son", "está", "es
 const matchesLemma = (token: string, lemma: string) => token.startsWith(stem(lemma));
 
 /** Does a gloss carry the listed translation? Compares content words by prefix, so "left" ≈ "leave" fails but "houses" ≈ "house" passes. */
+const IRREGULAR: Record<string, string> = { men: "man", women: "woman", children: "child", teeth: "tooth", feet: "foot", people: "person", mice: "mouse" };
+
 export function glossMatches(given: string, listed: string): boolean {
   const want = tokens(listed).filter((t) => t.length >= 3 && t !== "the");
-  const got = tokens(given);
+  const got = tokens(given).map((g) => IRREGULAR[g] ?? g);
   return want.length === 0 || want.some((w) => got.some((g) => g.startsWith(w.slice(0, 4)) || w.startsWith(g.slice(0, 4))));
 }
 
@@ -91,6 +93,7 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
   const wrongGloss: string[] = [];
   let ruleUsed = false;
   let sentence = false;
+  const sentences: string[] = [];
   const lexicon = spec.lexicon ? new Set(spec.lexicon.map(norm)) : null;
   const inLexicon = (t: string) => t.length >= 3 && (lexicon!.has(t) || lexicon!.has(t.replace(/e?s$/, "")));
 
@@ -100,7 +103,7 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
     // a rule word or a listed cognate may be spelled like its gloss by design (natural = natural, color = color)
     const cognate = spec.served.some((s) => norm(s.target) === norm(s.gloss) && toks.includes(norm(s.target)));
     if (norm(p.word) === norm(p.gloss) && !ruleWord && !cognate) selfGloss.push(`${p.word} (${p.gloss})`);
-    if (toks.length >= 4) { sentence = true; continue; }
+    if (toks.length >= 4) { sentence = true; sentences.push(p.word); continue; }
     const hit = spec.served.find((s) => toks.some((t) => matchesLemma(t, s.target) || inflects(t, s.target)));
     if (hit) {
       woven.add(hit.target);
@@ -124,11 +127,12 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
   // or plain: a stretch with Spanish function words, then a translation of 4+ words in parentheses
   for (const m of prose.matchAll(/([^.!?:\n(]{12,200}[.!?]?)\s*\(([^)\n]{12,})\)/g)) {
     const fn = tokens(m[1]!.replace(/\*/g, "")).filter((t) => ES_FUNCTION.has(t)).length;
-    if (fn >= 2 && tokens(m[2]!).length >= 4) sentence = true;
+    if (fn >= 2 && tokens(m[2]!).length >= 4) { sentence = true; sentences.push(m[1]!); }
   }
 
   // a served word in prose that never got the bold+gloss treatment
-  const proseTokens = tokens(prose);
+  // words inside the Spanish sentence are its content, not unglossed weaves
+  const proseTokens = tokens(sentences.reduce((acc, x) => acc.replace(x, " "), prose));
   const unformatted = spec.served
     .filter((s) => !woven.has(s.target) && proseTokens.some((t) => inflects(t, s.target)))
     .map((s) => s.target);

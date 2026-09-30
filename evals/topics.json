@@ -1,0 +1,25 @@
+[
+  {
+    "id": "tech",
+    "prompt": "This function returns undefined for an empty array instead of 0. Fix it and explain the bug briefly.\n\n```ts\nexport function sumPrices(items: { price: number }[]) {\n  let total;\n  for (const item of items) total = (total ?? 0) + item.price;\n  return total;\n}\n```",
+    "mustKeep": ["sumPrices", "item.price"]
+  },
+  {
+    "id": "marketing",
+    "prompt": "Write a LinkedIn post announcing Tidy, a small app that turns messy voice notes into a clean to-do list. A headline, three short paragraphs, and a call to action to join the beta.",
+    "mustKeep": ["Tidy"]
+  },
+  {
+    "id": "meeting",
+    "prompt": "Summarise this planning meeting: a short summary, the decisions, and action items with owners and dates.\n\nMaya: OK, the checkout redesign. Where are we?\nTom: Design is done. Engineering estimate is two sprints.\nPriya: Two sprints pushes us past the October 21 release.\nMaya: Can we ship the new payment screen alone on the 21st and the rest later?\nTom: Yes, the payment screen is independent. One sprint.\nPriya: Then QA needs the build by October 14.\nMaya: Agreed. Tom, build to QA by the 14th. Priya, test plan by Friday.\nPriya: Fine. And the old coupon field?\nMaya: Keep it for now. We decide after the release.\nTom: I'll also write up the migration risks for the second half.\nMaya: Great. Let's meet again on October 22 to review.",
+    "mustKeep": ["Maya", "Tom", "Priya"]
+  },
+  {
+    "id": "travel",
+    "prompt": "I have one free day in Lisbon. What should I do from morning to evening?"
+  },
+  {
+    "id": "finance",
+    "prompt": "How do I build a simple monthly budget on a single income of $3,000 after tax? Show a sample split and explain the reasoning."
+  }
+]
