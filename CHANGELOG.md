@@ -6,6 +6,21 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps. No version so far has needed any.
 
+## [0.5.0] - 2026-09-30
+
+### Added
+- Hermes Agent support: `langcouch install hermes` puts a plugin into
+  `$HERMES_HOME/plugins/langcouch/`, then `hermes plugins enable langcouch`. It works in the
+  Hermes CLI and on gateway platforms such as Telegram.
+- OpenClaw support: `langcouch install openclaw` generates a plugin and prints the three
+  commands that link, allow and enable it.
+- `/langcouch status`, `/langcouch lang pt`, `/langcouch level up`, `/langcouch pause` and
+  `/langcouch resume` inside Hermes and OpenClaw chats.
+- Every host except Claude Code is now tested end to end in CI on a clean machine: Codex
+  CLI, opencode, Hermes Agent and OpenClaw. The tests check that the plugin loads, that the
+  instruction reaches the model, and that real models (DeepSeek, GLM) weave the words they
+  were given.
+
 ## [0.4.0] - 2026-09-28
 
 ### Added

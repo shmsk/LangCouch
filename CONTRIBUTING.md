@@ -17,6 +17,14 @@ bun tests/validate-wordlist.ts  # data validation (add --full when contributing 
 
 All three must be green before a PR. CI runs the same commands.
 
+### Host smoke tests
+
+[`.github/workflows/hosts-smoke.yml`](.github/workflows/hosts-smoke.yml) installs Codex CLI, opencode, Hermes Agent and OpenClaw on a clean runner and checks each adapter end to end. Never run these hosts on your own machine for this; the runner is thrown away afterwards.
+
+- **Fake-model jobs** point each host at [`tests/smoke/fake-llm.ts`](tests/smoke/fake-llm.ts), a tiny stand-in for an OpenAI-compatible API. It records every request and always answers "ok". The job passes when a recorded request contains the `<langcouch>` block: the plugin loaded, the hook fired, and the block reached the model. No API key needed, and the result is the same every run.
+- **Live jobs** run each host on real cheap models through OpenRouter. They pass when the reply contains, as `**word** (translation)`, at least one of the words the hook served in that run (read back from the state file). They run only after all fake-model jobs pass, and never on pull requests, because they need the `OPENROUTER_API_KEY` secret.
+- To run the live jobs in your fork, add your own `OPENROUTER_API_KEY` secret with a spending limit, then start the workflow by hand in the Actions tab. The key is given only to the step that calls the model, and is never written to disk.
+
 ## Ground rules
 
 - TypeScript + bun; no runtime dependencies (the hook must start in milliseconds).

@@ -4,7 +4,7 @@ English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
 
 **Learn a language without getting off the couch — or leaving your terminal.**
 
-LangCouch weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
+LangCouch weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "why is the deploy failing?"
 > Agent: "Port 8080 is still held by a **viejo** (old) process from your **primero** (first) run this morning. Kill it with `lsof -ti :8080 | xargs kill` and the deploy will go through **ahora** (now)."
@@ -72,6 +72,31 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 ```
 
 Codex skips any hook you haven't reviewed, so the `/hooks` step is needed once (and again if the hook command changes). A project-scope hook also needs the project to be trusted. If you installed the old experimental version, the installer removes its `AGENTS.md` section for you. Codex currently shows the injected instruction as a visible developer message in the transcript ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); it's cosmetic.
+
+### As a Hermes Agent plugin
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install hermes           # $HERMES_HOME/plugins/langcouch/ (default ~/.hermes)
+hermes plugins enable langcouch         # Hermes plugins are opt-in
+# restart hermes — replies start weaving Spanish
+```
+
+The plugin is a small Python file that hands every turn to the LangCouch CLI through Hermes' `pre_llm_call` hook, so it works the same in the CLI and on gateway platforms like Telegram. Control it from any session with `/langcouch status`, `/langcouch lang pt`, `/langcouch level up`, `/langcouch pause` / `/langcouch resume`. You don't need Python yourself beyond what Hermes already ships with.
+
+### As an OpenClaw plugin
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install openclaw         # generates the plugin in ~/.langcouch/openclaw-plugin/
+openclaw plugins install --link ~/.langcouch/openclaw-plugin --force --accept-capabilities
+openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
+openclaw plugins enable langcouch
+```
+
+OpenClaw only runs prompt hooks of plugins you have allowed, so the `allowConversationAccess` line is required. The plugin uses the `before_prompt_build` hook, and `/langcouch status`, `/langcouch lang pt`, `/langcouch pause` work in any chat channel. OpenClaw's `claude-cli` provider doesn't run prompt hooks ([openclaw/openclaw#65157](https://github.com/openclaw/openclaw/issues/65157)); every other provider does.
 
 ## Will it make my agent's answers worse?
 
@@ -147,6 +172,10 @@ What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update
 | Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch`, or `langcouch install claude` | `UserPromptSubmit` hook (context injection, reliable) |
 | opencode | **Production** (plugin) + **experimental** (fallback) | `langcouch install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback |
 | Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | `UserPromptSubmit` hook in `hooks.json` (context injection, reliable) |
+| Hermes Agent | **Production** | `langcouch install hermes` | `pre_llm_call` plugin hook (context appended to your message) |
+| OpenClaw | **Production** | `langcouch install openclaw` | `before_prompt_build` plugin hook (`prependContext`) |
+
+Codex CLI, opencode, Hermes Agent and OpenClaw are installed on a clean CI runner and tested end to end ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): the plugin loads, the block reaches the model, and real models on OpenRouter weave the words they were given.
 
 Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook contract any adapter must satisfy: never break the host session (on any error, print nothing and exit 0).
 
@@ -167,6 +196,8 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `install claude [--scope project\|user]` | register the UserPromptSubmit hook |
 | `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for opencode |
 | `install codex [--scope project\|user]` | register the UserPromptSubmit hook in Codex CLI's `hooks.json` |
+| `install hermes` | install the Hermes Agent plugin into `$HERMES_HOME/plugins/langcouch/` |
+| `install openclaw` | generate the OpenClaw plugin and print the commands that link and enable it |
 
 ## Spinner tips (opt-in)
 
@@ -189,6 +220,8 @@ The hook runs locally. It reads your prompt only to scan it for words you've alr
 - **Manual Claude Code hook:** remove the `UserPromptSubmit` entry whose command ends in `src/cli.ts hook` in `.claude/settings.json` (or `~/.claude/settings.json` if you installed with `--scope user`).
 - **opencode:** delete `langcouch.ts` from `.opencode/plugin/` (or `~/.config/opencode/plugin/`) and the section between `<!-- langcouch:start -->` and `<!-- langcouch:end -->` in `AGENTS.md`.
 - **Codex CLI:** remove the `UserPromptSubmit` and `SessionStart` entries whose command ends in `src/cli.ts hook` from `~/.codex/hooks.json` (or `.codex/hooks.json` for `--scope project`).
+- **Hermes Agent:** `hermes plugins disable langcouch`, then delete `~/.hermes/plugins/langcouch/` (or under your `$HERMES_HOME`).
+- **OpenClaw:** `openclaw plugins uninstall langcouch`, then delete `~/.langcouch/openclaw-plugin/`.
 - **Your progress:** `rm -rf ~/.langcouch` (skip this if you might come back — progress survives reinstalls).
 
 ## Contributing

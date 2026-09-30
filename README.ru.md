@@ -6,7 +6,7 @@
 
 **Учите язык, не вставая с дивана и не выходя из терминала.**
 
-LangCouch вплетает слова изучаемого языка в ответы вашего AI-агента для кода (Claude Code, opencode, Codex CLI). Это техника *diglot weave*: вы работаете как обычно, а в ответах постепенно появляются слова на новом языке. Сначала 3–5 на ответ, потом чаще и сложнее, вплоть до правил словообразования, словосочетаний и простых конструкций. Никаких уроков. Погружение вместо зубрёжки.
+LangCouch вплетает слова изучаемого языка в ответы вашего AI-агента для кода (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw). Это техника *diglot weave*: вы работаете как обычно, а в ответах постепенно появляются слова на новом языке. Сначала 3–5 на ответ, потом чаще и сложнее, вплоть до правил словообразования, словосочетаний и простых конструкций. Никаких уроков. Погружение вместо зубрёжки.
 
 > Вы: «почему падает деплой?»
 > Агент: «Порт 8080 всё ещё держит **viejo** (старый) процесс от вашего **primero** (первый) утреннего запуска. Завершите его командой `lsof -ti :8080 | xargs kill`, и деплой пройдёт **ahora** (сейчас).»
@@ -74,6 +74,31 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 ```
 
 Codex не запускает хуки, которые вы не одобрили, поэтому шаг с `/hooks` нужен один раз (и снова, если команда хука изменится). Хуку с `--scope project` нужно ещё, чтобы сам проект был доверенным. Если у вас стояла старая экспериментальная версия, установщик сам удалит её секцию из `AGENTS.md`. Сейчас Codex показывает вставленную инструкцию в переписке как видимое developer-сообщение ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); это чисто косметика.
+
+### Как плагин Hermes Agent
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install hermes           # $HERMES_HOME/plugins/langcouch/ (default ~/.hermes)
+hermes plugins enable langcouch         # Hermes plugins are opt-in
+# restart hermes — replies start weaving Spanish
+```
+
+Плагин — небольшой Python-файл, который через хук Hermes `pre_llm_call` передаёт каждый ход в CLI LangCouch, поэтому он одинаково работает и в CLI, и в мессенджерах вроде Telegram. Управлять им можно из любой сессии: `/langcouch status`, `/langcouch lang pt`, `/langcouch level up`, `/langcouch pause` / `/langcouch resume`. Ставить Python отдельно не нужно, хватит того, что уже идёт вместе с Hermes.
+
+### Как плагин OpenClaw
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install openclaw         # generates the plugin in ~/.langcouch/openclaw-plugin/
+openclaw plugins install --link ~/.langcouch/openclaw-plugin --force --accept-capabilities
+openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
+openclaw plugins enable langcouch
+```
+
+OpenClaw запускает хуки промпта только у тех плагинов, которым вы это разрешили, поэтому строка с `allowConversationAccess` обязательна. Плагин использует хук `before_prompt_build`, а `/langcouch status`, `/langcouch lang pt`, `/langcouch pause` работают в любом канале чата. Провайдер `claude-cli` в OpenClaw хуки промпта не запускает ([openclaw/openclaw#65157](https://github.com/openclaw/openclaw/issues/65157)); все остальные провайдеры запускают.
 
 ## Не станут ли ответы агента хуже?
 
@@ -149,6 +174,10 @@ flowchart LR
 | Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch` или `langcouch install claude` | хук `UserPromptSubmit` (добавление в контекст, надёжно) |
 | opencode | **Production** (плагин) + **экспериментально** (запасной путь) | `langcouch install opencode [--scope project\|user]` | хук плагина `experimental.chat.messages.transform` + запасная секция в AGENTS.md |
 | Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | хук `UserPromptSubmit` в `hooks.json` (добавление в контекст, надёжно) |
+| Hermes Agent | **Production** | `langcouch install hermes` | хук плагина `pre_llm_call` (контекст добавляется к вашему сообщению) |
+| OpenClaw | **Production** | `langcouch install openclaw` | хук плагина `before_prompt_build` (`prependContext`) |
+
+Codex CLI, opencode, Hermes Agent и OpenClaw устанавливаются на чистый CI-раннер и проверяются от начала до конца ([workflow hosts-smoke](.github/workflows/hosts-smoke.yml)): плагин загружается, блок доходит до модели, а настоящие модели на OpenRouter вплетают выданные им слова.
 
 Адаптер для вашего CLI приветствуется, см. [CONTRIBUTING.md](CONTRIBUTING.md). Контракт хука, который обязан соблюдать любой адаптер: никогда не ломать сессию хоста (при любой ошибке ничего не печатать и выйти с кодом 0).
 
@@ -169,6 +198,8 @@ flowchart LR
 | `install claude [--scope project\|user]` | регистрирует хук UserPromptSubmit |
 | `install opencode [--scope project\|user]` | ставит плагин + запасную секцию в AGENTS.md для opencode |
 | `install codex [--scope project\|user]` | регистрирует хук UserPromptSubmit в `hooks.json` Codex CLI |
+| `install hermes` | ставит плагин Hermes Agent в `$HERMES_HOME/plugins/langcouch/` |
+| `install openclaw` | генерирует плагин OpenClaw и печатает команды, которые подключают и включают его |
 
 ## Подсказки в спиннере (по желанию)
 
@@ -191,6 +222,8 @@ flowchart LR
 - **Ручной хук Claude Code:** удалите запись `UserPromptSubmit`, команда которой заканчивается на `src/cli.ts hook`, из `.claude/settings.json` (или `~/.claude/settings.json`, если ставили с `--scope user`).
 - **opencode:** удалите `langcouch.ts` из `.opencode/plugin/` (или `~/.config/opencode/plugin/`) и секцию между `<!-- langcouch:start -->` и `<!-- langcouch:end -->` в `AGENTS.md`.
 - **Codex CLI:** удалите записи `UserPromptSubmit` и `SessionStart`, команда которых заканчивается на `src/cli.ts hook`, из `~/.codex/hooks.json` (или `.codex/hooks.json` для `--scope project`).
+- **Hermes Agent:** `hermes plugins disable langcouch`, затем удалите `~/.hermes/plugins/langcouch/` (или каталог в вашем `$HERMES_HOME`).
+- **OpenClaw:** `openclaw plugins uninstall langcouch`, затем удалите `~/.langcouch/openclaw-plugin/`.
 - **Ваш прогресс:** `rm -rf ~/.langcouch` (не делайте этого, если можете вернуться: прогресс переживает переустановку).
 
 ## Участие в проекте
