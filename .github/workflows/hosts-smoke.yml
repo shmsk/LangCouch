@@ -5,12 +5,29 @@ name: Host smoke tests
 #   fake-model jobs: the plugin loads, the hook fires, and the <langcouch>
 #     block reaches the model request. No API key needed.
 #   live jobs: a real cheap model on OpenRouter actually weaves words.
-#     Manual or hosts-smoke branch only, never on PRs from forks.
+#     Never on pull requests: they need the OPENROUTER_API_KEY secret.
+# Runs when adapter code changes, weekly (to catch a host release that breaks
+# a plugin), and by hand from the Actions tab.
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
   push:
-    branches: [hosts-smoke]
+    branches: [main, hosts-smoke]
+    paths:
+      - "adapters/**"
+      - "src/**"
+      - "scripts/**"
+      - "tests/smoke/**"
+      - ".github/workflows/hosts-smoke.yml"
+  pull_request:
+    paths:
+      - "adapters/**"
+      - "src/**"
+      - "scripts/**"
+      - "tests/smoke/**"
+      - ".github/workflows/hosts-smoke.yml"
 
 env:
   HERMES_VERSION: "0.19.0"
@@ -250,6 +267,7 @@ jobs:
 
   live:
     needs: [hermes-fake, openclaw-fake, codex-fake, opencode-fake]
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:

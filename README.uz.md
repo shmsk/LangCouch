@@ -6,7 +6,7 @@
 
 **Divandan turmasdan — yoki terminalingizni tark etmasdan — til oʻrganing.**
 
-LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javoblariga toʻqib boradi (Claude Code, opencode, Codex CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
+LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javoblariga toʻqib boradi (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
 
 > Siz: "nega deploy muvaffaqiyatsiz boʻlyapti?"
 > Agent: "8080-portni ertalabki **primero** (birinchi) ishga tushirishdan qolgan **viejo** (eski) jarayon hali ham band qilib turibdi. Uni `lsof -ti :8080 | xargs kill` bilan toʻxtating, deploy **ahora** (hozir) oʻtadi."
@@ -74,6 +74,31 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 ```
 
 Codex siz koʻrib chiqmagan hooklarni ishga tushirmaydi, shuning uchun `/hooks` qadami bir marta kerak (hook buyrugʻi oʻzgarsa, yana). `--scope project` hooki uchun loyihaning oʻzi ham ishonchli boʻlishi kerak. Agar eski eksperimental versiya oʻrnatilgan boʻlsa, oʻrnatuvchi uning `AGENTS.md` boʻlimini oʻzi olib tashlaydi. Hozircha Codex qoʻshilgan koʻrsatmani suhbatda koʻrinadigan developer xabari sifatida koʻrsatadi ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); bu faqat tashqi koʻrinish masalasi.
+
+### Hermes Agent plagini sifatida
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install hermes           # $HERMES_HOME/plugins/langcouch/ (default ~/.hermes)
+hermes plugins enable langcouch         # Hermes plugins are opt-in
+# restart hermes — replies start weaving Spanish
+```
+
+Plagin — Hermes'ning `pre_llm_call` hooki orqali har bir navbatni LangCouch CLI'ga uzatadigan kichik Python fayli, shuning uchun u CLI'da ham, Telegram kabi gateway platformalarida ham bir xil ishlaydi. Uni istalgan sessiyadan `/langcouch status`, `/langcouch lang pt`, `/langcouch level up`, `/langcouch pause` / `/langcouch resume` bilan boshqaring. Hermes bilan birga keladigan Pythondan tashqari sizga Python kerak emas.
+
+### OpenClaw plagini sifatida
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install openclaw         # generates the plugin in ~/.langcouch/openclaw-plugin/
+openclaw plugins install --link ~/.langcouch/openclaw-plugin --force --accept-capabilities
+openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
+openclaw plugins enable langcouch
+```
+
+OpenClaw prompt hooklarini faqat siz ruxsat bergan plaginlar uchun ishga tushiradi, shuning uchun `allowConversationAccess` qatori shart. Plagin `before_prompt_build` hookidan foydalanadi, `/langcouch status`, `/langcouch lang pt`, `/langcouch pause` esa istalgan chat kanalida ishlaydi. OpenClaw'ning `claude-cli` provayderi prompt hooklarini ishga tushirmaydi ([openclaw/openclaw#65157](https://github.com/openclaw/openclaw/issues/65157)); qolgan barcha provayderlar ishga tushiradi.
 
 ## Bu agentimning javoblarini yomonlashtiradimi?
 
@@ -149,6 +174,10 @@ Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangila
 | Claude Code | **Ishlab chiqarishda** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch`, yoki `langcouch install claude` | `UserPromptSubmit` hook (kontekstga kiritish, ishonchli) |
 | opencode | **Ishlab chiqarishda** (plagin) + **eksperimental** (zaxira) | `langcouch install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plagin hooki + AGENTS.md orqali oʻz-oʻzidan ishlaydigan zaxira |
 | Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | `hooks.json`dagi `UserPromptSubmit` hook (kontekstga qoʻshish, ishonchli) |
+| Hermes Agent | **Production** | `langcouch install hermes` | `pre_llm_call` plagin hooki (kontekst xabaringizga qoʻshiladi) |
+| OpenClaw | **Production** | `langcouch install openclaw` | `before_prompt_build` plagin hooki (`prependContext`) |
+
+Codex CLI, opencode, Hermes Agent va OpenClaw toza CI runnerga oʻrnatilib, boshidan oxirigacha sinovdan oʻtkaziladi ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): plagin yuklanadi, blok modelga yetib boradi, OpenRouterdagi haqiqiy modellar esa ularga berilgan soʻzlarni toʻqiydi.
 
 Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md). Har qanday adapter rioya qilishi kerak boʻlgan hook shartnomasi: xost sessiyasini hech qachon buzmaslik (har qanday xatoda hech narsa chop etmasdan 0 bilan chiqish).
 
@@ -169,6 +198,8 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `install claude [--scope project\|user]` | `UserPromptSubmit` hookni roʻyxatdan oʻtkazadi |
 | `install opencode [--scope project\|user]` | opencode uchun plagin + AGENTS.md zaxirasini oʻrnatadi |
 | `install codex [--scope project\|user]` | Codex CLI `hooks.json` fayliga UserPromptSubmit hookini roʻyxatdan oʻtkazadi |
+| `install hermes` | Hermes Agent plaginini `$HERMES_HOME/plugins/langcouch/` ichiga oʻrnatadi |
+| `install openclaw` | OpenClaw plaginini yaratadi va uni ulash hamda yoqish buyruqlarini chop etadi |
 
 ## Spinner maslahatlari (ixtiyoriy)
 
@@ -191,6 +222,8 @@ Hook lokal tarzda ishlaydi. U soʻrovingizni faqat allaqachon koʻrgan soʻzlari
 - **Qoʻlda oʻrnatilgan Claude Code hooki:** `.claude/settings.json` faylida (yoki `--scope user` bilan oʻrnatgan boʻlsangiz `~/.claude/settings.json`da) buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit` yozuvini oʻchiring.
 - **opencode:** `.opencode/plugin/` dan (yoki `~/.config/opencode/plugin/` dan) `langcouch.ts` faylini va `AGENTS.md` ichidagi `<!-- langcouch:start -->` bilan `<!-- langcouch:end -->` orasidagi boʻlimni oʻchiring.
 - **Codex CLI:** `~/.codex/hooks.json` (yoki `--scope project` uchun `.codex/hooks.json`) faylidan buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit` va `SessionStart` yozuvlarini oʻchiring.
+- **Hermes Agent:** `hermes plugins disable langcouch`, keyin `~/.hermes/plugins/langcouch/` papkasini (yoki `$HERMES_HOME` ichidagisini) oʻchiring.
+- **OpenClaw:** `openclaw plugins uninstall langcouch`, keyin `~/.langcouch/openclaw-plugin/` papkasini oʻchiring.
 - **Progressingiz:** `rm -rf ~/.langcouch` (agar qaytib kelishingiz mumkin boʻlsa, buni bajarmang — progress qayta oʻrnatishlardan omon qoladi).
 
 ## Hissa qoʻshish
