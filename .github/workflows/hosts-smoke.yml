@@ -15,6 +15,7 @@ on:
 env:
   HERMES_VERSION: "0.19.0"
   OPENCLAW_VERSION: "2026.9.7"
+  CODEX_VERSION: "0.159.2"
   FAKE_LLM_PORT: "4010"
   LIVE_PROMPT: "In four or five plain sentences, explain why morning daylight helps people wake up."
 
@@ -138,14 +139,61 @@ jobs:
           cat "$RUNNER_TEMP/fake-llm.out" || true
           openclaw plugins doctor --json || true
 
+  codex-fake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Isolated dirs
+        run: |
+          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "CODEX_HOME=$RUNNER_TEMP/codex" >> "$GITHUB_ENV"
+          echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
+      - run: bun install
+      - name: Install Codex
+        run: npm install -g "@openai/codex@$CODEX_VERSION" && codex --version
+      - name: Install the LangCouch hook
+        run: |
+          bun src/cli.ts init && bun src/cli.ts level 5
+          bun src/cli.ts install codex --scope user
+          cat "$CODEX_HOME/hooks.json"
+      - name: Point Codex at the fake model
+        run: |
+          cat > "$CODEX_HOME/config.toml" <<EOF
+          model_provider = "fake"
+          model = "fake-model"
+          [model_providers.fake]
+          name = "fake"
+          base_url = "http://127.0.0.1:$FAKE_LLM_PORT/v1"
+          wire_api = "responses"
+          env_key = "FAKE_API_KEY"
+          EOF
+      - name: Start the fake model
+        run: |
+          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/fake-llm.out"; exit 1
+      - name: One turn against the fake model
+        # --dangerously-bypass-hook-trust stands in for the one-time /hooks review a user does
+        run: FAKE_API_KEY=x codex exec --skip-git-repo-check --ephemeral --dangerously-bypass-hook-trust -s read-only "hello from CI"
+      - name: The <langcouch> block reached the model
+        run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: Logs on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/fake-llm.out" || true
+
   live:
-    needs: [hermes-fake, openclaw-fake]
+    needs: [hermes-fake, openclaw-fake, codex-fake]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        host: [hermes, openclaw]
+        host: [hermes, openclaw, codex]
         model: ["deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3-flash"]
     env:
       MODEL: ${{ matrix.model }}
@@ -157,7 +205,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         if: matrix.host == 'hermes'
       - uses: actions/setup-node@v4
-        if: matrix.host == 'openclaw'
+        if: matrix.host == 'openclaw' || matrix.host == 'codex'
         with:
           node-version: 24
       - name: Isolated dirs
@@ -165,6 +213,7 @@ jobs:
           echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
           echo "HERMES_HOME=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
           echo "OPENCLAW_HOME=$RUNNER_TEMP/ochome" >> "$GITHUB_ENV"
+          echo "CODEX_HOME=$RUNNER_TEMP/codex" >> "$GITHUB_ENV"
       - run: bun install && bun src/cli.ts init && bun src/cli.ts lang es && bun src/cli.ts level 5
       - name: Hermes setup
         if: matrix.host == 'hermes'
@@ -182,17 +231,31 @@ jobs:
           openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force --accept-capabilities
           openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
           openclaw plugins enable langcouch
+      - name: Codex setup
+        if: matrix.host == 'codex'
+        run: |
+          npm install -g "@openai/codex@$CODEX_VERSION"
+          bun src/cli.ts install codex --scope user
+          cat > "$CODEX_HOME/config.toml" <<EOF
+          model_provider = "openrouter"
+          model = "$MODEL"
+          [model_providers.openrouter]
+          name = "OpenRouter"
+          base_url = "https://openrouter.ai/api/v1"
+          wire_api = "responses"
+          env_key = "OPENROUTER_API_KEY"
+          EOF
       - name: A real model weaves (one retry, replies vary)
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           test -n "$OPENROUTER_API_KEY" || { echo "OPENROUTER_API_KEY secret is not set"; exit 1; }
           for attempt in 1 2; do
-            if [ "${{ matrix.host }}" = hermes ]; then
-              hermes -z "$LIVE_PROMPT" --provider openrouter -m "$MODEL" > reply.txt || true
-            else
-              openclaw agent --local --agent main --message "$LIVE_PROMPT" --timeout 180 > reply.txt || true
-            fi
+            case "${{ matrix.host }}" in
+              hermes) hermes -z "$LIVE_PROMPT" --provider openrouter -m "$MODEL" > reply.txt || true ;;
+              openclaw) openclaw agent --local --agent main --message "$LIVE_PROMPT" --timeout 180 > reply.txt || true ;;
+              codex) codex exec --skip-git-repo-check --ephemeral --dangerously-bypass-hook-trust -s read-only -o reply.txt "$LIVE_PROMPT" > /dev/null || true ;;
+            esac
             if bun tests/smoke/assert-woven.ts reply reply.txt es; then
               { echo "### ${{ matrix.host }} × $MODEL"; echo; cat reply.txt; } >> "$GITHUB_STEP_SUMMARY"
               exit 0
