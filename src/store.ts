@@ -61,10 +61,15 @@ function writeStateFile(lang: string, state: State): void {
 function mergeWordState(a: WordState | undefined, b: WordState | undefined): WordState | undefined {
   if (!a || !b) return a ?? b;
   const recalls = Math.max(a.recalls ?? 0, b.recalls ?? 0);
+  // ladder fields travel together, from the record that climbed higher
+  const ladder = (b.step ?? -1) > (a.step ?? -1) ? b : a;
   return {
     exposures: Math.max(a.exposures, b.exposures),
     lastSeen: a.lastSeen > b.lastSeen ? a.lastSeen : b.lastSeen,
     ...(recalls > 0 ? { recalls } : {}),
+    ...(ladder.step !== undefined ? { step: ladder.step } : {}),
+    ...(ladder.due !== undefined ? { due: ladder.due } : {}),
+    ...(ladder.missed ? { missed: ladder.missed } : {}),
   };
 }
 

@@ -77,3 +77,34 @@ describe("weave eval metrics", () => {
     expect(m.unformatted).toEqual([]);
   });
 });
+
+describe("algorithm 3 metrics", () => {
+  const spec: CaseSpec = {
+    served: [{ target: "casa", gloss: "house" }, { target: "nombre", gloss: "name" }, { target: "tiempo", gloss: "time" }],
+    familiar: ["nombre"],
+    nudge: ["tiempo"],
+    known: ["grande"],
+    deliverable: true,
+  };
+
+  test("unglossed familiar and known words count, the glossary line is found", () => {
+    const reply = "Here is the post:\n\nA **casa** (house) with a **grande** view and a **nombre**.\n\nLike **tiempo** (time), it flies.\n\nnombre = name";
+    const m = scoreReply(reply, spec);
+    expect(m.woven.sort()).toEqual(["casa", "nombre", "tiempo"]);
+    expect(m.familiarUsed).toEqual(["nombre"]);
+    expect(m.glossaryLine).toBe(true);
+    expect(m.knownUsed).toEqual(["grande"]);
+    expect(m.nudgeWoven).toEqual(["tiempo"]);
+    expect(m.glossedFamiliar).toEqual([]);
+    expect(m.inDeliverable.sort()).toEqual(["casa", "grande", "nombre", "tiempo"]);
+    expect(m.spanishShare).toBeGreaterThan(0);
+  });
+
+  test("a familiar word with an inline translation is flagged, weaving only around the deliverable is clean", () => {
+    const reply = "Your post, **nombre** (name) ready:\n\nClean post text here.\n\nMore clean text.\n\nThat took little **tiempo** (time).";
+    const m = scoreReply(reply, spec);
+    expect(m.glossedFamiliar).toEqual(["nombre"]);
+    expect(m.inDeliverable).toEqual([]);
+    expect(m.glossaryLine).toBe(false);
+  });
+});

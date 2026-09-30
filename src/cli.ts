@@ -8,7 +8,9 @@ import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
 import { pickGrammar, markGrammarShown, grammarProgress, type GrammarItem } from "./grammar.ts";
 import { pickPattern, markPatternShown, patternCue, patternProgress, PATTERN_MIN_LEVEL, type Pattern } from "./patterns.ts";
-import { pickWords, markExposed, unlockedWords, tierProgress } from "./scheduler.ts";
+import { pickWords, markExposed, unlockedWords, tierProgress, type Pick } from "./scheduler.ts";
+import { migrate, pickLadder } from "./ladder.ts";
+import { putServed, staleServed, takeServed, settleServed, lastReply } from "./served.ts";
 import { buildInstruction } from "./instruction.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
@@ -20,25 +22,61 @@ import { installOpencode } from "../adapters/opencode/install.ts";
 import { installHermes } from "../adapters/hermes/install.ts";
 import { installOpenclaw } from "../adapters/openclaw/install.ts";
 
-function makeInstruction(mark: boolean): string {
+/**
+ * Build this turn's instruction. `mark` records the turn: algorithms 1-2 count the
+ * served words as shown right away; algorithm 3 only remembers the offer, and the
+ * Stop hook counts what the reply actually wove. SessionStart serves without an
+ * offer to settle, since no reply of its own follows it.
+ */
+function makeInstruction(mark: boolean, sessionId = "", eventName = ""): string {
   const config = loadConfig();
   if (config.enabled === false) return "";
+  const algorithm = config.algorithm ?? 1;
   const words = loadWordlist(config.lang);
   const state = loadState(config.lang);
-  const picks = pickWords(unlockedWords(words, state), state, wordsPerResponse(config.level));
+  const now = new Date().toISOString();
+  const n = wordsPerResponse(config.level);
+  let picks: Pick[];
+  let known: Word[] = [];
+  if (algorithm === 3) {
+    migrate(state);
+    const stale = mark ? staleServed(DATA_DIR, sessionId) : null;
+    if (stale && stale.lang === config.lang) settleServed(state, stale, null, now); // host with no after-reply event
+    ({ picks, known } = pickLadder(unlockedWords(words, state), state, n, now));
+  } else {
+    picks = pickWords(unlockedWords(words, state), state, n);
+  }
   if (picks.length === 0) return "";
   const stage = grammarStage(config.level);
   const grammar = stage >= 2 ? pickGrammar(loadGrammar(config.lang), words, state, stage) : null;
   const rule = config.level >= PATTERN_MIN_LEVEL ? pickPattern(loadPatterns(config.lang), config.native, state) : null;
   if (mark) {
-    const now = new Date().toISOString();
-    markExposed(state, picks, now);
+    if (algorithm !== 3) markExposed(state, picks, now);
+    else if (eventName !== "SessionStart") {
+      const ids = (ws: Word[]) => Object.fromEntries(ws.map((w) => [w.id, w.target]));
+      putServed(DATA_DIR, sessionId, { lang: config.lang, at: now, picks: ids(picks.map((p) => p.word)), known: ids(known) });
+    }
     if (grammar) markGrammarShown(state, grammar, now);
     if (rule) markPatternShown(state, rule, now);
     saveState(config.lang, state);
   }
   const cue = rule ? patternCue(rule, config.native, normalizeLang(config.lang), falseFriendsFor(config.lang)) : null;
-  return buildInstruction(config, picks, grammar, cue);
+  return buildInstruction(config, picks, grammar, cue, algorithm, known);
+}
+
+/**
+ * Stop hook (algorithm 3): read the finished reply and count the words it wove.
+ * The reply comes from the payload when the host sends it, else from the transcript.
+ */
+function settleReply(payload: HookPayload): void {
+  const config = loadConfig();
+  if (config.enabled === false || (config.algorithm ?? 1) !== 3) return;
+  const now = new Date().toISOString();
+  const rec = takeServed(DATA_DIR, payload.sessionId, now);
+  if (!rec || rec.lang !== config.lang) return;
+  const reply = payload.lastMessage || (payload.transcriptPath ? lastReply(readFileSync(payload.transcriptPath, "utf8")) : "");
+  const state = migrate(loadState(config.lang));
+  saveState(config.lang, settleServed(state, rec, reply, now));
 }
 
 /** Rewrite our spinner tips from current progress; spinner off (or no words) removes them. Returns tips written. */
@@ -61,6 +99,10 @@ interface HookPayload {
   prompt: string;
   sessionId: string;
   eventName: string;
+  /** Stop only: where the host keeps the conversation (Claude Code transcript JSONL) */
+  transcriptPath?: string;
+  /** Stop only: the finished reply, when the host sends it directly */
+  lastMessage?: string;
 }
 
 /**
@@ -76,11 +118,14 @@ async function readHookPayload(): Promise<HookPayload> {
   ]);
   if (!raw) return empty;
   try {
-    const payload = JSON.parse(raw) as { prompt?: string; session_id?: string; hook_event_name?: string };
+    const payload = JSON.parse(raw) as { prompt?: string; session_id?: string; hook_event_name?: string; transcript_path?: string; last_assistant_message?: string };
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
     return {
-      prompt: typeof payload.prompt === "string" ? payload.prompt : "",
-      sessionId: typeof payload.session_id === "string" ? payload.session_id : "",
-      eventName: typeof payload.hook_event_name === "string" ? payload.hook_event_name : "",
+      prompt: str(payload.prompt),
+      sessionId: str(payload.session_id),
+      eventName: str(payload.hook_event_name),
+      transcriptPath: str(payload.transcript_path) || undefined,
+      lastMessage: str(payload.last_assistant_message) || undefined,
     };
   } catch {
     return { ...empty, prompt: raw }; // plain-text stdin still counts as a prompt
@@ -272,13 +317,23 @@ try {
       } catch {
         // guard/bootstrap are best-effort — never let them break the instruction below
       }
+      if (payload.eventName === "Stop") {
+        try {
+          settleReply(payload);
+        } catch {
+          // counting is best-effort; a Stop hook prints nothing and never blocks
+        }
+        process.exit(0);
+      }
       try {
         // recall scan: the user's own prompt is the strongest signal a word is known
         if (payload.prompt) {
           const config = loadConfig();
           if (config.enabled !== false) {
             const found = scanRecalls(payload.prompt, loadWordlist(config.lang));
-            if (found.length) saveState(config.lang, recordRecalls(loadState(config.lang), found));
+            const state = loadState(config.lang);
+            if (config.algorithm === 3) migrate(state); // recalls climb the ladder only once it is there
+            if (found.length) saveState(config.lang, recordRecalls(state, found));
           }
         }
       } catch {
@@ -291,7 +346,7 @@ try {
         // spinner is a bonus — a broken settings.json must never cost us the instruction
       }
       try {
-        console.log(makeInstruction(true));
+        console.log(makeInstruction(true, payload.sessionId, payload.eventName));
       } catch {
         // swallow everything — empty stdout, exit 0
       }
@@ -301,6 +356,7 @@ try {
       const config = loadConfig();
       const words = loadWordlist(config.lang);
       const state = loadState(config.lang);
+      if (config.algorithm === 3) migrate(state); // a quiz answer climbs or resets the ladder
       const n = Math.max(1, Math.trunc(Number(args[0])) || 5);
       const seenTargets = new Set<string>();
       const candidates = words

@@ -4,6 +4,10 @@ import { isAbsorbed, TIER_UNLOCK_RATIO } from "./types.ts";
 export interface Pick {
   word: Word;
   exposures: number;
+  /** Ladder step (algorithm 3): decides how the translation is shown */
+  step?: number;
+  /** Algorithm 3: a long-overdue word the reply may work in even where it does not fit */
+  nudge?: boolean;
 }
 
 export interface TierProgress {

@@ -1,5 +1,5 @@
 {
-  "description": "LangCouch diglot weave — injects the vocabulary instruction into context",
+  "description": "LangCouch diglot weave \u2014 injects the vocabulary instruction into context; on Stop, counts the words the reply actually wove (algorithm 3)",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -12,6 +12,16 @@
       }
     ],
     "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/hook.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
       {
         "hooks": [
           {

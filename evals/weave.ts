@@ -2,7 +2,7 @@
  * Weave-quality eval: how well do models follow the <langcouch> instruction?
  * The logic (stages, seed, topics, metrics, judge) is described in evals/README.md.
  *
- *   bun evals/weave.ts [--algo 1|2] [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
+ *   bun evals/weave.ts [--algo 1|2|3] [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
  *   bun evals/weave.ts --rescore evals/out/<run>      re-score saved replies, no calls
  *   bun evals/weave.ts --fill evals/out/<run>         re-ask failed replies, re-judge their groups
  *
@@ -146,8 +146,29 @@ function tableRow(rows: Row[], judged: Judged[], model: string, stage?: string):
   ];
 }
 
+const HEAD2 = ["model", "deliverables with Spanish", "Spanish /100 words", "nudge woven", "familiar glossed inline", "glossary line", "known used/reply"];
+
+/** Deliverables for every algorithm; the ladder columns only mean something for algorithm 3. */
+function tableRow2(rows: Row[], model: string, stage?: string): string[] {
+  const ok = rows.filter((x) => x.model === model && (!stage || x.stage === stage) && x.metrics);
+  const m = (x: Row) => x.metrics!;
+  const del = ok.filter((x) => x.spec.deliverable);
+  const nudgeRows = ok.filter((x) => (x.spec.nudge ?? []).length > 0);
+  const famRows = ok.filter((x) => m(x).familiarUsed.length > 0);
+  const ladder = ok.some((x) => x.spec.known !== undefined);
+  return [
+    model,
+    `${del.filter((x) => m(x).inDeliverable.length > 0).length}/${del.length}`,
+    avg(ok.map((x) => m(x).spanishShare)),
+    ladder ? pct(nudgeRows.reduce((a, x) => a + m(x).nudgeWoven.length, 0), nudgeRows.reduce((a, x) => a + x.spec.nudge!.length, 0)) : "—",
+    ladder ? String(ok.reduce((a, x) => a + m(x).glossedFamiliar.length, 0)) : "—",
+    ladder ? `${famRows.filter((x) => m(x).glossaryLine).length}/${famRows.length}` : "—",
+    ladder ? avg(ok.map((x) => m(x).knownUsed.length)) : "—",
+  ];
+}
+
 const HEAD = ["model", "ok", "coverage", "off-list/reply", "bad gloss", "no gloss", "code/facts touched", "rule used", "sentence", "answer (1-5)", "weave (1-5)", "cost"];
-const md = (rows: string[][]) => [HEAD, HEAD.map(() => "---"), ...rows].map((r) => `| ${r.join(" | ")} |`).join("\n");
+const md = (rows: string[][], head = HEAD) => [head, head.map(() => "---"), ...rows].map((r) => `| ${r.join(" | ")} |`).join("\n");
 
 function gitSha(): string {
   try { return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: DIR, encoding: "utf8" }).trim(); } catch { return "unknown"; }
@@ -165,6 +186,8 @@ function report(rows: Row[], judged: Judged[], models: string[], stages: Stage[]
     "## All stages",
     "",
     md(models.map((m) => tableRow(rows, judged, m))),
+    "",
+    md(models.map((m) => tableRow2(rows, m)), HEAD2),
   ];
   for (const s of stages) {
     parts.push("", `## Stage: ${s.id} (${Math.round(s.absorbed * 100)}% absorbed, level ${s.level})`, "", md(models.map((m) => tableRow(rows, judged, m, s.id))));
@@ -191,7 +214,7 @@ async function judgeGroup(rows: Row[], stage: string, topic: string, prompt: str
   const letters = letterMap(group.map((r) => r.model), `${stage}/${topic}/${rep}`);
   const answers = Object.fromEntries(Object.entries(letters).map(([l, m]) => [l, group.find((r) => r.model === m)!.reply]));
   const served = group[0]?.spec.served.map((s) => s.target) ?? [];
-  const a = await ask(JUDGE_MODEL, JUDGE_SYSTEM, judgePrompt(prompt, served, answers), key);
+  const a = await ask(JUDGE_MODEL, JUDGE_SYSTEM, judgePrompt(prompt, served, answers, group[0]?.spec.nudge ?? []), key);
   const j: Judged = { stage, topic, rep, letters, verdicts: a.error ? {} : parseJudge(a.text, letters), error: a.error };
   if (!a.error && Object.keys(j.verdicts).length !== group.length) j.error = `parsed ${Object.keys(j.verdicts).length}/${group.length}: ${a.text.slice(0, 200)}`;
   return j;
@@ -229,8 +252,14 @@ async function fill(runDir: string) {
   rescore(runDir);
 }
 
+/** Scores follow today's topics.json (mustKeep, deliverable), so runs of different algorithms compare on one rule set. */
 function rescore(runDir: string) {
-  const rows = readJsonl<Row>(join(runDir, "replies.jsonl")).map((r) => ({ ...r, metrics: r.error ? undefined : scoreReply(r.reply, r.spec) }));
+  const topics = new Map(readJson<Topic[]>("topics.json").map((t) => [t.id, t]));
+  const rows = readJsonl<Row>(join(runDir, "replies.jsonl")).map((r) => {
+    const t = topics.get(r.topic);
+    const spec: CaseSpec = { ...r.spec, mustKeep: t?.mustKeep, deliverable: t?.deliverable };
+    return { ...r, spec, metrics: r.error ? undefined : scoreReply(r.reply, spec) };
+  });
   const judged = readJsonl<Judged>(join(runDir, "judge.jsonl"));
   const models = [...new Set(rows.map((r) => r.model))];
   const stages = readJson<{ stages: Stage[] }>("stages.json").stages.filter((s) => rows.some((r) => r.stage === s.id));
@@ -253,7 +282,7 @@ async function main() {
   const stages = cfg.stages.filter((s) => stageArg === "all" || s.id === stageArg);
   const topics = readJson<Topic[]>("topics.json");
   const algo = Number(arg("algo") ?? 1) as WeaveAlgorithm;
-  if (algo !== 1 && algo !== 2) throw new Error("--algo must be 1 or 2");
+  if (algo !== 1 && algo !== 2 && algo !== 3) throw new Error("--algo must be 1, 2 or 3");
   const built: Built[] = stages.flatMap((s) => buildStage(s, topics, cfg.seed, algo));
 
   if (process.argv.includes("--dry")) {

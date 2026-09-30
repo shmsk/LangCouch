@@ -70,6 +70,11 @@ export interface Config {
   spinner?: boolean;
   /** Last plugin version whose changelog `status` has shown; a newer one shows once. */
   seenVersion?: string;
+  /**
+   * Weave algorithm (src/instruction.ts): 1 = every listed word (default), 2 = only where it fits,
+   * 3 = fit + nudge + interval ladder with honest counting (src/ladder.ts).
+   */
+  algorithm?: 1 | 2 | 3;
 }
 
 export interface WordState {
@@ -78,6 +83,12 @@ export interface WordState {
   lastSeen: string;
   /** Times the user actively produced the word: found in their prompt or answered in quiz. */
   recalls?: number;
+  /** Interval-ladder step (algorithm 3). Absent on records from 0.5.0 and earlier: estimated on first read. */
+  step?: number;
+  /** ISO time the word is due again on the ladder */
+  due?: string;
+  /** Times served while due but not woven; enough of them make the word a nudge candidate */
+  missed?: number;
 }
 
 /** True for state keys that track words; constructions ("g:") and rules ("p:") carry a prefix. */
@@ -99,11 +110,33 @@ export const QUIZ_FAIL_EXPOSURES = 2; // exposures cap after a failed quiz — r
 /** Tier N+1 unlocks when this share of tier N is absorbed. */
 export const TIER_UNLOCK_RATIO = 0.8;
 
-export function isAbsorbed(s: WordState | undefined): boolean {
-  if (!s) return false;
+/**
+ * Interval ladder (algorithm 3): after a word is woven at step k it moves to k+1
+ * and comes back LADDER_MS[k+1] later. Steps up to INLINE_GLOSS_MAX_STEP carry the
+ * translation inline, up to GLOSSARY_MAX_STEP in the closing glossary line, then none.
+ */
+const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+export const LADDER_MS = [0, 30 * MIN, 8 * HOUR, DAY, 4 * DAY, 14 * DAY, 30 * DAY, 180 * DAY];
+export const INLINE_GLOSS_MAX_STEP = 2;
+export const GLOSSARY_MAX_STEP = 4;
+export const ABSORBED_STEP = 5;
+/** Served while due this many times without fitting → the word may be nudged in */
+export const NUDGE_AFTER_MISSES = 3;
+export const MAX_NUDGE = 2;
+/** Absorbed lemmas offered per reply, without glosses, to use freely where they fit */
+export const KNOWN_SAMPLE = 30;
+
+/** The points formula: how absorption worked before the ladder, and how old records are estimated. */
+export function absorbedByScore(s: WordState): boolean {
   const recalls = s.recalls ?? 0;
   const score = s.exposures + RECALL_WEIGHT * recalls;
   return score >= ABSORBED_SCORE && (recalls >= 1 || s.exposures >= NO_RECALL_EXPOSURES);
+}
+
+/** On the ladder (a step is recorded) absorbed means step ≥ ABSORBED_STEP; otherwise the points formula. */
+export function isAbsorbed(s: WordState | undefined): boolean {
+  if (!s) return false;
+  return s.step !== undefined ? s.step >= ABSORBED_STEP : absorbedByScore(s);
 }
 
 /**

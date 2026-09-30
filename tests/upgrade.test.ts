@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cpSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
@@ -40,6 +40,21 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
     const hook = run(dir, ["hook"], JSON.stringify({ prompt: "upgrade check" }));
     expect(hook.status).toBe(0);
     expect(hook.stdout).toContain("<langcouch>");
+  });
+
+  test("switching to algorithm 3 keeps every absorbed word absorbed", () => {
+    const dir = copy();
+    const cfgPath = join(dir, "config.json");
+    writeFileSync(cfgPath, JSON.stringify({ ...JSON.parse(readFileSync(cfgPath, "utf8")), algorithm: 3 }));
+    const absorbed = () => Number(run(dir, ["status"]).stdout.match(/Absorbed \(recall formula\): (\d+)/)?.[1]);
+    const before = absorbed();
+    const bestBefore = best(states(dir));
+    const hook = run(dir, ["hook"], JSON.stringify({ prompt: "upgrade check", session_id: "u", hook_event_name: "UserPromptSubmit" }));
+    expect(hook.stdout).toContain("<langcouch>");
+    expect(run(dir, ["hook"], JSON.stringify({ session_id: "u", hook_event_name: "Stop", last_assistant_message: "no weave" })).status).toBe(0);
+    expect(absorbed()).toBeGreaterThanOrEqual(before);
+    const after = best(states(dir));
+    for (const [key, b] of Object.entries(bestBefore)) expect(after[key]?.exposures ?? 0).toBeGreaterThanOrEqual(b.exposures);
   });
 
   test("no progress is lost after a few replies", () => {

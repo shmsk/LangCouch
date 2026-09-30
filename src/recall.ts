@@ -1,5 +1,10 @@
 import type { State, Word } from "./types.ts";
 import { QUIZ_FAIL_EXPOSURES } from "./types.ts";
+import { climb, reset } from "./ladder.ts";
+
+/** On the ladder (a step is recorded) a recall climbs one step; old records only count it. */
+const onLadder = (s: { step?: number }) => s.step !== undefined;
+const now = () => new Date().toISOString();
 
 /** Min target length to count a prompt hit as recall — filters short cognate/particle noise. */
 export const MIN_RECALL_LENGTH = 3;
@@ -22,7 +27,8 @@ export function scanRecalls(prompt: string, words: Word[]): string[] {
 export function recordRecalls(state: State, ids: string[]): State {
   for (const id of ids) {
     const prev = state[id] ?? { exposures: 0, lastSeen: "" };
-    state[id] = { ...prev, recalls: (prev.recalls ?? 0) + 1 };
+    const next = { ...prev, recalls: (prev.recalls ?? 0) + 1 };
+    state[id] = onLadder(prev) ? climb(next, now()) : next;
   }
   return state;
 }
@@ -33,9 +39,10 @@ export function recordRecalls(state: State, ids: string[]): State {
  */
 export function applyQuizResult(state: State, id: string, ok: boolean): State {
   const prev = state[id] ?? { exposures: 0, lastSeen: "" };
-  state[id] = ok
+  const next = ok
     ? { ...prev, recalls: (prev.recalls ?? 0) + 1 }
     : { ...prev, recalls: 0, exposures: Math.min(prev.exposures, QUIZ_FAIL_EXPOSURES) };
+  state[id] = onLadder(prev) ? (ok ? climb(next, now()) : reset(next, now())) : next;
   return state;
 }
 
