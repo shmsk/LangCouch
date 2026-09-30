@@ -2,7 +2,7 @@
  * Weave-quality eval: how well do models follow the <langcouch> instruction?
  * The logic (stages, seed, topics, metrics, judge) is described in evals/README.md.
  *
- *   bun evals/weave.ts [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
+ *   bun evals/weave.ts [--algo 1|2] [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
  *   bun evals/weave.ts --rescore evals/out/<run>      re-score saved replies, no calls
  *   bun evals/weave.ts --fill evals/out/<run>         re-ask failed replies, re-judge their groups
  *
@@ -13,20 +13,22 @@
  *   provider/model → OpenRouter chat/completions. The key comes from the macOS
  *     Keychain (service "langcouch-openrouter"), else OPENROUTER_API_KEY.
  *
- * Writes raw replies and judge verdicts to evals/out/<run>/ and the tables to evals/RESULTS.md.
+ * Writes raw replies and judge verdicts to evals/out/<run>/ and the tables to evals/results/algo-<n>.md.
  */
 import { spawn, execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync, readFileSync, existsSync, appendFileSync } from "node:fs";
 import { join } from "node:path";
 import { scoreReply, type CaseSpec, type ReplyMetrics } from "./metrics.ts";
 import { liveView, type Lane } from "./progress-view.ts";
+import type { WeaveAlgorithm } from "../src/instruction.ts";
 import { buildStage, letterMap, parseJudge, judgePrompt, JUDGE_SYSTEM, type Stage, type Topic, type Built, type Verdict } from "./stages.ts";
 
 const DEFAULT_MODELS = ["opus", "deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3-flash", "qwen/qwen3.8-flash"];
 const JUDGE_MODEL = "opus";
 const SYSTEM = "You are a helpful assistant. Answer clearly and concisely.";
 const DIR = import.meta.dir;
-const RESULTS = join(DIR, "RESULTS.md");
+const resultsFile = (algo: number) => join(DIR, "results", `algo-${algo}.md`);
+const runAlgo = (runDir: string): WeaveAlgorithm => (existsSync(join(runDir, "meta.json")) ? (JSON.parse(readFileSync(join(runDir, "meta.json"), "utf8")) as { algo: WeaveAlgorithm }).algo : 1);
 const FINDINGS_START = "<!-- findings:start -->";
 const FINDINGS_END = "<!-- findings:end -->";
 
@@ -147,13 +149,17 @@ function tableRow(rows: Row[], judged: Judged[], model: string, stage?: string):
 const HEAD = ["model", "ok", "coverage", "off-list/reply", "bad gloss", "no gloss", "code/facts touched", "rule used", "sentence", "answer (1-5)", "weave (1-5)", "cost"];
 const md = (rows: string[][]) => [HEAD, HEAD.map(() => "---"), ...rows].map((r) => `| ${r.join(" | ")} |`).join("\n");
 
-function report(rows: Row[], judged: Judged[], models: string[], stages: Stage[], runDir: string): string {
-  let sha = "unknown";
-  try { sha = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: DIR, encoding: "utf8" }).trim(); } catch { /* not a checkout */ }
+function gitSha(): string {
+  try { return execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: DIR, encoding: "utf8" }).trim(); } catch { return "unknown"; }
+}
+
+function report(rows: Row[], judged: Judged[], models: string[], stages: Stage[], runDir: string, algo: WeaveAlgorithm): string {
+  const meta = existsSync(join(runDir, "meta.json")) ? (JSON.parse(readFileSync(join(runDir, "meta.json"), "utf8")) as { sha?: string }) : {};
+  const sha = meta.sha ?? gitSha();
   const parts = [
-    "# Weave eval results",
+    `# Weave eval results: algorithm ${algo}`,
     "",
-    `Run \`${runDir.split("/").pop()}\` on commit \`${sha}\`. Logic and metric definitions: [README.md](README.md).`,
+    `Run \`${runDir.split("/").pop()}\` on commit \`${sha}\`. Logic and metric definitions: [README.md](../README.md).`,
     `Models: ${models.map((m) => `\`${m}\``).join(", ")}. Judge: blind \`${JUDGE_MODEL}\`, scores 1-5.`,
     "",
     "## All stages",
@@ -168,12 +174,14 @@ function report(rows: Row[], judged: Judged[], models: string[], stages: Stage[]
   return parts.join("\n");
 }
 
-/** Regenerate RESULTS.md, keeping the hand-written findings between the markers. */
-function writeResults(auto: string) {
-  const old = existsSync(RESULTS) ? readFileSync(RESULTS, "utf8") : "";
+/** Regenerate results/algo-<n>.md, keeping the hand-written findings between the markers. */
+function writeResults(auto: string, algo: WeaveAlgorithm) {
+  const file = resultsFile(algo);
+  mkdirSync(join(DIR, "results"), { recursive: true });
+  const old = existsSync(file) ? readFileSync(file, "utf8") : "";
   const s = old.indexOf(FINDINGS_START), e = old.indexOf(FINDINGS_END);
   const findings = s >= 0 && e > s ? old.slice(s, e + FINDINGS_END.length) : `${FINDINGS_START}\n## Findings\n\n_Written by hand after reading the replies._\n${FINDINGS_END}`;
-  writeFileSync(RESULTS, `${findings}\n\n${auto}\n`);
+  writeFileSync(file, `${findings}\n\n${auto}\n`);
 }
 
 // ---------- run ----------
@@ -195,7 +203,7 @@ async function fill(runDir: string) {
   const rows = readJsonl<Row>(repliesFile);
   const topics = new Map(readJson<Topic[]>("topics.json").map((t) => [t.id, t]));
   const cfg = readJson<{ seed: string; stages: Stage[] }>("stages.json");
-  const built = cfg.stages.flatMap((s) => buildStage(s, [...topics.values()], cfg.seed));
+  const built = cfg.stages.flatMap((s) => buildStage(s, [...topics.values()], cfg.seed, runAlgo(runDir)));
   const failed = rows.filter((r) => r.error);
   const key = failed.some((r) => r.model.includes("/")) || JUDGE_MODEL.includes("/") ? openrouterKey() : "";
   const byModel = [...new Set(failed.map((r) => r.model))];
@@ -226,8 +234,9 @@ function rescore(runDir: string) {
   const judged = readJsonl<Judged>(join(runDir, "judge.jsonl"));
   const models = [...new Set(rows.map((r) => r.model))];
   const stages = readJson<{ stages: Stage[] }>("stages.json").stages.filter((s) => rows.some((r) => r.stage === s.id));
-  const auto = report(rows, judged, models, stages, runDir);
-  writeResults(auto);
+  const algo = runAlgo(runDir);
+  const auto = report(rows, judged, models, stages, runDir, algo);
+  writeResults(auto, algo);
   console.log(auto);
 }
 
@@ -243,7 +252,9 @@ async function main() {
   const cfg = readJson<{ seed: string; stages: Stage[] }>("stages.json");
   const stages = cfg.stages.filter((s) => stageArg === "all" || s.id === stageArg);
   const topics = readJson<Topic[]>("topics.json");
-  const built: Built[] = stages.flatMap((s) => buildStage(s, topics, cfg.seed));
+  const algo = Number(arg("algo") ?? 1) as WeaveAlgorithm;
+  if (algo !== 1 && algo !== 2) throw new Error("--algo must be 1 or 2");
+  const built: Built[] = stages.flatMap((s) => buildStage(s, topics, cfg.seed, algo));
 
   if (process.argv.includes("--dry")) {
     for (const b of built) console.log(`## ${b.stage.id} / ${b.topic.id}\n${b.instruction}\n`);
@@ -254,6 +265,7 @@ async function main() {
   const key = [...models, JUDGE_MODEL].some((m) => m.includes("/")) ? openrouterKey() : "";
   const runDir = join(DIR, "out", new Date().toISOString().replace(/[:.]/g, "-"));
   mkdirSync(runDir, { recursive: true });
+  writeFileSync(join(runDir, "meta.json"), JSON.stringify({ algo, sha: gitSha() }) + "\n");
   const repliesFile = join(runDir, "replies.jsonl");
 
   // brew-style bars on a terminal; plain lines when piped or run in the background
@@ -292,10 +304,10 @@ async function main() {
   }
 
   view?.stop();
-  const auto = report(rows, judged, models, stages, runDir);
-  writeResults(auto);
+  const auto = report(rows, judged, models, stages, runDir, algo);
+  writeResults(auto, algo);
   console.log(auto);
-  console.log(`\nraw replies: ${runDir}\nresults: ${RESULTS}`);
+  console.log(`\nraw replies: ${runDir}\nresults: ${resultsFile(algo)}`);
 }
 
 await main();

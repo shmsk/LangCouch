@@ -4,7 +4,7 @@
  * letter shuffle and parsing. No I/O beyond the wordlist loaders.
  */
 import { loadWordlist, loadGrammar, loadPatterns, falseFriendsFor } from "../src/store.ts";
-import { buildInstruction } from "../src/instruction.ts";
+import { buildInstruction, type WeaveAlgorithm } from "../src/instruction.ts";
 import { pickGrammar, markGrammarShown } from "../src/grammar.ts";
 import { pickPattern, patternCue, markPatternShown, PATTERN_MIN_LEVEL } from "../src/patterns.ts";
 import { pickWords, markExposed, unlockedWords } from "../src/scheduler.ts";
@@ -39,7 +39,7 @@ export function learnerState(words: Word[], share: number, seed: string): State 
  * The instructions one learner gets over a session: topics in order, each marked
  * exposed afterwards, exactly as the hook does (src/cli.ts makeInstruction).
  */
-export function buildStage(stage: Stage, topics: Topic[], seed: string): Built[] {
+export function buildStage(stage: Stage, topics: Topic[], seed: string, algorithm: WeaveAlgorithm = 1): Built[] {
   const words = loadWordlist(LANG);
   const state = learnerState(words, stage.absorbed, seed);
   const config: Config = { lang: LANG, native: NATIVE, level: stage.level };
@@ -57,7 +57,7 @@ export function buildStage(stage: Stage, topics: Topic[], seed: string): Built[]
     return {
       stage,
       topic,
-      instruction: buildInstruction(config, picks, grammar, cue),
+      instruction: buildInstruction(config, picks, grammar, cue, algorithm),
       spec: {
         served: picks.map((p) => ({ target: p.word.target, gloss: glossFor(p.word, NATIVE, LANG) })),
         ruleSuffix: cue?.to,

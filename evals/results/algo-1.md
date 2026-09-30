@@ -26,9 +26,9 @@ Run of 2026-09-30: 120 replies, 30 blind judge calls. One Qwen reply still timed
 - Then rerun this eval with the same seed and compare.
 <!-- findings:end -->
 
-# Weave eval results
+# Weave eval results: algorithm 1
 
-Run `2026-09-30T15-43-27-762Z` on commit `baa250b`. Logic and metric definitions: [README.md](README.md).
+Run `2026-09-30T15-43-27-762Z` on commit `baa250b`. Logic and metric definitions: [README.md](../README.md).
 Models: `opus`, `deepseek/deepseek-v4.1-flash`, `z-ai/glm-5.3-flash`, `qwen/qwen3.8-flash`. Judge: blind `opus`, scores 1-5.
 
 ## All stages

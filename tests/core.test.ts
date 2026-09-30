@@ -100,6 +100,19 @@ describe("instruction", () => {
     expect(langName("zz-not-a-code!")).toBe("zz-not-a-code!");
   });
 
+  test("never weaves into text the user will copy or send, in both algorithms", () => {
+    for (const algo of [1, 2] as const) expect(buildInstruction(config, picks, null, null, algo)).toContain("Never weave into text the user will copy or send");
+  });
+
+  test("algorithm 2 asks for a word only where the reply needs it, within budget", () => {
+    const maxPicks = pickWords(words, {}, wordsPerResponse(10));
+    const two = buildInstruction({ ...config, level: 10 }, maxPicks, null, null, 2);
+    expect(two).toContain("only where your reply already needs that meaning");
+    expect(two).toContain("If it fits the reply, once insert");
+    expect(two.length).toBeLessThanOrEqual(2400);
+    expect(buildInstruction(config, picks)).not.toContain("only where your reply already needs");
+  });
+
   test("grammar stages escalate with level", () => {
     const lvl2 = buildInstruction({ ...config, level: 2 }, picks);
     const lvl5 = buildInstruction({ ...config, level: 5 }, picks);
