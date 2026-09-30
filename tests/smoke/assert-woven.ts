@@ -3,16 +3,22 @@
  *
  *   bun tests/smoke/assert-woven.ts request <fake-llm-log.jsonl>
  *     The block reached the model: some recorded request carries <langcouch>.
- *   bun tests/smoke/assert-woven.ts reply <reply.txt>
- *     A real model wove: the reply has at least one **word** (translation).
+ *   bun tests/smoke/assert-woven.ts reply <reply.txt> <lang>
+ *     A real model wove what LangCouch served: at least one word the hook put
+ *     into this run's instruction (read back from state.<lang>.json and mapped
+ *     to its lemma via the wordlist) appears as **word** (translation).
  *
  * Prints what it found either way, so a red run shows why.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { DATA_DIR, loadWordlist } from "../../src/store.ts";
+import { isWordKey, type State } from "../../src/types.ts";
+import { wovenPairs, matchServed } from "./woven.ts";
 
-const [mode, file] = process.argv.slice(2);
-if (!file || (mode !== "request" && mode !== "reply")) {
-  console.error("usage: assert-woven.ts <request|reply> <file>");
+const [mode, file, lang] = process.argv.slice(2);
+if (!file || (mode !== "request" && mode !== "reply") || (mode === "reply" && !lang)) {
+  console.error("usage: assert-woven.ts request <log.jsonl> | reply <reply.txt> <lang>");
   process.exit(2);
 }
 const text = readFileSync(file, "utf8");
@@ -39,11 +45,21 @@ if (mode === "request") {
   process.exit(1);
 } else {
   console.log(`reply:\n${text}\n`);
-  // **palabra** (word) — the format the weave instruction asks for
-  const woven = [...text.matchAll(/\*\*([^*\n]{1,40})\*\*\s*\(([^)\n]{1,60})\)/g)].map((m) => `${m[1]} = ${m[2]}`);
-  if (woven.length === 0) {
-    console.error("FAIL: no **word** (translation) in the reply");
+  const statePath = join(DATA_DIR, `state.${lang}.json`);
+  const state: State = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
+  // fresh data dir per run, so every exposed word was served by this run's hook
+  const servedIds = new Set(Object.keys(state).filter((k) => isWordKey(k) && (state[k]?.exposures ?? 0) > 0));
+  const served = loadWordlist(lang!).filter((w) => servedIds.has(w.id)).map((w) => w.target);
+  console.log(`served (${served.length}): ${served.join(", ") || "none"}`);
+  if (served.length === 0) {
+    console.error("FAIL: the hook served no words, so the plugin never ran in this turn");
     process.exit(1);
   }
-  console.log(`OK: woven ${woven.length}: ${woven.join("; ")}`);
+  console.log(`bold pairs: ${wovenPairs(text).map((p) => `${p.word} (${p.gloss})`).join("; ") || "none"}`);
+  const hits = matchServed(text, served);
+  if (hits.length === 0) {
+    console.error("FAIL: none of the served words appears as **word** (translation)");
+    process.exit(1);
+  }
+  console.log(`OK: wove ${hits.length} served word(s): ${hits.join(", ")}`);
 }

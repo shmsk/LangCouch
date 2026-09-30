@@ -193,7 +193,7 @@ jobs:
             else
               openclaw agent --local --agent main --message "$LIVE_PROMPT" --timeout 180 > reply.txt || true
             fi
-            if bun tests/smoke/assert-woven.ts reply reply.txt; then
+            if bun tests/smoke/assert-woven.ts reply reply.txt es; then
               { echo "### ${{ matrix.host }} × $MODEL"; echo; cat reply.txt; } >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
