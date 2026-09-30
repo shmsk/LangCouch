@@ -17,6 +17,8 @@ export interface CaseSpec {
   ruleSuffix?: string;
   /** Strings the reply's code must keep verbatim (identifiers, paths, flags from the prompt) */
   mustKeep?: string[];
+  /** Every lemma of the target wordlist: off-list means a real target-language word, not a bold English phrase */
+  lexicon?: string[];
 }
 
 export interface ReplyMetrics {
@@ -67,6 +69,8 @@ export function inflects(token: string, lemma: string): boolean {
 }
 const VERB_ENDINGS = new Set(["o", "as", "a", "amos", "an", "es", "e", "emos", "en", "imos", "ado", "ada", "ido", "ida", "ando", "iendo", "é", "ó", "ió", "aba", "ía"]);
 
+const ES_FUNCTION = new Set(["el", "la", "los", "las", "es", "son", "está", "están", "un", "una", "que", "de", "del", "y", "en", "con", "muy", "mi", "tu", "su", "hay", "para", "por", "no", "me", "te", "se"]);
+
 const matchesLemma = (token: string, lemma: string) => token.startsWith(stem(lemma));
 
 /** Does a gloss carry the listed translation? Compares content words by prefix, so "left" ≈ "leave" fails but "houses" ≈ "house" passes. */
@@ -87,10 +91,15 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
   const wrongGloss: string[] = [];
   let ruleUsed = false;
   let sentence = false;
+  const lexicon = spec.lexicon ? new Set(spec.lexicon.map(norm)) : null;
+  const inLexicon = (t: string) => t.length >= 3 && (lexicon!.has(t) || lexicon!.has(t.replace(/e?s$/, "")));
 
   for (const p of pairs) {
     const toks = tokens(p.word);
-    if (norm(p.word) === norm(p.gloss)) selfGloss.push(`${p.word} (${p.gloss})`);
+    const ruleWord = !!suffix && toks.length === 1 && toks[0]!.endsWith(suffix);
+    // a rule word or a listed cognate may be spelled like its gloss by design (natural = natural, color = color)
+    const cognate = spec.served.some((s) => norm(s.target) === norm(s.gloss) && toks.includes(norm(s.target)));
+    if (norm(p.word) === norm(p.gloss) && !ruleWord && !cognate) selfGloss.push(`${p.word} (${p.gloss})`);
     if (toks.length >= 4) { sentence = true; continue; }
     const hit = spec.served.find((s) => toks.some((t) => matchesLemma(t, s.target) || inflects(t, s.target)));
     if (hit) {
@@ -98,12 +107,25 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
       if (toks.length === 1 && !glossMatches(p.gloss, hit.gloss)) wrongGloss.push(`${p.word} (${p.gloss}) ≠ ${hit.gloss}`);
       continue;
     }
-    if (suffix && toks.length === 1 && toks[0]!.endsWith(suffix)) { ruleUsed = true; continue; }
-    offList.add(norm(p.word));
+    if (ruleWord) { ruleUsed = true; continue; }
+    if (!lexicon || toks.some(inLexicon)) offList.add(norm(p.word));
+  }
+
+  // off-list words bolded with no gloss at all (**dieta**, **frío**) — only countable against a lexicon
+  if (lexicon) for (const m of prose.matchAll(/\*\*([^*\n]{2,30})\*\*(?!\s*\()/g)) {
+    const toks = tokens(m[1]!);
+    if (toks.length !== 1 || spec.served.some((s) => inflects(toks[0]!, s.target))) continue;
+    if (suffix && toks[0]!.endsWith(suffix)) continue;
+    if (inLexicon(toks[0]!)) offList.add(`${toks[0]} (no gloss)`);
   }
 
   // the level 7+ sentence may come italic or bold, as long as a translation follows it
   if (/(\*{1,2}|_)[^*_\n]{15,200}\1\s*\([^)\n]{10,}\)/.test(prose)) sentence = true;
+  // or plain: a stretch with Spanish function words, then a translation of 4+ words in parentheses
+  for (const m of prose.matchAll(/([^.!?:\n(]{12,200}[.!?]?)\s*\(([^)\n]{12,})\)/g)) {
+    const fn = tokens(m[1]!.replace(/\*/g, "")).filter((t) => ES_FUNCTION.has(t)).length;
+    if (fn >= 2 && tokens(m[2]!).length >= 4) sentence = true;
+  }
 
   // a served word in prose that never got the bold+gloss treatment
   const proseTokens = tokens(prose);

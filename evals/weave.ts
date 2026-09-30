@@ -2,6 +2,7 @@
  * Weave-quality eval: how well do models follow the <langcouch> instruction?
  *
  *   bun evals/weave.ts [--models a,b] [--reps 2] [--cases id,id] [--dry]
+ *   bun evals/weave.ts --rescore evals/out/<run>   (re-score saved replies, no calls)
  *
  * Every model gets the same instructions, built by the real buildInstruction from
  * the Spanish wordlist, prepended to the user message the way the adapters do it.
@@ -16,7 +17,7 @@
  * Writes raw replies to evals/out/<timestamp>/ and prints a table per model.
  */
 import { spawn, execFileSync } from "node:child_process";
-import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { loadWordlist, loadGrammar, loadPatterns, falseFriendsFor } from "../src/store.ts";
 import { buildInstruction } from "../src/instruction.ts";
@@ -60,6 +61,7 @@ function build(cases: Case[]): Built[] {
       served: picked.map((w) => ({ target: w.target, gloss: glossFor(w, NATIVE, LANG) })),
       ruleSuffix: cue?.to,
       mustKeep: c.mustKeep,
+      lexicon: words.map((w) => w.target),
     };
     return { c, instruction, spec };
   });
@@ -159,9 +161,29 @@ async function main() {
   const all = JSON.parse(readFileSync(join(import.meta.dir, "cases.json"), "utf8")) as Case[];
   const built = build(only ? all.filter((c) => only.includes(c.id)) : all);
 
+  const rows: Row[] = [];
   if (process.argv.includes("--dry")) {
     for (const b of built) console.log(`## ${b.c.id} (level ${b.c.level})\n${b.instruction}\n\n${b.c.prompt}\n`);
     console.log(`${built.length} cases × ${reps} reps × ${models.length} models = ${built.length * reps * models.length} calls`);
+    return;
+  }
+
+  const rescore = arg("rescore");
+  if (rescore) {
+    const byId = new Map(built.map((b) => [b.c.id, b]));
+    const models2: string[] = [];
+    for (const file of readdirSync(rescore).filter((f) => f.endsWith(".jsonl"))) {
+      const model = file.replace(/\.jsonl$/, "").replace("_", "/");
+      models2.push(model);
+      for (const l of readFileSync(join(rescore, file), "utf8").trim().split("\n")) {
+        const j = JSON.parse(l) as { case: string; rep: number; reply: string; error?: string; costUsd?: number };
+        const b = byId.get(j.case);
+        if (!b) continue;
+        rows.push({ model, case: j.case, rep: j.rep, answer: { text: j.reply, error: j.error, costUsd: j.costUsd, ms: 0 }, served: b.spec.served.length,
+          hasRule: !!b.spec.ruleSuffix, wantsSentence: grammarStage(b.c.level) >= 3, metrics: j.error ? undefined : scoreReply(j.reply, b.spec) });
+      }
+    }
+    printTable(rows, models2, rescore);
     return;
   }
 
@@ -169,7 +191,6 @@ async function main() {
   const outDir = join(import.meta.dir, "out", new Date().toISOString().replace(/[:.]/g, "-"));
   mkdirSync(outDir, { recursive: true });
 
-  const rows: Row[] = [];
   const jobsFor = (model: string) => built.flatMap((b) => Array.from({ length: reps }, (_, rep) => async () => {
     const user = `${b.instruction}\n\n${b.c.prompt}`;
     const answer = model.includes("/") ? await askOpenrouter(model, user, key) : await askClaude(model, user);
@@ -195,6 +216,10 @@ async function main() {
     writeFileSync(file, lines.join("\n") + "\n");
   }
 
+  printTable(rows, models, outDir);
+}
+
+function printTable(rows: Row[], models: string[], outDir: string) {
   const head = ["model", "ok", "coverage", "off-list/reply", "self-gloss", "wrong gloss", "unformatted", "code touched", "over-weave", "rule used", "sentence", "cost"];
   const table = [head, head.map(() => "---"), ...models.map((m) => summarize(rows, m))].map((r) => `| ${r.join(" | ")} |`).join("\n");
   writeFileSync(join(outDir, "summary.md"), table + "\n");

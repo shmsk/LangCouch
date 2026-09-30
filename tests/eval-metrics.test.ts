@@ -52,4 +52,20 @@ describe("weave eval metrics", () => {
     expect(glossMatches("leaving", "to leave")).toBe(true);
     expect(glossMatches("carry", "to leave")).toBe(false);
   });
+
+  test("with a lexicon, off-list means a real Spanish word, bolded with or without a gloss", () => {
+    const m = scoreReply("Your **dieta** matters, and **Climate** (long-term) too; eat **comida** (food).", { ...spec, lexicon: ["dieta", "comida", "casa"] });
+    expect(m.offList.sort()).toEqual(["comida", "dieta (no gloss)"]);
+  });
+
+  test("a rule word spelled like its gloss is not a self-gloss", () => {
+    const m = scoreReply("It is **natural** (natural).", { ...spec, ruleSuffix: "-al" });
+    expect(m.selfGloss).toEqual([]);
+    expect(m.ruleUsed).toBe(true);
+  });
+
+  test("a plain Spanish sentence followed by its translation counts", () => {
+    expect(scoreReply("El **tren** cuesta **dinero**, la **comida** es buena. (The train costs money; the food is good.)", spec).sentence).toBe(true);
+    expect(scoreReply("Take the train to Belém (it is quick and cheap).", spec).sentence).toBe(false);
+  });
 });
