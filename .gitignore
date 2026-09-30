@@ -11,3 +11,5 @@ Plans/
 .claude/
 # local install smoke-test output (never committed)
 /.smoke-opencode/
+# weave eval raw replies (local only)
+/evals/out/

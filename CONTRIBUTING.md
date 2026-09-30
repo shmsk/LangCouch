@@ -25,6 +25,14 @@ All three must be green before a PR. CI runs the same commands.
 - **Live jobs** run each host on real cheap models through OpenRouter. They pass when the reply contains, as `**word** (translation)`, at least one of the words the hook served in that run (read back from the state file). They run only after all fake-model jobs pass, and never on pull requests, because they need the `OPENROUTER_API_KEY` secret.
 - To run the live jobs in your fork, add your own `OPENROUTER_API_KEY` secret with a spending limit, then start the workflow by hand in the Actions tab. The key is given only to the step that calls the model, and is never written to disk.
 
+### Weave eval
+
+[`evals/weave.ts`](evals/weave.ts) measures how well a model follows the weave instruction, not just whether it weaves at all. Every model gets the same instructions, built by the real `buildInstruction` from the Spanish wordlist, over the prompts in [`evals/cases.json`](evals/cases.json) (prose, code, shell, git). The metrics in [`evals/metrics.ts`](evals/metrics.ts) are plain checks you can verify by reading a reply: share of listed words woven, words woven that were not on the list, self-glosses like `tiempo (tiempo)`, wrong glosses, listed words left without the `**word** (translation)` format, code or identifiers touched, over-weaving, and whether the rule word and the level 7+ sentence showed up.
+
+- `bun evals/weave.ts --dry` prints the instructions and prompts, no network.
+- `bun evals/weave.ts [--models a,b] [--reps 2] [--cases id,id]` runs it. A model id without a slash (`opus`) goes through your local `claude` CLI and your Claude subscription; `provider/model` goes to OpenRouter, with the key read from the macOS Keychain (`security add-generic-password -s langcouch-openrouter -a "$USER" -w`) or `OPENROUTER_API_KEY`.
+- It prints a table per model and saves the raw replies to `evals/out/` (gitignored). Read some of them: the numbers are a map, not the verdict.
+
 ## Ground rules
 
 - TypeScript + bun; no runtime dependencies (the hook must start in milliseconds).
