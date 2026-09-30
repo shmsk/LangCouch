@@ -146,6 +146,8 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
     if (fn >= 2 && tokens(m[2]!).length >= 4) { sentence = true; sentences.push(m[1]!); }
   }
 
+  // unglossed bold counts as woven: familiar and known words come without a translation by design
+  for (const t of wovenLemmas(prose, spec.served.map((s) => s.target))) woven.add(t);
   // a served word in prose that never got the bold+gloss treatment
   // words inside the Spanish sentence are its content, not unglossed weaves
   const proseTokens = tokens(sentences.reduce((acc, x) => acc.replace(x, " "), prose));
@@ -153,8 +155,6 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
     .filter((s) => !woven.has(s.target) && proseTokens.some((t) => inflects(t, s.target)))
     .map((s) => s.target);
 
-  // unglossed bold counts as woven: familiar and known words come without a translation by design
-  for (const t of wovenLemmas(prose, spec.served.map((s) => s.target))) woven.add(t);
   const familiarUsed = (spec.familiar ?? []).filter((t) => woven.has(t));
   const lastLines = prose.trim().split("\n").slice(-3).join("\n");
   const glossaryLine = familiarUsed.length > 0 && familiarUsed.some((t) => new RegExp(`${stem(t)}\\p{L}*\\**\\s*=\\s*\\S`, "iu").test(lastLines));

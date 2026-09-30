@@ -13,7 +13,8 @@ const HOOK_MARKER = "langcouch";
 
 // UserPromptSubmit is the workhorse (fresh words every prompt); SessionStart is the
 // fallback for CLI versions where prompt-submit context injection is flaky (lang-coach lesson).
-const EVENTS = ["UserPromptSubmit", "SessionStart"];
+// Stop reads the finished reply back, so only words it actually used count (weave algorithm 3).
+const EVENTS = ["UserPromptSubmit", "SessionStart", "Stop"];
 
 interface HookEntry {
   type: "command";

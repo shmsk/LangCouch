@@ -4,7 +4,48 @@ What changed in each version, written for people who use LangCouch. The format f
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/). `langcouch status` shows the newest section once
 after an update. If an update ever needs you to do something, its section starts with
-**Upgrade notes**: numbered steps. No version so far has needed any.
+**Upgrade notes**: numbered steps.
+
+## [0.6.0] - 2026-09-30
+
+**Upgrade notes**
+
+Your progress carries over by itself: on first use each word is placed on the new ladder
+from its old counts, and every word you had absorbed stays absorbed. Two steps are needed
+only if you installed LangCouch outside the Claude Code plugin:
+
+1. Codex CLI, or a manual Claude Code hook: run `langcouch install codex` (or
+   `langcouch install claude`) again with the same `--scope`. It adds the `Stop` hook and
+   leaves your other hooks alone. In Codex, open `/hooks` and trust the new entry.
+2. opencode, Hermes Agent or OpenClaw: run `langcouch install opencode` (with the same
+   `--scope`), `langcouch install hermes` or `langcouch install openclaw` again, so the
+   plugin file picks up the after-reply event. For OpenClaw, run the printed link command
+   again too.
+
+If you skip them, weaving keeps working and words are counted when they are served, as
+before. To keep the old weave entirely, run `langcouch mode 1`.
+
+### Changed
+- Words come back on an interval ladder: 30 minutes, 8 hours, a day, 4 days, 2 weeks, a
+  month, then 6 months. A word climbs a step only when a reply actually uses it while it
+  is due, and it keeps coming back until one does.
+- A word counts as shown only when the reply used it. LangCouch reads the finished reply
+  back through the host's after-reply event: `Stop` in Claude Code and Codex,
+  `post_llm_call` in Hermes, `agent_end` in OpenClaw, `session.idle` in opencode.
+- Translations fade. A new word comes as **casa** (house). A familiar one comes as plain
+  **casa**, and the reply ends with one line such as `casa = house · nombre = name`.
+  Absorbed words get no translation, so more of each reply is in the language you learn.
+- The model weaves a word only where the reply already needs its meaning, instead of
+  fitting in every listed word. One or two words that kept missing may still go into a
+  short aside or a closing line, never into code, facts or text you will copy.
+- Posts, emails, summaries and commit messages you will copy or send stay free of
+  foreign words; the weave stays in the text around them.
+- A wrong `quiz` answer sends a word back to the start of the ladder.
+
+### Added
+- `langcouch mode [1|2|3]` and `/langcouch:mode`: 3 is the new default, 2 weaves only
+  words that fit, 1 is the old "every listed word".
+- `status` shows the current mode.
 
 ## [0.5.0] - 2026-09-30
 

@@ -8,6 +8,9 @@ All logic lives in the TypeScript CLI; this file only shells out to it.
   We pipe the turn into `langcouch hook` and return the <langcouch> block as
   {"context": ...}, which Hermes appends to the user message. Same contract as
   the Claude Code UserPromptSubmit hook.
+- post_llm_call: fires once the turn's final answer is done. We hand the
+  answer to `langcouch hook` as a Stop event, so only the words it really
+  used count as shown (weave algorithm 3).
 - /langcouch <args>: routes to the CLI (lang, level, pause, resume, status)
   and returns its output. Works in the CLI and on gateway platforms.
 
@@ -27,7 +30,7 @@ TIMEOUT = 5
 
 # Subcommands safe to run from a chat. quiz is interactive and init/install
 # touch the host config, so they stay terminal-only.
-COMMANDS = ("lang", "level", "pause", "resume", "status", "validate", "instruction")
+COMMANDS = ("lang", "level", "mode", "pause", "resume", "status", "validate", "instruction")
 
 
 def _runtimes():
@@ -78,6 +81,21 @@ def pre_llm_call(session_id="", user_message="", **kwargs):
         return None
 
 
+def post_llm_call(session_id="", assistant_response="", **kwargs):
+    try:
+        if not assistant_response:
+            return None
+        payload = json.dumps({
+            "session_id": session_id or "",
+            "hook_event_name": "Stop",
+            "last_assistant_message": assistant_response,
+        })
+        _run(["hook"], payload)
+    except Exception:
+        pass
+    return None
+
+
 def langcouch_command(raw_args=""):
     try:
         args = shlex.split(raw_args or "")
@@ -94,6 +112,7 @@ def langcouch_command(raw_args=""):
 
 def register(ctx):
     ctx.register_hook("pre_llm_call", pre_llm_call)
+    ctx.register_hook("post_llm_call", post_llm_call)
     ctx.register_command(
         "langcouch",
         handler=langcouch_command,

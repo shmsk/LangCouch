@@ -104,6 +104,8 @@ jobs:
           echo "exit $code, reply: $(cat "$RUNNER_TEMP/reply.txt")"; exit $code
       - name: The <langcouch> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: The finished reply came back to LangCouch
+        run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
         run: |
@@ -172,6 +174,8 @@ jobs:
         run: openclaw agent --local --agent main --message "hello from CI" --timeout 120
       - name: The <langcouch> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: The finished reply came back to LangCouch
+        run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
         run: |
@@ -228,6 +232,8 @@ jobs:
         run: FAKE_API_KEY=x codex exec --skip-git-repo-check --ephemeral --dangerously-bypass-hook-trust -s read-only "hello from CI"
       - name: The <langcouch> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: The finished reply came back to LangCouch
+        run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
         run: cat "$RUNNER_TEMP/fake-llm.out" || true
@@ -291,6 +297,8 @@ jobs:
         run: opencode run -m fake/fake-model "hello from CI"
       - name: The <langcouch> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: The finished reply came back to LangCouch
+        run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
         run: |
@@ -376,7 +384,7 @@ jobs:
               opencode) (cd "$RUNNER_TEMP/work" && opencode run -m "openrouter/$MODEL" "$LIVE_PROMPT") > reply.txt || true ;;
               codex) codex exec --skip-git-repo-check --ephemeral --dangerously-bypass-hook-trust -s read-only -o reply.txt "$LIVE_PROMPT" > /dev/null || true ;;
             esac
-            if bun tests/smoke/assert-woven.ts reply reply.txt es; then
+            if bun tests/smoke/assert-woven.ts reply reply.txt es && bun tests/smoke/assert-woven.ts settled; then
               { echo "### ${{ matrix.host }} × $MODEL"; echo; cat reply.txt; } >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi

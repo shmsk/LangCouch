@@ -42,7 +42,7 @@ export function inflects(token: string, lemma: string): boolean {
   const root = l.replace(/[aoe]$/, "");
   return root !== l && ["a", "o", "as", "os"].includes(t.slice(root.length)) && t.startsWith(root);
 }
-const VERB_ENDINGS = new Set(["o", "as", "a", "amos", "an", "es", "e", "emos", "en", "imos", "ado", "ada", "ido", "ida", "ando", "iendo", "é", "ó", "ió", "aba", "ía"]);
+const VERB_ENDINGS = new Set(["o", "as", "a", "amos", "an", "es", "e", "emos", "en", "imos", "ado", "ada", "ido", "ida", "ando", "iendo", "é", "ó", "ió", "aba", "ía", "á", "ás", "án"]);
 
 /** Code the weave must not touch: fenced blocks and inline spans. */
 export function splitCode(reply: string): { prose: string; code: string } {

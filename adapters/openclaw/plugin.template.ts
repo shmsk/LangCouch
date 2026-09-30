@@ -12,6 +12,9 @@ import { spawnSync } from "node:child_process";
  * - before_prompt_build: shells out to `langcouch hook` with the current user
  *   message and returns the <langcouch> block as prependContext, the same
  *   position as the Claude Code UserPromptSubmit hook and the opencode plugin.
+ * - agent_end: when a run finishes successfully, sends the last assistant
+ *   message to `langcouch hook` as a Stop payload so the CLI counts which
+ *   served words the reply really used. Once per runId when present.
  * - /langcouch <args>: routes to the CLI and replies without calling the LLM.
  *
  * Turn-scoped dedup: OpenClaw re-runs before_prompt_build on retries and
@@ -69,8 +72,35 @@ export function runHook(prompt: string, sessionId: string, spawn: SpawnFn = defa
   return r && r.status === 0 ? r.stdout.trim() : "";
 }
 
+/** Send a finished reply to the CLI (Stop payload). */
+export function runStop(reply: string, sessionId: string, spawn: SpawnFn = defaultSpawn): void {
+  const payload = JSON.stringify({ hook_event_name: "Stop", session_id: sessionId, last_assistant_message: reply });
+  runCli(["hook"], payload, spawn);
+}
+
+/** Text of the last assistant entry in an agent_end messages array ("" if none). Shapes vary, so all access is defensive. */
+export function lastAssistantText(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const raw = messages[i] as any;
+    const msg = raw?.message && typeof raw.message === "object" ? raw.message : raw;
+    if (msg?.role !== "assistant") continue;
+    const c = msg?.content;
+    if (typeof c === "string") return c.trim();
+    if (Array.isArray(c)) {
+      return c
+        .filter((p: any) => p?.type === "text" && typeof p?.text === "string")
+        .map((p: any) => p.text)
+        .join("\n")
+        .trim();
+    }
+    return "";
+  }
+  return "";
+}
+
 // Subcommands safe to run from a chat; quiz is interactive, init/install touch host config.
-const COMMANDS = ["lang", "level", "pause", "resume", "status", "validate", "instruction"];
+const COMMANDS = ["lang", "level", "mode", "pause", "resume", "status", "validate", "instruction"];
 
 export function runCommand(rawArgs: string, spawn: SpawnFn = defaultSpawn): string {
   const args = rawArgs.trim().split(/\s+/).filter(Boolean);
@@ -84,7 +114,12 @@ export function runCommand(rawArgs: string, spawn: SpawnFn = defaultSpawn): stri
 /** Minimal slice of the OpenClaw plugin API this adapter uses. */
 export type PromptBuildEvent = { prompt: string; currentUserMessage?: string; currentUserMessageId?: string };
 export type AgentContext = { sessionId?: string; sessionKey?: string };
+export type AgentEndEvent = { runId?: string; messages: unknown[]; success: boolean; error?: string; durationMs?: number };
 export type PluginApi = {
+  on(
+    hook: "agent_end",
+    handler: (event: AgentEndEvent, ctx: AgentContext) => void,
+  ): void;
   on(
     hook: "before_prompt_build",
     handler: (event: PromptBuildEvent, ctx: AgentContext) => { prependContext: string } | undefined,
@@ -121,6 +156,26 @@ export function buildPlugin(spawn: SpawnFn = defaultSpawn) {
           return block ? { prependContext: block } : undefined;
         } catch {
           return undefined; // never break the host session
+        }
+      });
+
+      // runId → already sent (per session, last one only is enough)
+      const lastReply = new Map<string, string>();
+
+      api.on("agent_end", (event, ctx) => {
+        try {
+          if (event?.success === false) return;
+          const text = lastAssistantText(event?.messages);
+          if (!text) return;
+          const sessionId = ctx?.sessionId ?? ctx?.sessionKey ?? "";
+          const runId = event?.runId;
+          if (runId) {
+            if (lastReply.get(sessionId) === runId) return;
+            lastReply.set(sessionId, runId);
+          }
+          runStop(text, sessionId, spawn);
+        } catch {
+          // never break the host session
         }
       });
 

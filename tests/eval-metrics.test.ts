@@ -115,3 +115,9 @@ describe("algorithm 3 metrics", () => {
     expect(m.glossaryLine).toBe(false);
   });
 });
+
+test("an unglossed bold served word is woven, not 'no gloss'", () => {
+  const m = scoreReply("A common **clase** of bug.", { served: [{ target: "clase", gloss: "class" }], familiar: ["clase"] });
+  expect(m.woven).toEqual(["clase"]);
+  expect(m.unformatted).toEqual([]);
+});

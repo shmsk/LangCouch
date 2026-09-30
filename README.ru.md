@@ -29,7 +29,7 @@ LangCouch вплетает слова изучаемого языка в отв�
 # restart the session — replies start weaving Spanish (default: es, level 2)
 ```
 
-Настройка не нужна: ни `npm install`, ни сборки, хук сам создаёт конфиг при первом запуске. Управление прямо из Claude Code: `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, а свой язык добавляется через `/langcouch:add-language <language>`.
+Настройка не нужна: ни `npm install`, ни сборки, хук сам создаёт конфиг при первом запуске. Управление прямо из Claude Code: `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, а свой язык добавляется через `/langcouch:add-language <language>`.
 
 **Подсказки на вашем языке:** укажите `"native"` в `~/.langcouch/config.json`: `en` (по умолчанию), `ru` или `uz` (узбекский, латиница). От этого зависят подсказки в ответах и принимаемые ответы в квизе.
 
@@ -118,14 +118,18 @@ flowchart LR
     E --> F[Build ≤600-token<br/>weave instruction]
     F --> G[Instruction injected<br/>into agent context]
     G --> H[Model weaves words<br/>into its reply]
-    H --> I[Exposures +1<br/>written to local state]
+    H --> I[After the reply: words it used<br/>climb the ladder in local state]
 ```
 
 - **Словарь по концептам**: значения хранятся один раз в `concepts.json` (id, часть речи, tier, подсказки для каждого родного языка); каждый `wordlists/<lang>.json` — тонкая карта «концепт → лемма», так что новый язык — это один небольшой файл, а подсказки не расходятся
 - **Словари**: ~400 базовых значимых слов на язык (существительные, глаголы, прилагательные, наречия), без служебных слов; поле tier оставляет место для уровня до 1000 слов, который открывается, когда база усвоена примерно на 80%
 - **Прогресс по каждому языку**: состояние лежит в `~/.langcouch/state.<lang>.json` с ключом по id концепта, поэтому прогресс переживает исправления лемм и сравним между языками («вы знаете *солнце* в 3 языках из 5»)
-- **SRS-lite**: сначала слова, которые показывались реже всего, ротация, усвоенные слова уходят в хвост повторения (≤20%)
-- **Сигнал вспоминания**: увидеть слово не значит его знать. Слово считается усвоенным, только когда вы сами его использовали (оно появилось в вашем промпте или вы прошли `quiz`), либо после гораздо большей пассивной дозы
+- **Лесенка интервалов**: каждое слово возвращается через 30 минут, 8 часов, 1 день, 4 дня, 2 недели, 1 месяц, затем через 6 месяцев. На ступень вверх оно поднимается, только когда ответ действительно его использует, пока слово «созрело»; созревшие слова идут первыми, а четверть каждого списка остаётся свободной для новых слов
+- **Честный подсчёт**: после ответа хук Stop (или событие хоста «после ответа») читает его обратно, и показанными считаются только те слова, которые ответ использовал. Хост без такого события, как и раньше, считает выданные слова
+- **Переводы тают**: новое слово приходит как **casa** (house). Начиная с четвёртой ступени оно стоит просто как **casa**, а перевод даётся одной строкой в конце (`casa = house · nombre = name`). С пятой ступени (усвоено) перевода нет совсем, а усвоенные слова возвращаются как вращающаяся выборка, которую модель может использовать свободно, так что доля языка в ответах растёт
+- **Только к месту, плюс подталкивание**: модель вплетает слово, только если ответу и так нужен его смысл, поэтому ничего не выдумывается ради слова. Единственное исключение: одно-два слова, которые всё время не попадали в ответы, можно вставить в короткое отступление или в заключительную строку, но никогда не в код, факты или текст, который вы скопируете
+- **Сигнал вспоминания**: увидеть слово не значит его знать. Слово, которое вы использовали в своём промпте или правильно ответили в `quiz`, поднимается на ступень; неверный ответ в quiz возвращает его в начало
+- **Режимы**: `langcouch mode 3` это всё описанное выше (по умолчанию). `mode 2` вплетает только те слова, которые подходят к месту, а `mode 1` просит использовать каждое слово из списка; оба засчитывают слово в момент выдачи
 - **Уровни 1–10**: слова с 1-го уровня; [правила словообразования](#правила-словообразования) со 2-го (`patterns/<lang>.json`); словосочетания с 4-го и простые предложения с 7-го, на конструкциях из `grammar/<lang>.json`, если они есть у языка
 - **Родной язык**: если вы учите свой родной язык (например, `en` при native `en`), подсказки берутся из другого языка
 
@@ -171,11 +175,11 @@ flowchart LR
 
 | CLI | Статус | Установка | Механизм |
 |---|---|---|---|
-| Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch` или `langcouch install claude` | хук `UserPromptSubmit` (добавление в контекст, надёжно) |
-| opencode | **Production** (плагин) + **экспериментально** (запасной путь) | `langcouch install opencode [--scope project\|user]` | хук плагина `experimental.chat.messages.transform` + запасная секция в AGENTS.md |
-| Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | хук `UserPromptSubmit` в `hooks.json` (добавление в контекст, надёжно) |
-| Hermes Agent | **Production** | `langcouch install hermes` | хук плагина `pre_llm_call` (контекст добавляется к вашему сообщению) |
-| OpenClaw | **Production** | `langcouch install openclaw` | хук плагина `before_prompt_build` (`prependContext`) |
+| Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch` или `langcouch install claude` | хук `UserPromptSubmit` (добавление в контекст, надёжно); `Stop` читает ответ обратно |
+| opencode | **Production** (плагин) + **экспериментально** (запасной путь) | `langcouch install opencode [--scope project\|user]` | хук плагина `experimental.chat.messages.transform` + запасная секция в AGENTS.md; `session.idle` читает ответ обратно |
+| Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | хук `UserPromptSubmit` в `hooks.json` (добавление в контекст, надёжно); `Stop` читает ответ обратно |
+| Hermes Agent | **Production** | `langcouch install hermes` | хук плагина `pre_llm_call` (контекст добавляется к вашему сообщению); `post_llm_call` читает ответ обратно |
+| OpenClaw | **Production** | `langcouch install openclaw` | хук плагина `before_prompt_build` (`prependContext`); `agent_end` читает ответ обратно |
 
 Codex CLI, opencode, Hermes Agent и OpenClaw устанавливаются на чистый CI-раннер и проверяются от начала до конца ([workflow hosts-smoke](.github/workflows/hosts-smoke.yml)): плагин загружается, блок доходит до модели, а настоящие модели на OpenRouter вплетают выданные им слова.
 
@@ -190,14 +194,15 @@ Codex CLI, opencode, Hermes Agent и OpenClaw устанавливаются н�
 | `lang [code]` | переключает изучаемый язык / показывает доступные (ваши собственные помечены `local`) |
 | `validate <code> [--full]` | проверяет словарь, например добавленный вами в `~/.langcouch/wordlists/` |
 | `level <1-10\|up\|down>` | интенсивность вплетения |
+| `mode [1\|2\|3]` | алгоритм вплетения: 3 лесенка интервалов (по умолчанию), 2 только подходящие к месту слова, 1 каждое слово из списка |
 | `quiz [n]` | проверка усвоения (по умолчанию 5 слов); проваленное слово возвращается в ротацию |
 | `pause` / `resume` | выключатель вплетения |
 | `spinner <on\|off\|status>` | по желанию: слова, которые вы учите, в подсказках спиннера Claude Code |
 | `instruction` | печатает инструкцию для модели (не засчитывая показы) |
-| `hook` | режим хука CLI (засчитывает показы и ищет в промпте вспомненные слова; при любой ошибке выходит с кодом 0, чтобы не ломать сессию хоста) |
-| `install claude [--scope project\|user]` | регистрирует хук UserPromptSubmit |
+| `hook` | режим хука CLI: перед ответом строит инструкцию и ищет в промпте вспомненные слова; после него (событие `Stop`) засчитывает слова, которые ответ использовал. При любой ошибке выходит с кодом 0, чтобы не ломать сессию хоста |
+| `install claude [--scope project\|user]` | регистрирует хуки UserPromptSubmit, SessionStart и Stop |
 | `install opencode [--scope project\|user]` | ставит плагин + запасную секцию в AGENTS.md для opencode |
-| `install codex [--scope project\|user]` | регистрирует хук UserPromptSubmit в `hooks.json` Codex CLI |
+| `install codex [--scope project\|user]` | регистрирует хуки UserPromptSubmit, SessionStart и Stop в `hooks.json` Codex CLI |
 | `install hermes` | ставит плагин Hermes Agent в `$HERMES_HOME/plugins/langcouch/` |
 | `install openclaw` | генерирует плагин OpenClaw и печатает команды, которые подключают и включают его |
 
@@ -216,14 +221,14 @@ Codex CLI, opencode, Hermes Agent и OpenClaw устанавливаются н�
 
 Хук работает локально. Он читает ваш промпт только чтобы найти в нём уже показанные слова (сигнал вспоминания). Промпт никогда не логируется, не отправляется по сети и нигде не хранится. На диск пишется только файл состояния для каждого языка в `~/.langcouch/` (читаемый JSON), который можно посмотреть, забэкапить или удалить через `rm -rf` в любой момент. У LangCouch нет сетевых обращений и нет телеметрии.
 
-Экспериментальный алгоритм вплетения 3 (по умолчанию выключен, включается строкой `"algorithm": 3` в `~/.langcouch/config.json`) ещё и читает последний ответ ассистента, когда тот готов, из локального транскрипта Claude Code, чтобы засчитать только те слова, которые ответ действительно использовал. До этого слова, предложенные на текущий ход, лежат в `~/.langcouch/served.json`. Сам ответ не сохраняется, и ничего не покидает ваш компьютер.
+Когда ответ готов, хук ещё и читает его (хост передаёт его сам, либо он есть в локальном транскрипте Claude Code), чтобы засчитать только те слова, которые ответ действительно использовал. Слова, предложенные на текущий ход, до этого лежат в `~/.langcouch/served.json`. Сам ответ не сохраняется, и ничего не покидает ваш компьютер. `langcouch mode 1` или `mode 2` это отключает.
 
 ## Удаление
 
 - **Плагин Claude Code:** если вы включали спиннер, **сначала** выполните `/langcouch:spinner off` (у Claude Code нет хука удаления, так что плагин не может прибраться за собой сам). Затем `/plugin uninstall langcouch@langcouch` и перезапустите сессию. Уже удалили с включённым спиннером? Удалите строки, начинающиеся с `LangCouch · `, из `spinnerTipsOverride.tips` в `~/.claude/settings.json`.
-- **Ручной хук Claude Code:** удалите запись `UserPromptSubmit`, команда которой заканчивается на `src/cli.ts hook`, из `.claude/settings.json` (или `~/.claude/settings.json`, если ставили с `--scope user`).
+- **Ручной хук Claude Code:** удалите записи `UserPromptSubmit`, `SessionStart` и `Stop`, команда которых заканчивается на `src/cli.ts hook`, из `.claude/settings.json` (или `~/.claude/settings.json`, если ставили с `--scope user`).
 - **opencode:** удалите `langcouch.ts` из `.opencode/plugin/` (или `~/.config/opencode/plugin/`) и секцию между `<!-- langcouch:start -->` и `<!-- langcouch:end -->` в `AGENTS.md`.
-- **Codex CLI:** удалите записи `UserPromptSubmit` и `SessionStart`, команда которых заканчивается на `src/cli.ts hook`, из `~/.codex/hooks.json` (или `.codex/hooks.json` для `--scope project`).
+- **Codex CLI:** удалите записи `UserPromptSubmit`, `SessionStart` и `Stop`, команда которых заканчивается на `src/cli.ts hook`, из `~/.codex/hooks.json` (или `.codex/hooks.json` для `--scope project`).
 - **Hermes Agent:** `hermes plugins disable langcouch`, затем удалите `~/.hermes/plugins/langcouch/` (или каталог в вашем `$HERMES_HOME`).
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, затем удалите `~/.langcouch/openclaw-plugin/`.
 - **Ваш прогресс:** `rm -rf ~/.langcouch` (не делайте этого, если можете вернуться: прогресс переживает переустановку).
@@ -236,7 +241,7 @@ Codex CLI, opencode, Hermes Agent и OpenClaw устанавливаются н�
 
 - Грамматические конструкции не только для испанского (pt, it, fr, de, en, tr), с региональными оверлеями для pt-BR и en-GB
 - Словарь второго уровня (до 1000 слов на язык), открывается при ~80% усвоения базы
-- Полноценное интервальное повторение SM-2 (сейчас SRS-lite)
+- Лексические блоки (целые фразы), когда большая часть ядра усвоена
 - Испанские герундии в глаголах спиннера («Pensando…»)
 - Адаптер для Gemini CLI
 - Больше языков. Может, ваш? ([docs/AddLanguage.md](docs/AddLanguage.md))

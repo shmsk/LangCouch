@@ -13,7 +13,7 @@ import { migrate, pickLadder } from "./ladder.ts";
 import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "./served.ts";
 import { buildInstruction } from "./instruction.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
-import { glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
+import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
 import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
 import { installClaude } from "../adapters/claude/install.ts";
@@ -31,7 +31,7 @@ import { installOpenclaw } from "../adapters/openclaw/install.ts";
 function makeInstruction(mark: boolean, sessionId = "", eventName = ""): string {
   const config = loadConfig();
   if (config.enabled === false) return "";
-  const algorithm = config.algorithm ?? 1;
+  const algorithm = algorithmOf(config);
   const words = loadWordlist(config.lang);
   const state = loadState(config.lang);
   const now = new Date().toISOString();
@@ -70,11 +70,13 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = ""): string 
  */
 function settleReply(payload: HookPayload): void {
   const config = loadConfig();
-  if (config.enabled === false || (config.algorithm ?? 1) !== 3) return;
+  if (config.enabled === false || algorithmOf(config) !== 3) return;
+  const reply = payload.lastMessage || (payload.transcriptPath ? lastReply(readTail(payload.transcriptPath)) : "");
+  // an unreadable reply leaves the offer for the served-as-woven fallback, rather than marking every word missed
+  if (!reply.trim()) return;
   const now = new Date().toISOString();
   const rec = takeServed(DATA_DIR, payload.sessionId, now);
   if (!rec || rec.lang !== config.lang) return;
-  const reply = payload.lastMessage || (payload.transcriptPath ? lastReply(readTail(payload.transcriptPath)) : "");
   const state = migrate(loadState(config.lang));
   saveState(config.lang, settleServed(state, rec, reply, now));
 }
@@ -259,7 +261,7 @@ function status(): string {
   });
 
   return [
-    `langcouch — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response)`,
+    `langcouch — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response) · mode ${algorithmOf(config)}`,
     news,
     coreLine,
     regionalLine,
@@ -292,6 +294,12 @@ function absorbedListView(): string {
   return [`Absorbed in ${config.lang} (${rows.length}):`, ...rows].join("\n");
 }
 
+const MODE_NAMES: Record<1 | 2 | 3, string> = {
+  1: "every listed word, counted when served",
+  2: "only words that fit the reply, counted when served",
+  3: "words that fit plus a nudge, translations fade on an interval ladder, counted when the reply uses them",
+};
+
 const [cmd, ...args] = process.argv.slice(2);
 
 try {
@@ -321,8 +329,10 @@ try {
         try {
           settleReply(payload);
         } catch {
-          // counting is best-effort; a Stop hook prints nothing and never blocks
+          // counting is best-effort and never blocks the stop
         }
+        // Codex wants JSON from a Stop hook; an empty object means "no decision" to Claude Code too
+        console.log("{}");
         process.exit(0);
       }
       try {
@@ -332,7 +342,7 @@ try {
           if (config.enabled !== false) {
             const found = scanRecalls(payload.prompt, loadWordlist(config.lang));
             const state = loadState(config.lang);
-            if (config.algorithm === 3) migrate(state); // recalls climb the ladder only once it is there
+            if (algorithmOf(config) === 3) migrate(state); // recalls climb the ladder only once it is there
             if (found.length) saveState(config.lang, recordRecalls(state, found));
           }
         }
@@ -356,7 +366,7 @@ try {
       const config = loadConfig();
       const words = loadWordlist(config.lang);
       const state = loadState(config.lang);
-      if (config.algorithm === 3) migrate(state); // a quiz answer climbs or resets the ladder
+      if (algorithmOf(config) === 3) migrate(state); // a quiz answer climbs or resets the ladder
       const n = Math.max(1, Math.trunc(Number(args[0])) || 5);
       const seenTargets = new Set<string>();
       const candidates = words
@@ -399,6 +409,22 @@ try {
       }
       saveConfig({ ...config, level: next });
       console.log(`Level: ${config.level} → ${next} (${wordsPerResponse(next)} words/response)`);
+      break;
+    }
+    case "mode": {
+      const config = loadConfig();
+      const arg = args[0];
+      if (arg === undefined) {
+        console.log(`Weave algorithm: ${algorithmOf(config)} (${MODE_NAMES[algorithmOf(config)]})`);
+        break;
+      }
+      const next = Number(arg);
+      if (next !== 1 && next !== 2 && next !== 3) {
+        console.error("usage: langcouch mode <1|2|3> — 3: interval ladder (default), 2: only words that fit, 1: every listed word");
+        process.exit(1);
+      }
+      saveConfig({ ...config, algorithm: next });
+      console.log(`Weave algorithm: ${algorithmOf(config)} → ${next} (${MODE_NAMES[next]})`);
       break;
     }
     case "lang": {
@@ -522,6 +548,7 @@ try {
           "  lang [code]               switch language / list available (regional variants too: pt-BR)",
           "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.langcouch/wordlists/)",
           "  level <1-10|up|down>      weaving intensity",
+          "  mode [1|2|3]              weave algorithm: 3 interval ladder (default), 2 fit only, 1 every word",
           "  quiz [n]                  absorption check (default 5 words)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
           "  instruction               print the weave instruction (without marking exposures)",

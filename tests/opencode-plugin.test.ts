@@ -177,3 +177,83 @@ describe("runHook — runtime detection (smoke)", () => {
     expect(runHook("prompt", "sess", spawn)).toBe("");
   });
 });
+describe("opencode plugin — after-reply (session.idle)", () => {
+  type Spawned = { cmd: string; args: string[]; input?: string };
+  function recording() {
+    const spawned: Spawned[] = [];
+    const spawn: SpawnFn = (cmd, args, opts) => {
+      spawned.push({ cmd, args, input: opts.input });
+      return { status: 0, stdout: "" };
+    };
+    return { spawn, spawned };
+  }
+  const stops = (spawned: Spawned[]) => spawned.filter((c) => c.args.includes("hook")).map((c) => JSON.parse(c.input ?? "{}"));
+  const asst = (id: string, ...texts: string[]) => ({
+    info: { id, role: "assistant" },
+    parts: texts.map((text) => ({ type: "text", text })),
+  });
+  const idle = (sessionID: string) => ({ event: { type: "session.idle", properties: { sessionID } } as never });
+  const clientOf = (items: unknown, wrap = true) => ({
+    session: { messages: async () => (wrap ? { data: items } : items) },
+  });
+
+  test("sends exactly one Stop payload with the last assistant text", async () => {
+    const { spawn, spawned } = recording();
+    const items = [{ info: { id: "u1", role: "user" }, parts: [{ type: "text", text: "q" }] }, asst("a0", "old"), asst("a1", "hola", "casa")];
+    const hooks = await buildPlugin(spawn)({ client: clientOf(items) } as never);
+    await hooks.event!(idle("s1"));
+    const sent = stops(spawned);
+    expect(sent.length).toBe(1);
+    expect(sent[0]).toEqual({ hook_event_name: "Stop", session_id: "s1", last_assistant_message: "hola\ncasa" });
+  });
+
+  test("accepts a bare array result and does not resend the same assistant message", async () => {
+    const { spawn, spawned } = recording();
+    const hooks = await buildPlugin(spawn)({ client: clientOf([asst("a1", "uno")], false) } as never);
+    await hooks.event!(idle("s1"));
+    await hooks.event!(idle("s1"));
+    expect(stops(spawned).length).toBe(1);
+  });
+
+  test("a new assistant message id sends again", async () => {
+    const { spawn, spawned } = recording();
+    let items = [asst("a1", "uno")];
+    const client = { session: { messages: async () => ({ data: items }) } };
+    const hooks = await buildPlugin(spawn)({ client } as never);
+    await hooks.event!(idle("s1"));
+    items = [asst("a1", "uno"), asst("a2", "dos")];
+    await hooks.event!(idle("s1"));
+    expect(stops(spawned).map((p) => p.last_assistant_message)).toEqual(["uno", "dos"]);
+  });
+
+  test("falls back to properties.sessionId / id, and to the client passed to buildPlugin", async () => {
+    const { spawn, spawned } = recording();
+    const hooks = await buildPlugin(spawn, clientOf([asst("a1", "x")]))({} as never);
+    await hooks.event!({ event: { type: "session.idle", properties: { sessionId: "sA" } } as never });
+    await hooks.event!({ event: { type: "session.idle", properties: { id: "sB" } } as never });
+    expect(stops(spawned).map((p) => p.session_id)).toEqual(["sA", "sB"]);
+  });
+
+  test("no text, other events, malformed payloads, missing or throwing client send nothing and never throw", async () => {
+    const { spawn, spawned } = recording();
+    const noText = await buildPlugin(spawn)({ client: clientOf([{ info: { id: "a1", role: "assistant" }, parts: [{ type: "tool" }] }]) } as never);
+    await noText.event!(idle("s1"));
+
+    const ok = await buildPlugin(spawn)({ client: clientOf([asst("a1", "x")]) } as never);
+    await ok.event!({ event: { type: "session.updated", properties: { sessionID: "s1" } } as never });
+    await ok.event!({ event: { type: "session.idle" } as never });
+    await ok.event!({ event: undefined as never });
+    await (ok.event as any)(undefined);
+
+    const noClient = await buildPlugin(spawn)({} as never);
+    await noClient.event!(idle("s1"));
+
+    const throwing = await buildPlugin(spawn)({ client: { session: { messages: async () => { throw new Error("rpc"); } } } } as never);
+    await expect(throwing.event!(idle("s1"))).resolves.toBeUndefined();
+
+    const garbage = await buildPlugin(spawn)({ client: clientOf("nope") } as never);
+    await expect(garbage.event!(idle("s1"))).resolves.toBeUndefined();
+
+    expect(spawned.length).toBe(0);
+  });
+});

@@ -72,10 +72,14 @@ export interface Config {
   seenVersion?: string;
   /**
    * Weave algorithm (src/instruction.ts): 1 = every listed word (default), 2 = only where it fits,
-   * 3 = fit + nudge + interval ladder with honest counting (src/ladder.ts).
+   * 3 = fit + nudge + interval ladder with honest counting (src/ladder.ts). Set by `langcouch mode`.
    */
   algorithm?: 1 | 2 | 3;
 }
+
+/** Algorithm 3 since 0.6.0; a config without the field gets it. `langcouch mode 1` brings the old weave back. */
+export const DEFAULT_ALGORITHM = 3;
+export const algorithmOf = (config: Config): 1 | 2 | 3 => config.algorithm ?? DEFAULT_ALGORITHM;
 
 export interface WordState {
   exposures: number;

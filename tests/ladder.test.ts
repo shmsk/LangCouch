@@ -226,7 +226,7 @@ describe("Stop hook, end to end", () => {
   const run = (dir: string, payload: object) =>
     spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LANGCOUCH_DIR: dir }, input: JSON.stringify(payload), encoding: "utf8" });
 
-  test("records exactly the words the reply wove, prints nothing, exits 0", () => {
+  test("records exactly the words the reply wove, prints {}, exits 0", () => {
     const dir = mkdtempSync(join(tmpdir(), "langcouch-stop-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify({ lang: "es", native: "en", level: 2, algorithm: 3 }));
     const served = run(dir, { prompt: "hi", session_id: "s", hook_event_name: "UserPromptSubmit" });
@@ -238,7 +238,7 @@ describe("Stop hook, end to end", () => {
     writeFileSync(transcript, [{ type: "user", message: { content: "hi" } }, { type: "assistant", message: { content: [{ type: "text", text: `Hello **${wovenLemma}** (x).` }] } }].map((l) => JSON.stringify(l)).join("\n"));
     const stop = run(dir, { session_id: "s", hook_event_name: "Stop", transcript_path: transcript });
     expect(stop.status).toBe(0);
-    expect(stop.stdout).toBe("");
+    expect(stop.stdout.trim()).toBe("{}");
     const state = JSON.parse(readFileSync(join(dir, "state.es.json"), "utf8")) as State;
     expect(state[wovenId!]).toMatchObject({ exposures: 1, step: 1 });
     for (const [id] of rest) expect(state[id]).toMatchObject({ exposures: 0, missed: 1 });
@@ -250,6 +250,6 @@ describe("Stop hook, end to end", () => {
     run(dir, { prompt: "hi", session_id: "s", hook_event_name: "UserPromptSubmit" });
     const stop = run(dir, { session_id: "s", hook_event_name: "Stop", transcript_path: join(dir, "missing.jsonl") });
     expect(stop.status).toBe(0);
-    expect(stop.stdout).toBe("");
+    expect(stop.stdout.trim()).toBe("{}");
   });
 });

@@ -7,6 +7,9 @@
  *     A real model wove what LangCouch served: at least one word the hook put
  *     into this run's instruction (read back from state.<lang>.json and mapped
  *     to its lemma via the wordlist) appears as **word** (translation).
+ *   bun tests/smoke/assert-woven.ts settled
+ *     The host's after-reply event reached LangCouch: a session in served.json
+ *     was read back by a Stop (weave algorithm 3, honest counting).
  *
  * Prints what it found either way, so a red run shows why.
  */
@@ -17,8 +20,19 @@ import { isWordKey, type State } from "../../src/types.ts";
 import { wovenPairs, matchServed } from "./woven.ts";
 
 const [mode, file, lang] = process.argv.slice(2);
+if (mode === "settled") {
+  const path = join(DATA_DIR, "served.json");
+  const all = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Record<string, { stopSeen?: boolean; picks?: object }>) : {};
+  console.log(`served.json: ${JSON.stringify(all)}`);
+  if (Object.values(all).some((r) => r.stopSeen)) {
+    console.log("OK: the after-reply event read a finished reply back");
+    process.exit(0);
+  }
+  console.error("FAIL: no session was settled by an after-reply event (served words fall back to served = woven)");
+  process.exit(1);
+}
 if (!file || (mode !== "request" && mode !== "reply") || (mode === "reply" && !lang)) {
-  console.error("usage: assert-woven.ts request <log.jsonl> | reply <reply.txt> <lang>");
+  console.error("usage: assert-woven.ts request <log.jsonl> | reply <reply.txt> <lang> | settled");
   process.exit(2);
 }
 const text = readFileSync(file, "utf8");
@@ -47,8 +61,11 @@ if (mode === "request") {
   console.log(`reply:\n${text}\n`);
   const statePath = join(DATA_DIR, `state.${lang}.json`);
   const state: State = existsSync(statePath) ? JSON.parse(readFileSync(statePath, "utf8")) : {};
-  // fresh data dir per run, so every exposed word was served by this run's hook
-  const servedIds = new Set(Object.keys(state).filter((k) => isWordKey(k) && (state[k]?.exposures ?? 0) > 0));
+  // fresh data dir per run, so every word with a record was served by this run's hook: shown
+  // (algorithms 1-2, or woven under 3), missed, or still waiting in served.json for its reply
+  const servedIds = new Set(Object.keys(state).filter((k) => isWordKey(k) && ((state[k]?.exposures ?? 0) > 0 || (state[k]?.missed ?? 0) > 0)));
+  const offers = join(DATA_DIR, "served.json");
+  if (existsSync(offers)) for (const r of Object.values(JSON.parse(readFileSync(offers, "utf8")) as Record<string, { picks?: Record<string, string> }>)) for (const id of Object.keys(r.picks ?? {})) servedIds.add(id);
   const served = loadWordlist(lang!).filter((w) => servedIds.has(w.id)).map((w) => w.target);
   console.log(`served (${served.length}): ${served.join(", ") || "none"}`);
   if (served.length === 0) {

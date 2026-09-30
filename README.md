@@ -27,7 +27,7 @@ I read a lot every day, and these days most of that text is my AI agents' replie
 # restart the session — replies start weaving Spanish (default: es, level 2)
 ```
 
-Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, and add your own language with `/langcouch:add-language <language>`.
+Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, and add your own language with `/langcouch:add-language <language>`.
 
 **Glosses in your language:** set `"native"` in `~/.langcouch/config.json` to `en` (default), `ru` or `uz` (Uzbek, Latin script). Glosses in the weave and accepted quiz answers follow it.
 
@@ -116,14 +116,18 @@ flowchart LR
     E --> F[Build ≤600-token<br/>weave instruction]
     F --> G[Instruction injected<br/>into agent context]
     G --> H[Model weaves words<br/>into its reply]
-    H --> I[Exposures +1<br/>written to local state]
+    H --> I[After the reply: words it used<br/>climb the ladder in local state]
 ```
 
 - **Concept-keyed vocabulary**: meanings live once in `concepts.json` (id, pos, tier, glosses per native language); each `wordlists/<lang>.json` is a thin concept→lemma map, so adding a language is one small file and glosses never drift
 - **Wordlists**: ~400 core content words per language (noun/verb/adj/adv), no function words; the tier field reserves room for the →1000-word band, unlocked when the core is ~80% absorbed
 - **Per-language progress**: state lives in `~/.langcouch/state.<lang>.json`, keyed by concept id — progress survives lemma fixes and can be compared across languages ("you know *sun* in 3 of 5")
-- **SRS-lite**: least-shown words first, rotation, absorbed words drop into a ≤20% review tail
-- **Recall signal**: exposure is not knowledge — a word counts as absorbed only after you actively use it (it shows up in your own prompt, or you pass a `quiz`) or after a much larger passive dose
+- **Interval ladder**: each word comes back after 30 min, 8 h, 1 day, 4 days, 2 weeks, 1 month, then 6 months. It climbs a step only when a reply actually uses it while it is due; words that are due come first, and a quarter of each list stays open for new words
+- **Honest counting**: after the reply, a Stop hook (or the host's after-reply event) reads it back, and only the words it used count as shown. A host without such an event counts the words served, as before
+- **Translations fade**: a new word comes as **casa** (house). From the fourth step it appears as plain **casa**, with the translation in one closing line (`casa = house · nombre = name`). From step five (absorbed) there is no translation at all, and absorbed words come back as a rotating sample the model may use freely, so the share of the language in replies grows
+- **Only where it fits, plus a nudge**: the model weaves a word only where the reply already needs its meaning, so nothing is invented to host a word. The one exception is one or two words that kept missing: those may go into a short aside or a closing line, never into code, facts or text you will copy
+- **Recall signal**: exposure is not knowledge. A word you use in your own prompt, or answer right in `quiz`, climbs a step; a wrong quiz answer sends it back to the start
+- **Modes**: `langcouch mode 3` is the above (default). `mode 2` weaves only words that fit, and `mode 1` asks for every listed word; both count a word when it is served
 - **Levels 1–10**: words from level 1; [word-building rules](#word-building-rules) from level 2 (`patterns/<lang>.json`); collocations from 4 and simple sentences from 7, using the constructions in `grammar/<lang>.json` where a language has them
 - **Native language**: when you learn your own native language (e.g. `en` with native `en`), glosses fall back to another language
 
@@ -169,11 +173,11 @@ What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update
 
 | CLI | Status | Install | Mechanism |
 |---|---|---|---|
-| Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch`, or `langcouch install claude` | `UserPromptSubmit` hook (context injection, reliable) |
-| opencode | **Production** (plugin) + **experimental** (fallback) | `langcouch install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback |
-| Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | `UserPromptSubmit` hook in `hooks.json` (context injection, reliable) |
-| Hermes Agent | **Production** | `langcouch install hermes` | `pre_llm_call` plugin hook (context appended to your message) |
-| OpenClaw | **Production** | `langcouch install openclaw` | `before_prompt_build` plugin hook (`prependContext`) |
+| Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch`, or `langcouch install claude` | `UserPromptSubmit` hook (context injection, reliable); `Stop` reads the reply back |
+| opencode | **Production** (plugin) + **experimental** (fallback) | `langcouch install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback; `session.idle` reads the reply back |
+| Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | `UserPromptSubmit` hook in `hooks.json` (context injection, reliable); `Stop` reads the reply back |
+| Hermes Agent | **Production** | `langcouch install hermes` | `pre_llm_call` plugin hook (context appended to your message); `post_llm_call` reads the reply back |
+| OpenClaw | **Production** | `langcouch install openclaw` | `before_prompt_build` plugin hook (`prependContext`); `agent_end` reads the reply back |
 
 Codex CLI, opencode, Hermes Agent and OpenClaw are installed on a clean CI runner and tested end to end ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): the plugin loads, the block reaches the model, and real models on OpenRouter weave the words they were given.
 
@@ -188,14 +192,15 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `lang [code]` | switch target language / list available ones (your own are marked `local`) |
 | `validate <code> [--full]` | check a wordlist, e.g. one you added in `~/.langcouch/wordlists/` |
 | `level <1-10\|up\|down>` | weaving intensity |
+| `mode [1\|2\|3]` | weave algorithm: 3 interval ladder (default), 2 only words that fit, 1 every listed word |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
 | `pause` / `resume` | kill switch for weaving |
 | `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
 | `instruction` | print the weave instruction (without marking exposures) |
-| `hook` | CLI-hook mode (marks exposures and scans your prompt for recalls; exits 0 on any error so it never breaks the host session) |
-| `install claude [--scope project\|user]` | register the UserPromptSubmit hook |
+| `hook` | CLI-hook mode: before a reply, builds the instruction and scans your prompt for recalls; after it (a `Stop` payload), counts the words the reply used. Exits 0 on any error so it never breaks the host session |
+| `install claude [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks |
 | `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for opencode |
-| `install codex [--scope project\|user]` | register the UserPromptSubmit hook in Codex CLI's `hooks.json` |
+| `install codex [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks in Codex CLI's `hooks.json` |
 | `install hermes` | install the Hermes Agent plugin into `$HERMES_HOME/plugins/langcouch/` |
 | `install openclaw` | generate the OpenClaw plugin and print the commands that link and enable it |
 
@@ -214,14 +219,14 @@ A plugin cannot ship spinner tips itself, so this writes to your `~/.claude/sett
 
 The hook runs locally. It reads your prompt only to scan it for words you've already seen (the recall signal) — your prompt is never logged, sent over the network, or stored anywhere. The only thing written to disk is the per-language state file in `~/.langcouch/` (human-readable JSON), which you can inspect, back up, or `rm -rf` at any time. LangCouch has no network surface and no telemetry.
 
-The experimental weave algorithm 3 (off by default; it is turned on with `"algorithm": 3` in `~/.langcouch/config.json`) also reads the assistant's last reply once it is finished, from Claude Code's local transcript, to count only the words the reply actually used. It keeps the words offered for the current turn in `~/.langcouch/served.json` until then. The reply is not stored, and nothing leaves your machine.
+Once a reply is finished, the hook also reads it (the host hands it over, or Claude Code's local transcript has it) to count only the words the reply actually used. The words offered for the current turn wait in `~/.langcouch/served.json` until then. The reply is not stored, and nothing leaves your machine. `langcouch mode 1` or `mode 2` turns this off.
 
 ## Uninstall
 
 - **Claude Code plugin:** if you turned the spinner on, run `/langcouch:spinner off` **first** (Claude Code has no uninstall hook, so the plugin can't clean up after itself). Then `/plugin uninstall langcouch@langcouch` and restart the session. Already uninstalled with the spinner on? Delete the lines starting with `LangCouch · ` from `spinnerTipsOverride.tips` in `~/.claude/settings.json`.
-- **Manual Claude Code hook:** remove the `UserPromptSubmit` entry whose command ends in `src/cli.ts hook` in `.claude/settings.json` (or `~/.claude/settings.json` if you installed with `--scope user`).
+- **Manual Claude Code hook:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` in `.claude/settings.json` (or `~/.claude/settings.json` if you installed with `--scope user`).
 - **opencode:** delete `langcouch.ts` from `.opencode/plugin/` (or `~/.config/opencode/plugin/`) and the section between `<!-- langcouch:start -->` and `<!-- langcouch:end -->` in `AGENTS.md`.
-- **Codex CLI:** remove the `UserPromptSubmit` and `SessionStart` entries whose command ends in `src/cli.ts hook` from `~/.codex/hooks.json` (or `.codex/hooks.json` for `--scope project`).
+- **Codex CLI:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` from `~/.codex/hooks.json` (or `.codex/hooks.json` for `--scope project`).
 - **Hermes Agent:** `hermes plugins disable langcouch`, then delete `~/.hermes/plugins/langcouch/` (or under your `$HERMES_HOME`).
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, then delete `~/.langcouch/openclaw-plugin/`.
 - **Your progress:** `rm -rf ~/.langcouch` (skip this if you might come back — progress survives reinstalls).
@@ -234,7 +239,7 @@ The most valuable contribution is your language, and [docs/AddLanguage.md](docs/
 
 - Grammar constructions beyond Spanish (pt, it, fr, de, en, tr), with regional overlays for pt-BR and en-GB
 - Tier 2 vocabulary (→1000 words per language), unlocked at ~80% core absorption
-- Full SM-2 spaced repetition (currently SRS-lite)
+- Lexical chunks (whole phrases) once most of the core is absorbed
 - Spanish gerunds in the spinner verbs ("Pensando…")
 - Gemini CLI adapter
 - More languages — yours? ([docs/AddLanguage.md](docs/AddLanguage.md))

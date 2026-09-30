@@ -27,6 +27,8 @@ class Ctx:
 ctx = Ctx(); mod.register(ctx)
 out = {"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)}
 out["pre_llm_call"] = ctx.hooks["pre_llm_call"](session_id="s1", user_message="hola", conversation_history=[], is_first_turn=True, model="m", platform="cli")
+out["post_llm_call"] = ctx.hooks["post_llm_call"](session_id="s1", user_message="hola", assistant_response="Una **casa** (house).", conversation_history=[], model="m", platform="cli")
+out["post_empty"] = ctx.hooks["post_llm_call"](session_id="s1", assistant_response="")
 out["cmd"] = ctx.commands["langcouch"](sys.argv[2])
 print(json.dumps(out))
 `;
@@ -49,15 +51,20 @@ function setup(name: string, cliBody: string): string {
 }
 
 function run(plugin: string, cmdArgs: string) {
-  const r = spawnSync("python3", [join(scratch, "harness.py"), plugin, cmdArgs], { encoding: "utf8", timeout: 20000 });
+  const r = spawnSync("python3", [join(scratch, "harness.py"), plugin, cmdArgs], { encoding: "utf8", timeout: 40000, env: { ...process.env, LC_STOP_LOG: join(scratch, "stop.jsonl") } });
   if (r.status !== 0) throw new Error(r.stderr);
-  return JSON.parse(r.stdout) as { hooks: string[]; commands: string[]; pre_llm_call: unknown; cmd: string };
+  return JSON.parse(r.stdout) as { hooks: string[]; commands: string[]; pre_llm_call: unknown; post_llm_call: unknown; post_empty: unknown; cmd: string };
 }
 
 const ECHO_CLI = `
 const args = process.argv.slice(2);
 if (args[0] === "hook") {
   const input = await Bun.stdin.json();
+  if (input.hook_event_name === "Stop") {
+    require("node:fs").appendFileSync(process.env.LC_STOP_LOG, JSON.stringify(input) + String.fromCharCode(10));
+    console.log("{}");
+    process.exit(0);
+  }
   console.log("<langcouch>" + input.hook_event_name + "|" + input.session_id + "|" + input.prompt + "</langcouch>");
 } else if (args[0] === "lang" && args[1] === "xx") {
   console.error("unknown language: xx"); process.exit(1);
@@ -67,15 +74,25 @@ if (args[0] === "hook") {
 `;
 
 describe.skipIf(!hasPython)("hermes plugin (python3 + fake CLI)", () => {
-  test("registers pre_llm_call and /langcouch", () => {
+  test("registers pre_llm_call, post_llm_call and /langcouch", () => {
     const out = run(setup("reg", ECHO_CLI), "status");
-    expect(out.hooks).toEqual(["pre_llm_call"]);
+    expect(out.hooks).toEqual(["post_llm_call", "pre_llm_call"]);
     expect(out.commands).toEqual(["langcouch"]);
   });
 
   test("pre_llm_call pipes the turn to `hook` and returns the block as context", () => {
     const out = run(setup("ok", ECHO_CLI), "status");
     expect(out.pre_llm_call).toEqual({ context: "<langcouch>UserPromptSubmit|s1|hola</langcouch>" });
+  });
+
+  test("post_llm_call hands the final answer to `hook` as a Stop event, once; an empty answer sends nothing", () => {
+    const log = join(scratch, "stop.jsonl");
+    rmSync(log, { force: true });
+    const out = run(setup("post", ECHO_CLI), "status");
+    expect(out.post_llm_call).toBeNull();
+    expect(out.post_empty).toBeNull();
+    const sent = readFileSync(log, "utf8").trim().split("\n").map((l) => JSON.parse(l));
+    expect(sent).toEqual([{ session_id: "s1", hook_event_name: "Stop", last_assistant_message: "Una **casa** (house)." }]);
   });
 
   test("empty block → None (no injection)", () => {

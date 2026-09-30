@@ -28,13 +28,13 @@ afterEach(() => {
 const readHooks = (path: string) => JSON.parse(readFileSync(path, "utf8")).hooks;
 
 describe("installCodex", () => {
-  test("project scope: registers UserPromptSubmit + SessionStart in .codex/hooks.json", () => {
+  test("project scope: registers UserPromptSubmit + SessionStart + Stop in .codex/hooks.json", () => {
     const msg = installCodex("project");
-    expect(msg).toContain("Hook installed (UserPromptSubmit + SessionStart)");
+    expect(msg).toContain("Hook installed (UserPromptSubmit + SessionStart + Stop)");
     expect(msg).toContain("/hooks");
 
     const hooks = readHooks(join(scratch, ".codex", "hooks.json"));
-    for (const event of ["UserPromptSubmit", "SessionStart"]) {
+    for (const event of ["UserPromptSubmit", "SessionStart", "Stop"]) {
       expect(hooks[event]).toHaveLength(1);
       expect(hooks[event][0].hooks[0].type).toBe("command");
       expect(hooks[event][0].hooks[0].command).toMatch(/^bun \/.*\/src\/cli\.ts hook$/);
@@ -59,12 +59,14 @@ describe("installCodex", () => {
     const path = join(scratch, ".codex", "hooks.json");
     mkdirSync(join(scratch, ".codex"));
     const foreign = { hooks: [{ type: "command", command: "echo mine" }] };
-    writeFileSync(path, JSON.stringify({ hooks: { UserPromptSubmit: [foreign], Stop: [foreign] }, other: 1 }));
+    writeFileSync(path, JSON.stringify({ hooks: { UserPromptSubmit: [foreign], PreToolUse: [foreign], Stop: [foreign] }, other: 1 }));
 
     installCodex("project");
     const file = JSON.parse(readFileSync(path, "utf8"));
     expect(file.other).toBe(1);
-    expect(file.hooks.Stop).toEqual([foreign]);
+    expect(file.hooks.PreToolUse).toEqual([foreign]);
+    expect(file.hooks.Stop).toHaveLength(2);
+    expect(file.hooks.Stop[0]).toEqual(foreign);
     expect(file.hooks.UserPromptSubmit).toHaveLength(2);
     expect(file.hooks.UserPromptSubmit[0]).toEqual(foreign);
   });
@@ -91,7 +93,7 @@ describe("installCodex", () => {
 
 describe("installClaude (shared JSON-hooks writer)", () => {
   test("project scope still writes both events to .claude/settings.json, idempotently", () => {
-    expect(installClaude("project")).toContain("Hook installed (UserPromptSubmit + SessionStart)");
+    expect(installClaude("project")).toContain("Hook installed (UserPromptSubmit + SessionStart + Stop)");
     const hooks = readHooks(join(scratch, ".claude", "settings.json"));
     expect(hooks.UserPromptSubmit[0].hooks[0].command).toMatch(/src\/cli\.ts hook$/);
     expect(hooks.SessionStart).toHaveLength(1);

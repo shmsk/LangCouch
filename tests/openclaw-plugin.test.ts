@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildPlugin, runCommand, type SpawnFn, type PluginApi, type PromptBuildEvent, type AgentContext } from "../adapters/openclaw/plugin.template.ts";
+import { buildPlugin, runCommand, type SpawnFn, type PluginApi, type PromptBuildEvent, type AgentContext, type AgentEndEvent } from "../adapters/openclaw/plugin.template.ts";
 
 const BLOCK = "<langcouch>\ncasa = house\n</langcouch>";
 
@@ -20,13 +20,17 @@ function makeFakeSpawn(mode: "ok" | "empty" | "fail" | "throw") {
 /** Register the plugin against a fake api and hand back the captured handlers. */
 function load(spawn: SpawnFn) {
   let hook: ((e: PromptBuildEvent, c: AgentContext) => { prependContext: string } | undefined) | undefined;
+  let agentEnd: ((e: AgentEndEvent, c: AgentContext) => void) | undefined;
   let command: ((c: { args?: string }) => { text: string }) | undefined;
   const api: PluginApi = {
-    on: (_name, h) => { hook = h; },
+    on: ((name: string, h: unknown) => {
+      if (name === "agent_end") agentEnd = h as typeof agentEnd;
+      else hook = h as typeof hook;
+    }) as PluginApi["on"],
     registerCommand: (def) => { command = def.handler; },
   };
   buildPlugin(spawn).register(api);
-  return { hook: hook!, command: command! };
+  return { hook: hook!, agentEnd: agentEnd!, command: command! };
 }
 
 const hookCalls = (calls: { args: string[] }[]) => calls.filter((c) => c.args.includes("hook")).length;
@@ -91,5 +95,63 @@ describe("openclaw plugin — /langcouch", () => {
     const { command } = load(makeFakeSpawn("throw").spawn);
     expect(command({ args: "install claude" }).text).toStartWith("Usage: /langcouch");
     expect(command({ args: "status" }).text).toBe("LangCouch: command failed.");
+  });
+});
+
+const stopCalls = (spawned: { cmd: string; args: string[]; input?: string }[]) =>
+  spawned.filter((c) => c.args.includes("hook")).map((c) => JSON.parse(c.input ?? "{}"));
+
+function loadRecording(mode: "ok" | "throw" = "ok") {
+  const spawned: { cmd: string; args: string[]; input?: string }[] = [];
+  const spawn: SpawnFn = (cmd, args, opts) => {
+    spawned.push({ cmd, args, input: opts.input });
+    if (mode === "throw") throw new Error("boom");
+    return { status: 0, stdout: "" };
+  };
+  return { ...load(spawn), spawned };
+}
+
+describe("openclaw plugin — agent_end", () => {
+  test("sends one Stop payload with the reply text and session id", () => {
+    const { agentEnd, spawned } = loadRecording();
+    agentEnd({ runId: "r1", success: true, messages: [{ role: "user", content: "hi" }, { role: "assistant", content: "hola casa" }] }, { sessionId: "s1" });
+    const sent = stopCalls(spawned);
+    expect(sent.length).toBe(1);
+    expect(sent[0]).toEqual({ hook_event_name: "Stop", session_id: "s1", last_assistant_message: "hola casa" });
+  });
+
+  test("a repeated runId does not resend; a new runId does", () => {
+    const { agentEnd, spawned } = loadRecording();
+    const ev = { runId: "r1", success: true, messages: [{ role: "assistant", content: "uno" }] };
+    agentEnd(ev, { sessionId: "s1" });
+    agentEnd(ev, { sessionId: "s1" });
+    expect(stopCalls(spawned).length).toBe(1);
+    agentEnd({ ...ev, runId: "r2" }, { sessionId: "s1" });
+    expect(stopCalls(spawned).length).toBe(2);
+  });
+
+  test("handles content-part arrays, nested message wrappers, and sessionKey fallback", () => {
+    const { agentEnd, spawned } = loadRecording();
+    agentEnd({ success: true, messages: [{ message: { role: "assistant", content: [{ type: "text", text: "a" }, { type: "tool_use" }, { type: "text", text: "b" }] } }] }, { sessionKey: "k1" });
+    const sent = stopCalls(spawned);
+    expect(sent[0].last_assistant_message).toBe("a\nb");
+    expect(sent[0].session_id).toBe("k1");
+  });
+
+  test("success:false, no assistant text, or malformed payloads send nothing and never throw", () => {
+    const { agentEnd, spawned } = loadRecording();
+    agentEnd({ success: false, messages: [{ role: "assistant", content: "x" }] }, { sessionId: "s" });
+    agentEnd({ success: true, messages: [{ role: "assistant", content: [{ type: "tool_use" }] }] }, { sessionId: "s" });
+    agentEnd({ success: true, messages: [{ role: "user", content: "x" }] }, { sessionId: "s" });
+    agentEnd({ success: true, messages: [{ role: "assistant", content: "   " }] }, { sessionId: "s" });
+    expect(() => agentEnd({ success: true, messages: "nope" as never }, { sessionId: "s" })).not.toThrow();
+    expect(() => agentEnd(undefined as never, undefined as never)).not.toThrow();
+    expect(() => agentEnd({ success: true, messages: [null, 5, {}] }, {})).not.toThrow();
+    expect(spawned.length).toBe(0);
+  });
+
+  test("a throwing spawn is swallowed", () => {
+    const { agentEnd } = loadRecording("throw");
+    expect(() => agentEnd({ success: true, messages: [{ role: "assistant", content: "x" }] }, { sessionId: "s" })).not.toThrow();
   });
 });
