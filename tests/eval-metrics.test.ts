@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { scoreReply, splitCode, glossMatches, inflects, type CaseSpec } from "../evals/metrics.ts";
+import { scoreReply, splitCode, glossMatches, inflects, deliverableOf, type CaseSpec } from "../evals/metrics.ts";
 
 const spec: CaseSpec = {
   served: [
@@ -76,6 +76,13 @@ describe("weave eval metrics", () => {
     expect(m.sentence).toBe(true);
     expect(m.unformatted).toEqual([]);
   });
+});
+
+test("deliverable: between --- rules, or the post before a single rule, else minus first and last paragraph", () => {
+  expect(deliverableOf("Here:\n\n---\n\nPOST\n\n---\n\nnote")).toContain("POST");
+  expect(deliverableOf("Here:\n\n---\n\nPOST\n\n---\n\nnote")).not.toContain("note");
+  expect(deliverableOf("Here:\n\nPOST one\n\nPOST two\n\n---\n\nnote **año**")).not.toContain("año");
+  expect(deliverableOf("Intro\n\nPOST\n\nOutro")).toBe("POST");
 });
 
 describe("algorithm 3 metrics", () => {

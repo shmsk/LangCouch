@@ -35,10 +35,17 @@ Models: `opus`, `deepseek/deepseek-v4.1-flash`, `z-ai/glm-5.3-flash`, `qwen/qwen
 
 | model | ok | coverage | off-list/reply | bad gloss | no gloss | code/facts touched | rule used | sentence | answer (1-5) | weave (1-5) | cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| opus | 30/30 | 70% | 0.0 | 0 | 5 | 0 | 85% | 80% | 4.9 | 3.3 | subscription |
-| deepseek/deepseek-v4.1-flash | 30/30 | 96% | 0.0 | 0 | 2 | 1 | 75% | 70% | 3.7 | 1.8 | $0.105 |
-| z-ai/glm-5.3-flash | 30/30 | 93% | 0.0 | 1 | 3 | 0 | 95% | 80% | 4.3 | 2.4 | $0.075 |
-| qwen/qwen3.8-flash | 29/30 | 97% | 0.0 | 0 | 3 | 2 | 84% | 56% | 2.6 | 1.5 | $0.103 |
+| opus | 30/30 | 73% | 0.0 | 0 | 5 | 0 | 85% | 80% | 4.9 | 3.3 | subscription |
+| deepseek/deepseek-v4.1-flash | 30/30 | 97% | 0.0 | 0 | 2 | 1 | 75% | 70% | 3.7 | 1.8 | $0.105 |
+| z-ai/glm-5.3-flash | 30/30 | 96% | 0.0 | 1 | 3 | 0 | 95% | 80% | 4.3 | 2.4 | $0.075 |
+| qwen/qwen3.8-flash | 29/30 | 99% | 0.0 | 0 | 3 | 1 | 84% | 56% | 2.6 | 1.5 | $0.103 |
+
+| model | deliverables with Spanish | Spanish /100 words | nudge woven | familiar glossed inline | glossary line | known used/reply |
+| --- | --- | --- | --- | --- | --- | --- |
+| opus | 8/12 | 2.4 | — | — | — | — |
+| deepseek/deepseek-v4.1-flash | 10/12 | 4.6 | — | — | — | — |
+| z-ai/glm-5.3-flash | 12/12 | 3.6 | — | — | — | — |
+| qwen/qwen3.8-flash | 9/11 | 6.5 | — | — | — | — |
 
 ## Stage: beginner (0% absorbed, level 1)
 
@@ -46,26 +53,26 @@ Models: `opus`, `deepseek/deepseek-v4.1-flash`, `z-ai/glm-5.3-flash`, `qwen/qwen
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | opus | 10/10 | 90% | 0.0 | 0 | 0 | 0 | — | — | 4.7 | 3.5 | subscription |
 | deepseek/deepseek-v4.1-flash | 10/10 | 100% | 0.0 | 0 | 0 | 0 | — | — | 4.2 | 2.4 | $0.012 |
-| z-ai/glm-5.3-flash | 10/10 | 97% | 0.1 | 0 | 1 | 0 | — | — | 4.5 | 2.6 | $0.008 |
-| qwen/qwen3.8-flash | 10/10 | 100% | 0.0 | 0 | 0 | 1 | — | — | 3.4 | 2.0 | $0.016 |
+| z-ai/glm-5.3-flash | 10/10 | 100% | 0.1 | 0 | 1 | 0 | — | — | 4.5 | 2.6 | $0.008 |
+| qwen/qwen3.8-flash | 10/10 | 100% | 0.0 | 0 | 0 | 0 | — | — | 3.4 | 2.0 | $0.016 |
 
 ## Stage: half (50% absorbed, level 5)
 
 | model | ok | coverage | off-list/reply | bad gloss | no gloss | code/facts touched | rule used | sentence | answer (1-5) | weave (1-5) | cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | opus | 10/10 | 79% | 0.0 | 0 | 0 | 0 | 80% | — | 5.0 | 3.4 | subscription |
-| deepseek/deepseek-v4.1-flash | 10/10 | 93% | 0.0 | 0 | 2 | 0 | 80% | — | 3.5 | 1.8 | $0.035 |
-| z-ai/glm-5.3-flash | 10/10 | 93% | 0.0 | 0 | 1 | 0 | 100% | — | 4.5 | 2.6 | $0.026 |
+| deepseek/deepseek-v4.1-flash | 10/10 | 96% | 0.0 | 0 | 2 | 0 | 80% | — | 3.5 | 1.8 | $0.035 |
+| z-ai/glm-5.3-flash | 10/10 | 94% | 0.0 | 0 | 1 | 0 | 100% | — | 4.5 | 2.6 | $0.026 |
 | qwen/qwen3.8-flash | 10/10 | 99% | 0.0 | 0 | 0 | 0 | 80% | — | 2.6 | 1.4 | $0.035 |
 
 ## Stage: advanced (90% absorbed, level 8)
 
 | model | ok | coverage | off-list/reply | bad gloss | no gloss | code/facts touched | rule used | sentence | answer (1-5) | weave (1-5) | cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| opus | 10/10 | 58% | 0.0 | 0 | 5 | 0 | 90% | 80% | 4.9 | 3.1 | subscription |
-| deepseek/deepseek-v4.1-flash | 10/10 | 96% | 0.0 | 0 | 0 | 1 | 70% | 70% | 3.3 | 1.3 | $0.057 |
-| z-ai/glm-5.3-flash | 10/10 | 92% | 0.0 | 1 | 1 | 0 | 90% | 80% | 4.0 | 2.1 | $0.040 |
-| qwen/qwen3.8-flash | 9/10 | 96% | 0.0 | 0 | 3 | 1 | 89% | 56% | 1.8 | 1.1 | $0.052 |
+| opus | 10/10 | 63% | 0.0 | 0 | 5 | 0 | 90% | 80% | 4.9 | 3.1 | subscription |
+| deepseek/deepseek-v4.1-flash | 10/10 | 97% | 0.0 | 0 | 0 | 1 | 70% | 70% | 3.3 | 1.3 | $0.057 |
+| z-ai/glm-5.3-flash | 10/10 | 95% | 0.0 | 1 | 1 | 0 | 90% | 80% | 4.0 | 2.1 | $0.040 |
+| qwen/qwen3.8-flash | 9/10 | 99% | 0.0 | 0 | 3 | 1 | 89% | 56% | 1.8 | 1.1 | $0.052 |
 
 ## Judge notes (scores of 2 or lower)
 

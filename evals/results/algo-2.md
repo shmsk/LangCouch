@@ -14,9 +14,9 @@ Run of 2026-09-30 on the same learner, topics and models as [algo-1](algo-1.md).
 
 **2. Coverage fell hard.** Opus now weaves 23% of the listed words, the others 28–50%. The rule word dropped from 75–95% to 10–25%. Fit-only works as intended: words that don't fit get skipped. But the scheduler still counts a skipped word as shown, so progress would be overstated. Honest counting (only words actually woven) is required before algorithm 2 or 3 can become the default.
 
-**3. The deliverables rule is only partly followed.** 13 of 24 LinkedIn posts still contain a glossed Spanish word. It needs a stronger formulation or a check.
+**3. The deliverables rule mostly holds.** An earlier version of this finding said 13 of 24 LinkedIn post replies contained a glossed Spanish word. That count was of whole replies. Reread, almost all of those words sit in the intro before the post or in notes after it, where the rule allows them. The "deliverables with Spanish" metric (added with algorithm 3, and applied to every run by `--rescore`) counts only the copyable part: 3 of 48 here, against 39 of 47 for algorithm 1. Two of the three are real: DeepSeek puts **partes** and **decidir** into the meeting summary's decisions. The third is a framing line inside GLM's summary and is borderline.
 
-**4. Metric note.** "code/facts touched" is mostly `missing Maya` in the meeting summary. Maya has no action item of her own, so leaving her name out is a fair summary. That `mustKeep` is too strict and should drop Maya.
+**4. Metric note.** "code/facts touched" was mostly `missing Maya` in the meeting summary. Maya has no action item of her own, so leaving her name out is a fair summary. She has since been dropped from `mustKeep`, and the tables below are rescored.
 <!-- findings:end -->
 
 # Weave eval results: algorithm 2
@@ -28,10 +28,17 @@ Models: `deepseek/deepseek-v4.1-flash`, `opus`, `z-ai/glm-5.3-flash`, `qwen/qwen
 
 | model | ok | coverage | off-list/reply | bad gloss | no gloss | code/facts touched | rule used | sentence | answer (1-5) | weave (1-5) | cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| deepseek/deepseek-v4.1-flash | 30/30 | 43% | 0.0 | 0 | 5 | 1 | 15% | 50% | 4.5 | 2.9 | $0.048 |
-| opus | 30/30 | 23% | 0.0 | 0 | 5 | 1 | 15% | 30% | 5.0 | 3.9 | subscription |
-| z-ai/glm-5.3-flash | 30/30 | 50% | 0.0 | 0 | 10 | 4 | 25% | 80% | 4.3 | 2.7 | $0.053 |
-| qwen/qwen3.8-flash | 30/30 | 28% | 0.0 | 0 | 2 | 3 | 10% | 40% | 3.7 | 2.7 | $0.065 |
+| deepseek/deepseek-v4.1-flash | 30/30 | 44% | 0.0 | 0 | 5 | 0 | 15% | 50% | 4.5 | 2.9 | $0.048 |
+| opus | 30/30 | 25% | 0.0 | 0 | 5 | 0 | 15% | 30% | 5.0 | 3.9 | subscription |
+| z-ai/glm-5.3-flash | 30/30 | 55% | 0.0 | 0 | 10 | 0 | 25% | 80% | 4.3 | 2.7 | $0.053 |
+| qwen/qwen3.8-flash | 30/30 | 28% | 0.0 | 0 | 2 | 0 | 10% | 40% | 3.7 | 2.7 | $0.065 |
+
+| model | deliverables with Spanish | Spanish /100 words | nudge woven | familiar glossed inline | glossary line | known used/reply |
+| --- | --- | --- | --- | --- | --- | --- |
+| deepseek/deepseek-v4.1-flash | 2/12 | 1.8 | — | — | — | — |
+| opus | 0/12 | 1.0 | — | — | — | — |
+| z-ai/glm-5.3-flash | 1/12 | 1.9 | — | — | — | — |
+| qwen/qwen3.8-flash | 0/12 | 1.8 | — | — | — | — |
 
 ## Stage: beginner (0% absorbed, level 1)
 
@@ -39,26 +46,26 @@ Models: `deepseek/deepseek-v4.1-flash`, `opus`, `z-ai/glm-5.3-flash`, `qwen/qwen
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | deepseek/deepseek-v4.1-flash | 10/10 | 37% | 0.0 | 0 | 0 | 0 | — | — | 4.8 | 4.3 | $0.007 |
 | opus | 10/10 | 30% | 0.0 | 0 | 0 | 0 | — | — | 4.9 | 3.9 | subscription |
-| z-ai/glm-5.3-flash | 10/10 | 50% | 0.0 | 0 | 0 | 1 | — | — | 4.1 | 3.4 | $0.007 |
-| qwen/qwen3.8-flash | 10/10 | 20% | 0.0 | 0 | 0 | 2 | — | — | 4.1 | 3.6 | $0.007 |
+| z-ai/glm-5.3-flash | 10/10 | 50% | 0.0 | 0 | 0 | 0 | — | — | 4.1 | 3.4 | $0.007 |
+| qwen/qwen3.8-flash | 10/10 | 20% | 0.0 | 0 | 0 | 0 | — | — | 4.1 | 3.6 | $0.007 |
 
 ## Stage: half (50% absorbed, level 5)
 
 | model | ok | coverage | off-list/reply | bad gloss | no gloss | code/facts touched | rule used | sentence | answer (1-5) | weave (1-5) | cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| deepseek/deepseek-v4.1-flash | 10/10 | 47% | 0.0 | 0 | 0 | 1 | 20% | — | 4.4 | 2.3 | $0.019 |
-| opus | 10/10 | 20% | 0.0 | 0 | 1 | 0 | 30% | — | 5.0 | 3.3 | subscription |
-| z-ai/glm-5.3-flash | 10/10 | 47% | 0.0 | 0 | 4 | 2 | 30% | — | 4.2 | 2.3 | $0.017 |
+| deepseek/deepseek-v4.1-flash | 10/10 | 47% | 0.0 | 0 | 0 | 0 | 20% | — | 4.4 | 2.3 | $0.019 |
+| opus | 10/10 | 21% | 0.0 | 0 | 1 | 0 | 30% | — | 5.0 | 3.3 | subscription |
+| z-ai/glm-5.3-flash | 10/10 | 53% | 0.0 | 0 | 4 | 0 | 30% | — | 4.2 | 2.3 | $0.017 |
 | qwen/qwen3.8-flash | 10/10 | 33% | 0.0 | 0 | 0 | 0 | 10% | — | 3.7 | 2.8 | $0.019 |
 
 ## Stage: advanced (90% absorbed, level 8)
 
 | model | ok | coverage | off-list/reply | bad gloss | no gloss | code/facts touched | rule used | sentence | answer (1-5) | weave (1-5) | cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| deepseek/deepseek-v4.1-flash | 10/10 | 41% | 0.1 | 0 | 5 | 0 | 10% | 50% | 4.3 | 2.2 | $0.023 |
-| opus | 10/10 | 23% | 0.0 | 0 | 4 | 1 | 0% | 30% | 5.0 | 4.4 | subscription |
-| z-ai/glm-5.3-flash | 10/10 | 51% | 0.0 | 0 | 6 | 1 | 20% | 80% | 4.6 | 2.4 | $0.028 |
-| qwen/qwen3.8-flash | 10/10 | 27% | 0.0 | 0 | 2 | 1 | 10% | 40% | 3.4 | 1.7 | $0.038 |
+| deepseek/deepseek-v4.1-flash | 10/10 | 44% | 0.1 | 0 | 5 | 0 | 10% | 50% | 4.3 | 2.2 | $0.023 |
+| opus | 10/10 | 25% | 0.0 | 0 | 4 | 0 | 0% | 30% | 5.0 | 4.4 | subscription |
+| z-ai/glm-5.3-flash | 10/10 | 58% | 0.0 | 0 | 6 | 0 | 20% | 80% | 4.6 | 2.4 | $0.028 |
+| qwen/qwen3.8-flash | 10/10 | 27% | 0.0 | 0 | 2 | 0 | 10% | 40% | 3.4 | 1.7 | $0.038 |
 
 ## Judge notes (scores of 2 or lower)
 

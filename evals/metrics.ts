@@ -80,6 +80,19 @@ export function glossMatches(given: string, listed: string): boolean {
   return want.length === 0 || want.some((w) => got.some((g) => g.startsWith(w.slice(0, 4)) || w.startsWith(g.slice(0, 4))));
 }
 
+/**
+ * The part of a reply the user copies: between the first and last `---` rule when
+ * the reply fences it that way, else everything but the first and last paragraph
+ * (an intro like "Here's the post:" and a closing note). A heuristic: read what it flags.
+ */
+export function deliverableOf(prose: string): string {
+  const fenced = prose.split(/^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/m);
+  if (fenced.length >= 3) return fenced.slice(1, -1).join("\n");
+  if (fenced.length === 2) return fenced[0]!.trim().split(/\n\s*\n/).slice(1).join("\n\n"); // a post, then notes after one rule
+  const paras = prose.trim().split(/\n\s*\n/);
+  return paras.length > 2 ? paras.slice(1, -1).join("\n\n") : prose;
+}
+
 export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
   const { prose, code } = splitCode(reply);
   const pairs = wovenPairs(prose);
@@ -147,8 +160,7 @@ export function scoreReply(reply: string, spec: CaseSpec): ReplyMetrics {
   const glossaryLine = familiarUsed.length > 0 && familiarUsed.some((t) => new RegExp(`${stem(t)}\\p{L}*\\**\\s*=\\s*\\S`, "iu").test(lastLines));
   const knownUsed = wovenLemmas(prose, known);
   const lexiconOrOffered = (t: string) => (lexicon ? inLexicon(t) : false) || spec.served.some((s) => inflects(t, s.target)) || known.some((k) => inflects(t, k));
-  const paras = prose.trim().split(/\n\s*\n/);
-  const inner = spec.deliverable && paras.length > 2 ? paras.slice(1, -1).join("\n\n") : spec.deliverable ? prose : "";
+  const inner = spec.deliverable ? deliverableOf(prose) : "";
   const inDeliverable = [...new Set(boldSpans(inner).flatMap(tokens).filter(lexiconOrOffered))];
   const proseToks = tokens(prose.replace(/\*/g, ""));
   const boldToks = boldSpans(prose).flatMap(tokens).filter(lexiconOrOffered);
