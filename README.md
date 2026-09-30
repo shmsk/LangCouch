@@ -75,7 +75,7 @@ Codex skips any hook you haven't reviewed, so the `/hooks` step is needed once (
 
 ## Will it make my agent's answers worse?
 
-It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt. If you need a clean session, `/langcouch:pause` stops it instantly and `/langcouch:resume` brings it back.
+It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt, mostly read from the prompt cache: about 1–3% of a typical session ([details](docs/TokenUsage.md)). If you need a clean session, `/langcouch:pause` stops it instantly and `/langcouch:resume` brings it back.
 
 ## How it works
 
