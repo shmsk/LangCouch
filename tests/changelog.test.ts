@@ -31,7 +31,8 @@ describe("changelog", () => {
       writeFileSync(configPath, JSON.stringify({ lang: "es", native: "en", level: 2, seenVersion: "0.0.1" }));
       const first = status();
       expect(first).toContain(`What's new in ${PLUGIN_VERSION}:`);
-      expect(first).toContain("  • Word-building rules");
+      // the newest section's first item, whatever the current version is
+      expect(first).toContain(`  • ${changelogFor(PLUGIN_VERSION)[0]!.slice(0, 40)}`);
       expect(JSON.parse(readFileSync(configPath, "utf8")).seenVersion).toBe(PLUGIN_VERSION);
       expect(status()).not.toContain("What's new");
     } finally {
