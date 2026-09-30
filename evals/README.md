@@ -61,9 +61,24 @@ Coverage alone rewards forcing. A model can reach 100% by inventing sentences on
 - **answer**: is the reply still correct and useful, as if the Spanish were not there;
 - **weave**: do the words sit where an English word was going to be anyway.
 
-Under algorithm 3 the judge is told which words are nudge words and that one brief aside with them is allowed. It is also told that bold words without a translation, and a closing glossary line, are part of the format.
+Under algorithm 3 the judge is told which words are nudge words and that one brief aside with them is allowed. It is also told which words the learner already knows, and that bold words without a translation, and a closing glossary line, are part of the format.
 
 The judge is one model's opinion, not proof. Read the replies behind any surprising score.
+
+## Algorithms compared
+
+All stages, 4 models, 120 replies per algorithm, same judge. Algorithm 3 is run B from [algo-3](results/algo-3.md); algorithms 1 and 2 are rescored with today's metrics.
+
+| model | answer 1 / 2 / 3 | weave 1 / 2 / 3 | coverage 1 / 2 / 3 | Spanish /100 words 2 / 3 |
+|---|---|---|---|---|
+| Opus | 4.9 / 5.0 / 4.9 | 3.3 / 3.9 / 4.1 | 73% / 25% / 26% | 1.0 / 1.6 |
+| DeepSeek | 3.7 / 4.5 / 4.4 | 1.8 / 2.9 / 3.0 | 97% / 44% / 27% | 1.8 / 3.1 |
+| GLM | 4.3 / 4.3 / 4.4 | 2.4 / 2.7 / 2.6 | 96% / 55% / 42% | 1.9 / 2.7 |
+| Qwen | 2.6 / 3.7 / 3.8 | 1.5 / 2.7 / 3.2 | 99% / 28% / 20% | 1.8 / 2.7 |
+
+Deliverables with Spanish: 39 of 47 under algorithm 1, 3 of 48 under algorithm 2, 3 of 48 under algorithm 3.
+
+Algorithm 1 covers nearly every word by forcing it in, and the answers pay for it. Algorithms 2 and 3 only weave where a word fits. Algorithm 3 adds honest counting, the interval ladder, the nudge and fading translations, and it is the default since 0.6.0.
 
 ## Running it
 
@@ -74,6 +89,7 @@ bun evals/weave.ts                               # all stages, 4 models, 2 reps,
 bun evals/weave.ts --stage half --models opus,qwen/qwen3.8-flash --reps 1 --no-judge
 bun evals/weave.ts --fill evals/out/<run>        # re-ask failed replies, re-judge their groups
 bun evals/weave.ts --rescore evals/out/<run>     # re-score saved replies after a metric change
+bun evals/weave.ts --rejudge evals/out/<run>     # re-judge every group after a judge-prompt change
 bun evals/progress.ts                            # watch the latest run from another terminal
 ```
 

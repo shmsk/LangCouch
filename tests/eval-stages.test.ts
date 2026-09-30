@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { learnerState, buildStage, letterMap, parseJudge } from "../evals/stages.ts";
+import { learnerState, buildStage, letterMap, parseJudge, judgePrompt } from "../evals/stages.ts";
 import { loadWordlist } from "../src/store.ts";
 import { isAbsorbed } from "../src/types.ts";
 
@@ -36,5 +36,13 @@ describe("weave eval stages", () => {
     const text = `Sure:\n{"${la}": {"answer": 5, "weave": 2, "why": "forced"}, "${lb}": {"answer": 9, "weave": 3}, "Z": {"answer": 4, "weave": 4}}`;
     expect(parseJudge(text, letters)).toEqual({ [letters[la!]!]: { answer: 5, weave: 2, why: "forced" } });
     expect(parseJudge("no json", letters)).toEqual({});
+  });
+
+  test("the judge learns the known words even when a case has no nudge", () => {
+    const p = judgePrompt("task", ["muy"], { A: "a" }, [], ["médico", "salud"]);
+    expect(p).toContain("médico, salud");
+    expect(p).toContain("closing line like `word = translation`");
+    expect(p).not.toContain("Exception:");
+    expect(judgePrompt("task", ["casa"], { A: "a" })).not.toContain("already knows");
   });
 });
