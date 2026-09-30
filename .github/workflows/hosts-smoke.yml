@@ -1,0 +1,201 @@
+name: Host smoke tests
+
+# Installs Hermes Agent and OpenClaw on a throwaway runner (never on a dev
+# machine) and checks the LangCouch adapters end to end:
+#   fake-model jobs: the plugin loads, the hook fires, and the <langcouch>
+#     block reaches the model request. No API key needed.
+#   live jobs: a real cheap model on OpenRouter actually weaves words.
+#     Manual or hosts-smoke branch only, never on PRs from forks.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [hosts-smoke]
+
+env:
+  HERMES_VERSION: "0.19.0"
+  OPENCLAW_VERSION: "2026.9.7"
+  FAKE_LLM_PORT: "4010"
+  LIVE_PROMPT: "In four or five plain sentences, explain why morning daylight helps people wake up."
+
+jobs:
+  hermes-fake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: astral-sh/setup-uv@v6
+      - name: Isolated dirs
+        run: |
+          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "HERMES_HOME=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
+          echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
+      - run: bun install
+      - name: Install Hermes Agent
+        run: uv tool install --python 3.12 "hermes-agent==$HERMES_VERSION" && hermes --version
+      - name: Install the LangCouch plugin
+        run: |
+          bun src/cli.ts init && bun src/cli.ts level 5
+          bun src/cli.ts install hermes
+      - name: Point Hermes at the fake model, enable the plugin
+        run: |
+          cat > "$HERMES_HOME/config.yaml" <<EOF
+          model:
+            provider: custom
+            base_url: http://127.0.0.1:$FAKE_LLM_PORT/v1
+            default: fake-model
+            context_length: 128000
+          plugins:
+            enabled: [langcouch]
+          EOF
+      - name: Start the fake model
+        run: |
+          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/fake-llm.out"; exit 1
+      - name: Plugin registered its hook and command
+        run: |
+          HERMES_PLUGINS_DEBUG=1 hermes plugins list 2>&1 | tee "$RUNNER_TEMP/plugins.txt"
+          "$(uv tool dir)/hermes-agent/bin/python" - <<'EOF'
+          from hermes_cli.plugins import discover_plugins, get_plugin_manager, get_plugin_commands
+          discover_plugins()
+          hooks, cmds = list(get_plugin_manager()._hooks), list(get_plugin_commands())
+          print("hooks:", hooks, "commands:", cmds)
+          assert "pre_llm_call" in hooks, "pre_llm_call not registered"
+          assert "langcouch" in cmds, "/langcouch not registered"
+          EOF
+      - name: One turn against the fake model
+        run: |
+          hermes -z "hello from CI" > "$RUNNER_TEMP/reply.txt"; code=$?
+          echo "exit $code, reply: $(cat "$RUNNER_TEMP/reply.txt")"; exit $code
+      - name: The <langcouch> block reached the model
+        run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: Logs on failure
+        if: failure()
+        run: |
+          cat "$RUNNER_TEMP/fake-llm.out" || true
+          tail -n 200 "$HERMES_HOME"/logs/*.log 2>/dev/null || true
+
+  openclaw-fake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Isolated dirs
+        run: |
+          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "OPENCLAW_HOME=$RUNNER_TEMP/ochome" >> "$GITHUB_ENV"
+          echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
+      - run: bun install
+      - name: Install OpenClaw
+        run: npm install -g "openclaw@$OPENCLAW_VERSION" && openclaw --version
+      - name: Install the LangCouch plugin
+        run: |
+          bun src/cli.ts init && bun src/cli.ts level 5
+          bun src/cli.ts install openclaw
+      - name: Point OpenClaw at the fake model
+        run: |
+          mkdir -p "$OPENCLAW_HOME/.openclaw"
+          cat > "$OPENCLAW_HOME/.openclaw/openclaw.json" <<EOF
+          {
+            "models": { "mode": "merge", "providers": { "fake": {
+              "baseUrl": "http://127.0.0.1:$FAKE_LLM_PORT/v1",
+              "apiKey": "sk-fake",
+              "api": "openai-completions",
+              "models": [{ "id": "fake-model", "name": "Fake", "reasoning": false, "input": ["text"],
+                "cost": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+                "contextWindow": 32000, "maxTokens": 4096 }]
+            } } },
+            "agents": { "defaults": { "model": { "primary": "fake/fake-model" } } }
+          }
+          EOF
+      - name: Link, allow, enable (the commands the installer prints)
+        run: |
+          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force
+          openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
+          openclaw plugins enable langcouch --accept-capabilities
+      - name: Plugin registered its hook
+        run: |
+          openclaw plugins inspect langcouch --runtime --json > "$RUNNER_TEMP/inspect.json"; cat "$RUNNER_TEMP/inspect.json"
+          grep -q before_prompt_build "$RUNNER_TEMP/inspect.json"
+      - name: Start the fake model
+        run: |
+          nohup bun tests/smoke/fake-llm.ts > "$RUNNER_TEMP/fake-llm.out" 2>&1 &
+          for i in $(seq 1 30); do curl -sf "http://127.0.0.1:$FAKE_LLM_PORT/v1/models" >/dev/null && exit 0; sleep 1; done
+          cat "$RUNNER_TEMP/fake-llm.out"; exit 1
+      - name: One turn against the fake model
+        run: openclaw agent --local --agent main --message "hello from CI" --timeout 120
+      - name: The <langcouch> block reached the model
+        run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
+      - name: Logs on failure
+        if: failure()
+        run: |
+          cat "$RUNNER_TEMP/fake-llm.out" || true
+          openclaw plugins doctor --json || true
+
+  live:
+    needs: [hermes-fake, openclaw-fake]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [hermes, openclaw]
+        model: ["deepseek/deepseek-v4.1-flash", "z-ai/glm-5.3-flash"]
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      MODEL: ${{ matrix.model }}
+    steps:
+      - name: Key present
+        run: test -n "$OPENROUTER_API_KEY" || { echo "OPENROUTER_API_KEY secret is not set"; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - uses: astral-sh/setup-uv@v6
+        if: matrix.host == 'hermes'
+      - uses: actions/setup-node@v4
+        if: matrix.host == 'openclaw'
+        with:
+          node-version: 24
+      - name: Isolated dirs
+        run: |
+          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "HERMES_HOME=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
+          echo "OPENCLAW_HOME=$RUNNER_TEMP/ochome" >> "$GITHUB_ENV"
+      - run: bun install && bun src/cli.ts init && bun src/cli.ts lang es && bun src/cli.ts level 5
+      - name: Hermes setup
+        if: matrix.host == 'hermes'
+        run: |
+          uv tool install --python 3.12 "hermes-agent==$HERMES_VERSION"
+          bun src/cli.ts install hermes
+          printf 'plugins:\n  enabled: [langcouch]\n' > "$HERMES_HOME/config.yaml"
+      - name: OpenClaw setup
+        if: matrix.host == 'openclaw'
+        run: |
+          npm install -g "openclaw@$OPENCLAW_VERSION"
+          bun src/cli.ts install openclaw
+          mkdir -p "$OPENCLAW_HOME/.openclaw"
+          # key goes in via env.vars (documented path); written by bun so it never hits the log
+          bun -e 'await Bun.write(process.env.OPENCLAW_HOME + "/.openclaw/openclaw.json", JSON.stringify({ env: { vars: { OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY } }, agents: { defaults: { model: { primary: "openrouter/" + process.env.MODEL } } } }))'
+          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force
+          openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
+          openclaw plugins enable langcouch --accept-capabilities
+      - name: A real model weaves (one retry, replies vary)
+        run: |
+          for attempt in 1 2; do
+            if [ "${{ matrix.host }}" = hermes ]; then
+              hermes -z "$LIVE_PROMPT" --provider openrouter -m "$MODEL" > reply.txt || true
+            else
+              openclaw agent --local --agent main --message "$LIVE_PROMPT" --timeout 180 > reply.txt || true
+            fi
+            if bun tests/smoke/assert-woven.ts reply reply.txt; then
+              { echo "### ${{ matrix.host }} × $MODEL"; echo; cat reply.txt; } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "attempt $attempt did not weave"
+          done
+          exit 1

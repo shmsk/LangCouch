@@ -20,6 +20,8 @@ jobs:
           bun -e 'await Bun.file(".claude-plugin/plugin.json").json(); await Bun.file(".claude-plugin/marketplace.json").json(); const h = await Bun.file("hooks/hooks.json").json(); if (!h.hooks.UserPromptSubmit || !h.hooks.SessionStart) process.exit(1)'
       - name: Shell wrappers parse
         run: sh -n scripts/hook.sh && sh -n scripts/cli.sh
+      - name: Hermes plugin template compiles
+        run: python3 -m py_compile adapters/hermes/plugin.template.py
 
   node-compat:
     runs-on: ubuntu-latest
