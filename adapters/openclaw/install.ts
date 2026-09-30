@@ -31,7 +31,7 @@ export function installOpenclaw(dir: string = join(DATA_DIR, "openclaw-plugin"))
   writeFileSync(
     join(dir, "package.json"),
     JSON.stringify(
-      { name: "langcouch-openclaw", version: packageVersion(), private: true, type: "module", openclaw: { extensions: ["./index.ts"] } },
+      { name: "langcouch", version: packageVersion(), private: true, type: "module", openclaw: { extensions: ["./index.ts"] } },
       null,
       2,
     ) + "\n",
@@ -56,9 +56,9 @@ export function installOpenclaw(dir: string = join(DATA_DIR, "openclaw-plugin"))
     `Plugin ${action} at ${dir}`,
     ``,
     `Link it into OpenClaw, allow the prompt hook, and enable it:`,
-    `  openclaw plugins install --link ${JSON.stringify(dir)} --force`,
+    `  openclaw plugins install --link ${JSON.stringify(dir)} --force --accept-capabilities`,
     `  openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json`,
-    `  openclaw plugins enable langcouch --accept-capabilities`,
+    `  openclaw plugins enable langcouch`,
     ``,
     `The allowConversationAccess line is required: OpenClaw only runs prompt hooks of non-bundled plugins you allowed.`,
     `Check it loaded: openclaw plugins inspect langcouch --runtime`,

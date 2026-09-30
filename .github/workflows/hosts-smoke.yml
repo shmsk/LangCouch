@@ -116,9 +116,9 @@ jobs:
           EOF
       - name: Link, allow, enable (the commands the installer prints)
         run: |
-          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force
+          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force --accept-capabilities
           openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
-          openclaw plugins enable langcouch --accept-capabilities
+          openclaw plugins enable langcouch
       - name: Plugin registered its hook
         run: |
           openclaw plugins inspect langcouch --runtime --json > "$RUNNER_TEMP/inspect.json"; cat "$RUNNER_TEMP/inspect.json"
@@ -179,9 +179,9 @@ jobs:
           bun src/cli.ts install openclaw
           mkdir -p "$OPENCLAW_HOME/.openclaw"
           printf '{"agents":{"defaults":{"model":{"primary":"openrouter/%s"}}}}\n' "$MODEL" > "$OPENCLAW_HOME/.openclaw/openclaw.json"
-          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force
+          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force --accept-capabilities
           openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
-          openclaw plugins enable langcouch --accept-capabilities
+          openclaw plugins enable langcouch
       - name: A real model weaves (one retry, replies vary)
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
