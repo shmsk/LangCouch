@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { pickLadder, markWoven, markMissed, migrate, estimateStep, dueOf, stepOf } from "../src/ladder.ts";
 import { recordRecalls, applyQuizResult } from "../src/recall.ts";
-import { putServed, staleServed, takeServed, settleServed, lastReply } from "../src/served.ts";
+import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "../src/served.ts";
 import { wovenLemmas } from "../src/weave-detect.ts";
 import { buildInstruction, INSTRUCTION_BUDGET } from "../src/instruction.ts";
 import { loadWordlist, loadGrammar, loadPatterns, falseFriendsFor } from "../src/store.ts";
@@ -175,6 +175,14 @@ describe("honest counting", () => {
     const text = lastReply(lines.map((l) => JSON.stringify(l)).join("\n") + "\nnot json");
     expect(text).toBe("part one\npart two **día** (day)");
   });
+});
+
+test("only the transcript's tail is read, starting at a whole line", () => {
+  const path = join(mkdtempSync(join(tmpdir(), "langcouch-tail-")), "t.jsonl");
+  writeFileSync(path, "x".repeat(5000) + "\n" + JSON.stringify({ type: "user", message: { content: "p" } }) + "\n" + JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "end **casa**" }] } }));
+  const tail = readTail(path, 200);
+  expect(tail.startsWith("{")).toBe(true);
+  expect(lastReply(tail)).toBe("end **casa**");
 });
 
 describe("algorithm 3 instruction", () => {

@@ -10,7 +10,7 @@ import { pickGrammar, markGrammarShown, grammarProgress, type GrammarItem } from
 import { pickPattern, markPatternShown, patternCue, patternProgress, PATTERN_MIN_LEVEL, type Pattern } from "./patterns.ts";
 import { pickWords, markExposed, unlockedWords, tierProgress, type Pick } from "./scheduler.ts";
 import { migrate, pickLadder } from "./ladder.ts";
-import { putServed, staleServed, takeServed, settleServed, lastReply } from "./served.ts";
+import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "./served.ts";
 import { buildInstruction } from "./instruction.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
@@ -74,7 +74,7 @@ function settleReply(payload: HookPayload): void {
   const now = new Date().toISOString();
   const rec = takeServed(DATA_DIR, payload.sessionId, now);
   if (!rec || rec.lang !== config.lang) return;
-  const reply = payload.lastMessage || (payload.transcriptPath ? lastReply(readFileSync(payload.transcriptPath, "utf8")) : "");
+  const reply = payload.lastMessage || (payload.transcriptPath ? lastReply(readTail(payload.transcriptPath)) : "");
   const state = migrate(loadState(config.lang));
   saveState(config.lang, settleServed(state, rec, reply, now));
 }

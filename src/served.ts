@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, readSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { State } from "./types.ts";
 import { markMissed, markWoven } from "./ladder.ts";
@@ -79,6 +79,24 @@ export function settleServed(state: State, rec: ServedRecord, reply: string | nu
   markWoven(state, [...ids(rec.picks, true), ...ids(rec.known, true)], now);
   markMissed(state, ids(rec.picks, false), now);
   return state;
+}
+
+/**
+ * The end of a transcript: a long session's file runs to tens of MB, and the hook
+ * must stay fast. The last reply sits at the end; a first partial line is dropped.
+ */
+export function readTail(path: string, bytes = 1 << 20): string {
+  const fd = openSync(path, "r");
+  try {
+    const size = fstatSync(fd).size;
+    const start = Math.max(0, size - bytes);
+    const buf = Buffer.alloc(size - start);
+    readSync(fd, buf, 0, buf.length, start);
+    const text = buf.toString("utf8");
+    return start > 0 ? text.slice(text.indexOf("\n") + 1) : text;
+  } finally {
+    closeSync(fd);
+  }
 }
 
 /**

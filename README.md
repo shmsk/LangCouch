@@ -214,6 +214,8 @@ A plugin cannot ship spinner tips itself, so this writes to your `~/.claude/sett
 
 The hook runs locally. It reads your prompt only to scan it for words you've already seen (the recall signal) — your prompt is never logged, sent over the network, or stored anywhere. The only thing written to disk is the per-language state file in `~/.langcouch/` (human-readable JSON), which you can inspect, back up, or `rm -rf` at any time. LangCouch has no network surface and no telemetry.
 
+The experimental weave algorithm 3 (off by default; it is turned on with `"algorithm": 3` in `~/.langcouch/config.json`) also reads the assistant's last reply once it is finished, from Claude Code's local transcript, to count only the words the reply actually used. It keeps the words offered for the current turn in `~/.langcouch/served.json` until then. The reply is not stored, and nothing leaves your machine.
+
 ## Uninstall
 
 - **Claude Code plugin:** if you turned the spinner on, run `/langcouch:spinner off` **first** (Claude Code has no uninstall hook, so the plugin can't clean up after itself). Then `/plugin uninstall langcouch@langcouch` and restart the session. Already uninstalled with the spinner on? Delete the lines starting with `LangCouch · ` from `spinnerTipsOverride.tips` in `~/.claude/settings.json`.
