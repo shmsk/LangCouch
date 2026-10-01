@@ -6,12 +6,17 @@
 
 **Divandan turmasdan — yoki terminalingizni tark etmasdan — til oʻrganing.**
 
-LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javoblariga toʻqib boradi (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
+LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javoblariga toʻqib boradi (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
 
 > Siz: "nega deploy muvaffaqiyatsiz boʻlyapti?"
 > Agent: "8080-portni ertalabki **primero** (birinchi) ishga tushirishdan qolgan **viejo** (eski) jarayon hali ham band qilib turibdi. Uni `lsof -ti :8080 | xargs kill` bilan toʻxtating, deploy **ahora** (hozir) oʻtadi."
 
-10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi.
+10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
+
+## 0.7.5 da nima yangi
+
+- **Tarjimalar siz yozayotgan tilda.** Agentga ruscha yozsangiz, **casa** (дом) keladi; inglizcha yozsangiz, **casa** (house). Hech narsani almashtirish shart emas. LangCouch tilni aniqlay olmasa, sizning `native` tilingizni oladi va qaysi tilni xohlashingizni bir marta soʻraydi.
+- **Gemini CLI, beta.** `langcouch install gemini` hooklarni roʻyxatdan oʻtkazadi. U Gemini'ning hooklar qoʻllanmasiga qarab yozilgan va testlar bilan qoplangan, lekin jonli Gemini CLI'da hali ishga tushirib koʻrilmagan.
 
 ## 0.7.0 da nima yangi
 
@@ -44,7 +49,7 @@ Men har kuni koʻp oʻqiyman, va hozir bu matnning katta qismi terminaldagi AI a
 
 Sozlash shart emas: na `npm install`, na build bosqichi kerak — hook birinchi ishlatilganda oʻz konfiguratsiyasini avtomatik yaratadi. Uni Claude Code ichidan `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on` buyruqlari bilan boshqaring, oʻz tilingizni esa `/langcouch:add-language <language>` bilan qoʻshing.
 
-**Oʻz tilingizdagi glosslar:** `~/.langcouch/config.json` faylida `"native"` qiymatini `en` (standart), `ru` yoki `uz` (oʻzbek, lotin yozuvi) ga oʻrnating. Toʻqilgan matndagi glosslar va qabul qilinadigan quiz javoblari shunga mos boʻladi.
+**Oʻz tilingizdagi glosslar:** tarjimalar xabaringiz tiliga mos keladi. Kirill yozuvi ruscha tarjima beradi; lotin yozuvi `native` qiymatingizni beradi, agar u `en` yoki `uz` (oʻzbek, lotin yozuvi) boʻlsa, aks holda inglizcha. `langcouch native <en|ru|uz>` (standart `en`) LangCouch oʻqiy olmaydigan xabar uchun zaxira tilni, shuningdek quiz javoblari va spinner maslahatlari tilini belgilaydi.
 
 ### Qoʻlda hook oʻrnatish
 
@@ -87,6 +92,17 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 ```
 
 Codex siz koʻrib chiqmagan hooklarni ishga tushirmaydi, shuning uchun `/hooks` qadami bir marta kerak (hook buyrugʻi oʻzgarsa, yana). `--scope project` hooki uchun loyihaning oʻzi ham ishonchli boʻlishi kerak. Agar eski eksperimental versiya oʻrnatilgan boʻlsa, oʻrnatuvchi uning `AGENTS.md` boʻlimini oʻzi olib tashlaydi. Hozircha Codex qoʻshilgan koʻrsatmani suhbatda koʻrinadigan developer xabari sifatida koʻrsatadi ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); bu faqat tashqi koʻrinish masalasi.
+
+### Gemini CLI hooki sifatida (beta)
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install gemini --scope user   # ~/.gemini/settings.json (or --scope project: ./.gemini/settings.json)
+# start gemini — replies start weaving Spanish
+```
+
+Beta: adapter Gemini CLI'ning [hooklar qoʻllanmasi](https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/reference.md) asosida yozilgan (`BeforeAgent` koʻrsatma qoʻshadi, `AfterAgent` javobni qayta oʻqiydi) va testlar bilan qoplangan, lekin jonli Gemini CLI'da hali hech kim ishga tushirib koʻrmagan. Soʻzlar toʻqilmasa, iltimos, [issue oching](https://github.com/shmsk/LangCouch/issues). Loyiha darajasidagi yangi hookni ishga tushirishdan oldin Gemini ruxsat soʻraydi: `langcouch` ga ruxsat bering.
 
 ### Hermes Agent plagini sifatida
 
@@ -191,6 +207,7 @@ Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangila
 | Claude Code | **Ishlab chiqarishda** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch`, yoki `langcouch install claude` | `UserPromptSubmit` hook (kontekstga kiritish, ishonchli); `Stop` javobni qayta oʻqiydi |
 | opencode | **Ishlab chiqarishda** (plagin) + **eksperimental** (zaxira) | `langcouch install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plagin hooki + AGENTS.md orqali oʻz-oʻzidan ishlaydigan zaxira; `session.idle` javobni qayta oʻqiydi |
 | Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | `hooks.json`dagi `UserPromptSubmit` hook (kontekstga qoʻshish, ishonchli); `Stop` javobni qayta oʻqiydi |
+| Gemini CLI | **Beta** (jonli sinalmagan) | `langcouch install gemini [--scope project\|user]` | `settings.json`dagi `BeforeAgent` hook (JSON `additionalContext`); `AfterAgent` javobni qayta oʻqiydi |
 | Hermes Agent | **Production** | `langcouch install hermes` | `pre_llm_call` plagin hooki (kontekst xabaringizga qoʻshiladi); `post_llm_call` javobni qayta oʻqiydi |
 | OpenClaw | **Production** | `langcouch install openclaw` | `before_prompt_build` plagin hooki (`prependContext`); `agent_end` javobni qayta oʻqiydi |
 
@@ -206,6 +223,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `status` | holati mavjud har bir til uchun daraja va progressni koʻrsatadi |
 | `lang [code]` | maqsadli tilni almashtiradi / mavjudlarini roʻyxatlaydi (oʻzingiznikilar `local` deb belgilanadi) |
 | `validate <code> [--full]` | soʻz roʻyxatini tekshiradi, masalan, siz `~/.langcouch/wordlists/` ga qoʻshgan roʻyxatni |
+| `native [en\|ru\|uz]` | sizning tilingiz: xabar tili noaniq boʻlganda tarjimalar, quiz javoblari, spinner maslahatlari |
 | `level <1-10\|up\|down>` | toʻqish intensivligi |
 | `mode [1\|2\|3]` | toʻqish algoritmi: 3 oraliqlar zinasi (standart), 2 faqat joyiga tushadigan soʻzlar, 1 roʻyxatdagi har bir soʻz |
 | `quiz [n]` | oʻzlashtirishni tekshiradi (standart 5 ta soʻz); notoʻgʻri javob berilgan soʻz yana aylanmaga qaytadi |
@@ -218,6 +236,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `install claude [--scope project\|user]` | UserPromptSubmit, SessionStart va Stop hooklarini roʻyxatdan oʻtkazadi |
 | `install opencode [--scope project\|user]` | opencode uchun plagin + AGENTS.md zaxirasini oʻrnatadi |
 | `install codex [--scope project\|user]` | Codex CLI `hooks.json` fayliga UserPromptSubmit, SessionStart va Stop hooklarini roʻyxatdan oʻtkazadi |
+| `install gemini [--scope project\|user]` | beta: Gemini CLI `settings.json` fayliga BeforeAgent, SessionStart va AfterAgent hooklarini roʻyxatdan oʻtkazadi |
 | `install hermes` | Hermes Agent plaginini `$HERMES_HOME/plugins/langcouch/` ichiga oʻrnatadi |
 | `install openclaw` | OpenClaw plaginini yaratadi va uni ulash hamda yoqish buyruqlarini chop etadi |
 
@@ -259,6 +278,7 @@ Javob tugagach, hook uni ham oʻqiydi (xost oʻzi uzatadi yoki u Claude Codeʼni
 - **Qoʻlda oʻrnatilgan Claude Code hooki:** `.claude/settings.json` faylida (yoki `--scope user` bilan oʻrnatgan boʻlsangiz `~/.claude/settings.json`da) buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit`, `SessionStart` va `Stop` yozuvlarini oʻchiring.
 - **opencode:** `.opencode/plugin/` dan (yoki `~/.config/opencode/plugin/` dan) `langcouch.ts` faylini va `AGENTS.md` ichidagi `<!-- langcouch:start -->` bilan `<!-- langcouch:end -->` orasidagi boʻlimni oʻchiring.
 - **Codex CLI:** `~/.codex/hooks.json` (yoki `--scope project` uchun `.codex/hooks.json`) faylidan buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit`, `SessionStart` va `Stop` yozuvlarini oʻchiring.
+- **Gemini CLI:** `~/.gemini/settings.json` (yoki `--scope project` uchun `.gemini/settings.json`) faylidan nomi `langcouch` boʻlgan `BeforeAgent`, `SessionStart` va `AfterAgent` yozuvlarini oʻchiring.
 - **Hermes Agent:** `hermes plugins disable langcouch`, keyin `~/.hermes/plugins/langcouch/` papkasini (yoki `$HERMES_HOME` ichidagisini) oʻchiring.
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, keyin `~/.langcouch/openclaw-plugin/` papkasini oʻchiring.
 - **Progressingiz:** `rm -rf ~/.langcouch` (agar qaytib kelishingiz mumkin boʻlsa, buni bajarmang — progress qayta oʻrnatishlardan omon qoladi).
@@ -273,7 +293,7 @@ Eng qimmatli hissa — bu sizning tilingiz, va [docs/AddLanguage.md](docs/AddLan
 - 2-daraja lugʻati (har bir til uchun →1000 soʻz), yadro ~80% oʻzlashtirilganda ochiladi
 - Leksik bloklar (butun iboralar), yadroning katta qismi oʻzlashtirilgach
 - Spinner fe'llarida ispancha gerundiylar («Pensando…»)
-- Gemini CLI adapteri
+- Gemini CLI'ni betadan chiqarish, jonli sinovdan keyin
 - Yana koʻproq tillar — sizniki ham boʻladimi? ([docs/AddLanguage.md](docs/AddLanguage.md))
 
 ## Litsenziya

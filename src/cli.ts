@@ -13,6 +13,7 @@ import { pickWords, markExposed, unlockedWords, tierProgress, type Pick } from "
 import { migrate, pickLadder } from "./ladder.ts";
 import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "./served.ts";
 import { buildInstruction } from "./instruction.ts";
+import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
@@ -23,6 +24,7 @@ import { installCodex } from "../adapters/codex/install.ts";
 import { installOpencode } from "../adapters/opencode/install.ts";
 import { installHermes } from "../adapters/hermes/install.ts";
 import { installOpenclaw } from "../adapters/openclaw/install.ts";
+import { installGemini } from "../adapters/gemini/install.ts";
 
 /**
  * Build this turn's instruction. `mark` records the turn: algorithms 1-2 count the
@@ -30,9 +32,13 @@ import { installOpenclaw } from "../adapters/openclaw/install.ts";
  * Stop hook counts what the reply actually wove. SessionStart serves without an
  * offer to settle, since no reply of its own follows it.
  */
-function makeInstruction(mark: boolean, sessionId = "", eventName = ""): string {
-  const config = loadConfig();
-  if (config.enabled === false) return "";
+function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt = ""): string {
+  const saved = loadConfig();
+  if (saved.enabled === false) return "";
+  // translations follow the language the user just wrote in; quiz, spinner and status stay on `native`
+  const gloss = promptGlossLang(prompt, saved.native);
+  const ask = gloss.unsure === "unknown" && saved.nativeAsked !== true;
+  const config: Config = { ...saved, native: gloss.lang };
   const algorithm = algorithmOf(config);
   const words = loadWordlist(config.lang);
   const state = loadState(config.lang);
@@ -63,7 +69,9 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = ""): string 
     saveState(config.lang, state);
   }
   const cue = rule ? patternCue(rule, config.native, normalizeLang(config.lang), falseFriendsFor(config.lang)) : null;
-  return buildInstruction(config, picks, grammar, cue, algorithm, known);
+  // asked once: a user who ignores the question isn't asked again
+  if (ask && mark) saveConfig({ ...loadConfig(), nativeAsked: true }); // re-read: never undo a change made meanwhile
+  return buildInstruction(config, picks, grammar, cue, algorithm, known, ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : null);
 }
 
 /**
@@ -122,14 +130,14 @@ async function readHookPayload(): Promise<HookPayload> {
   ]);
   if (!raw) return empty;
   try {
-    const payload = JSON.parse(raw) as { prompt?: string; session_id?: string; hook_event_name?: string; transcript_path?: string; last_assistant_message?: string };
+    const payload = JSON.parse(raw) as { prompt?: string; session_id?: string; hook_event_name?: string; transcript_path?: string; last_assistant_message?: string; prompt_response?: string };
     const str = (v: unknown) => (typeof v === "string" ? v : "");
     return {
       prompt: str(payload.prompt),
       sessionId: str(payload.session_id),
       eventName: str(payload.hook_event_name),
       transcriptPath: str(payload.transcript_path) || undefined,
-      lastMessage: str(payload.last_assistant_message) || undefined,
+      lastMessage: str(payload.last_assistant_message) || str(payload.prompt_response) || undefined,
     };
   } catch {
     return { ...empty, prompt: raw }; // plain-text stdin still counts as a prompt
@@ -319,14 +327,27 @@ try {
       break;
     case "hook": {
       // UserPromptSubmit contract: stdout is added to context; NEVER break the host session.
+      // Gemini CLI (--host gemini, beta) names the events BeforeAgent / AfterAgent and reads
+      // context only from JSON; any non-zero exit or a `decision` would block or retry its turn.
+      const gemini = args[0] === "--host" && args[1] === "gemini";
+      const GEMINI_EVENT: Record<string, string> = { BeforeAgent: "UserPromptSubmit", AfterAgent: "Stop" };
+      let hostEvent = "";
+      // `silent`: the duplicate guard prints nothing for plain-text hosts, as before
+      const emit = (text: string, silent = false) => {
+        if (gemini) console.log(text ? JSON.stringify({ hookSpecificOutput: { hookEventName: hostEvent || "BeforeAgent", additionalContext: text } }) : "{}");
+        else if (!silent) console.log(text);
+        process.exit(0);
+      };
       let payload: HookPayload = { prompt: "", sessionId: "", eventName: "" };
       try {
         payload = await readHookPayload();
+        hostEvent = payload.eventName;
+        if (gemini) payload.eventName = GEMINI_EVENT[payload.eventName] ?? payload.eventName;
         // Plugin installs skip `init`; bootstrap the default config (idempotent, never clobbers).
         initConfig();
         // Plugin + legacy settings.json hook may both deliver the same payload — emit once.
         const key = invocationKey(payload.sessionId, payload.eventName, payload.prompt);
-        if (isDuplicateInvocation(DATA_DIR, key, Date.now())) process.exit(0);
+        if (isDuplicateInvocation(DATA_DIR, key, Date.now())) emit("", true);
       } catch {
         // guard/bootstrap are best-effort — never let them break the instruction below
       }
@@ -360,12 +381,13 @@ try {
       } catch {
         // spinner is a bonus — a broken settings.json must never cost us the instruction
       }
+      let text = "";
       try {
-        console.log(makeInstruction(true, payload.sessionId, payload.eventName));
+        text = makeInstruction(true, payload.sessionId, payload.eventName, payload.prompt);
       } catch {
         // swallow everything — empty stdout, exit 0
       }
-      process.exit(0);
+      emit(text);
     }
     case "quiz": {
       const config = loadConfig();
@@ -430,6 +452,21 @@ try {
       }
       saveConfig({ ...config, algorithm: next });
       console.log(`Weave algorithm: ${algorithmOf(config)} → ${next} (${MODE_NAMES[next]})`);
+      break;
+    }
+    case "native": {
+      const config = loadConfig();
+      const arg = args[0];
+      if (arg === undefined) {
+        console.log(`Translations: ${config.native} when your message's language can't be read (Cyrillic → ru, Latin → ${["en", "uz"].includes(config.native) ? config.native : "en"}); quiz and spinner always use ${config.native}`);
+        break;
+      }
+      if (!GLOSS_LANGS.includes(arg)) {
+        console.error(`usage: langcouch native <${GLOSS_LANGS.join("|")}>`);
+        process.exit(1);
+      }
+      saveConfig({ ...config, native: arg, nativeAsked: true });
+      console.log(`Native language: ${config.native} → ${arg}`);
       break;
     }
     case "lang": {
@@ -571,12 +608,19 @@ try {
           process.exit(1);
         }
         console.log(installOpencode(scope));
+      } else if (args[0] === "gemini") {
+        const scope = args.includes("--scope") ? args[args.indexOf("--scope") + 1] : "project";
+        if (scope !== "project" && scope !== "user") {
+          console.error("--scope must be project or user");
+          process.exit(1);
+        }
+        console.log(installGemini(scope));
       } else if (args[0] === "hermes") {
         console.log(installHermes());
       } else if (args[0] === "openclaw") {
         console.log(installOpenclaw());
       } else {
-        console.error("usage: langcouch install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | hermes | openclaw>");
+        console.error("usage: langcouch install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | gemini [--scope project|user] | hermes | openclaw>");
         process.exit(1);
       }
       break;
@@ -591,6 +635,7 @@ try {
           "  status [--absorbed]       level, core/grammar progress; --absorbed lists absorbed words",
           "  lang [code]               switch language / list available (regional variants too: pt-BR)",
           "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.langcouch/wordlists/)",
+          "  native [en|ru|uz]         your language: translations when a message's language is unclear, quiz answers",
           "  level <1-10|up|down>      weaving intensity",
           "  mode [1|2|3]              weave algorithm: 3 interval ladder (default), 2 fit only, 1 every word",
           "  quiz [n]                  absorption check (default 5 words)",
@@ -602,6 +647,7 @@ try {
           "  install claude [--scope project|user]   register the hook in Claude Code",
           "  install codex [--scope project|user]   register the hook in Codex CLI (hooks.json)",
           "  install opencode [--scope project|user]   install the plugin + AGENTS.md fallback for opencode",
+          "  install gemini [--scope project|user]   register the hook in Gemini CLI (settings.json, beta)",
           "  install hermes            install the Hermes Agent plugin ($HERMES_HOME/plugins/langcouch)",
           "  install openclaw          generate the OpenClaw plugin and print the link commands",
         ].join("\n"),

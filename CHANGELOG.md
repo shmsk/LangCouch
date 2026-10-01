@@ -6,6 +6,26 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.7.5] - 2026-10-01
+
+### Added
+- Translations follow the language you write in: a message in Russian gets `casa (дом)`,
+  one in English gets `casa (house)`, with no setting to change. Cyrillic means Russian;
+  Latin means your `native` when it is English or Uzbek, otherwise English. Pasted code and
+  links don't count.
+- When LangCouch can't tell a message's language, it uses your `native` and the agent asks
+  you once which language you want translations in.
+- `langcouch native <en|ru|uz>` sets your language: the fallback above, quiz answers and
+  spinner tips.
+- Gemini CLI support, **beta**: `langcouch install gemini [--scope project|user]` registers
+  the `BeforeAgent`, `SessionStart` and `AfterAgent` hooks in Gemini's `settings.json`. It
+  follows Gemini's hooks reference and is covered by tests, but has not been run against a
+  live Gemini CLI yet.
+
+### Changed
+- The rule about text you will copy or send (posts, emails, commit messages) no longer
+  names a language: it only says to keep target-language words out.
+
 ## [0.7.0] - 2026-10-01
 
 ### Added

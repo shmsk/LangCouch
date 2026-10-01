@@ -35,7 +35,7 @@ export type WeaveAlgorithm = 1 | 2 | 3;
 
 export const INSTRUCTION_BUDGET = 2400;
 
-export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = []): string {
+export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = [], ask: string | null = null): string {
   const name = langName(config.lang);
   const base = config.lang.split("-")[0]!;
   const region = BASE_REGION[base] ?? langName(base);
@@ -46,7 +46,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
   const stage = grammarStage(config.level);
   const grammarContrast = grammar?.baseExample ? `; ${region}: ${grammar.baseExample}` : "";
 
-  if (algorithm === 3) return ladderInstruction(config, picks, grammar, rule, known, item);
+  if (algorithm === 3) return ladderInstruction(config, picks, grammar, rule, known, item, ask);
 
   const fitOnly = algorithm === 2;
   const lines = [
@@ -87,6 +87,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
     `Forbidden: touching code blocks, inline code, identifiers, commands, paths, URLs, quotes, or technical terms; translating the whole reply; weaving words not on the list${rule ? " (the one rule word aside)" : ""}.`,
     `Never weave into text the user will copy or send (a post, email, message, summary, document, commit message): keep it free of ${name} words and weave only in your own words around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
+    ...(ask ? [ask] : []),
     `</langcouch>`,
   );
 
@@ -94,9 +95,8 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
 }
 
 /** Algorithm 3: fit words, a capped nudge, and translations that fade with the ladder step. */
-function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null, rule: PatternCue | null, known: Word[], item: (p: Pick) => string): string {
+function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null, rule: PatternCue | null, known: Word[], item: (p: Pick) => string, ask: string | null): string {
   const name = langName(config.lang);
-  const native = langName(config.native.split("-")[0]!);
   const base = config.lang.split("-")[0]!;
   const region = BASE_REGION[base] ?? langName(base);
   const nudge = picks.filter((p) => p.nudge);
@@ -142,8 +142,9 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   }
   lines.push(
     `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply or weave unlisted words${rule ? " (the rule word aside)" : ""}.`,
-    `Anything the user will copy or send (post, email, message, summary, document, commit message) is written entirely in ${native}, no ${name}: weave only in your text around it.`,
+    `Anything the user will copy or send (post, email, message, summary, document, commit message) stays entirely free of ${name} words: weave only in your text around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
+    ...(ask ? [ask] : []),
     `</langcouch>`,
   );
 

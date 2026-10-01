@@ -75,6 +75,8 @@ export interface Config {
    * 3 = fit + nudge + interval ladder with honest counting (src/ladder.ts). Set by `langcouch mode`.
    */
   algorithm?: 1 | 2 | 3;
+  /** The hook already asked once which language translations should be in (or `langcouch native` set it). */
+  nativeAsked?: boolean;
 }
 
 /** Algorithm 3 since 0.6.0; a config without the field gets it. `langcouch mode 1` brings the old weave back. */

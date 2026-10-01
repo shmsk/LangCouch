@@ -4,12 +4,17 @@ English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
 
 **Learn a language without getting off the couch — or leaving your terminal.**
 
-LangCouch weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
+LangCouch weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "why is the deploy failing?"
 > Agent: "Port 8080 is still held by a **viejo** (old) process from your **primero** (first) run this morning. Kill it with `lsof -ti :8080 | xargs kill` and the deploy will go through **ahora** (now)."
 
-10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek.
+10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
+
+## What's new in 0.7.5
+
+- **Translations in the language you write in.** Write to the agent in Russian and you get **casa** (дом); write in English and you get **casa** (house). No setting to switch. If LangCouch can't tell the language, it uses your `native` and asks you once which one you want.
+- **Gemini CLI, beta.** `langcouch install gemini` registers the hooks. It is built from Gemini's hooks reference and covered by tests, but hasn't been run against a live Gemini CLI yet.
 
 ## What's new in 0.7.0
 
@@ -42,7 +47,7 @@ I read a lot every day, and these days most of that text is my AI agents' replie
 
 Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, and add your own language with `/langcouch:add-language <language>`.
 
-**Glosses in your language:** set `"native"` in `~/.langcouch/config.json` to `en` (default), `ru` or `uz` (Uzbek, Latin script). Glosses in the weave and accepted quiz answers follow it.
+**Glosses in your language:** translations follow the language of your message. Cyrillic gets Russian; Latin gets your `native` if it is `en` or `uz` (Uzbek, Latin script), else English. `langcouch native <en|ru|uz>` (default `en`) sets the fallback for a message LangCouch can't read, and the language of quiz answers and spinner tips.
 
 ### Manual hook install
 
@@ -85,6 +90,17 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 ```
 
 Codex skips any hook you haven't reviewed, so the `/hooks` step is needed once (and again if the hook command changes). A project-scope hook also needs the project to be trusted. If you installed the old experimental version, the installer removes its `AGENTS.md` section for you. Codex currently shows the injected instruction as a visible developer message in the transcript ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); it's cosmetic.
+
+### As a Gemini CLI hook (beta)
+
+```bash
+git clone https://github.com/shmsk/LangCouch && cd LangCouch
+bun install
+bun src/cli.ts install gemini --scope user   # ~/.gemini/settings.json (or --scope project: ./.gemini/settings.json)
+# start gemini — replies start weaving Spanish
+```
+
+Beta: the adapter follows Gemini CLI's [hooks reference](https://github.com/google-gemini/gemini-cli/blob/main/docs/hooks/reference.md) (`BeforeAgent` adds the instruction, `AfterAgent` reads the reply back) and is covered by tests, but nobody has run it against a live Gemini CLI yet. If it doesn't weave for you, please [open an issue](https://github.com/shmsk/LangCouch/issues). Gemini asks before running a new project-scope hook: allow `langcouch` when it does.
 
 ### As a Hermes Agent plugin
 
@@ -189,6 +205,7 @@ What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update
 | Claude Code | **Production** | `/plugin marketplace add shmsk/LangCouch` → `/plugin install langcouch@langcouch`, or `langcouch install claude` | `UserPromptSubmit` hook (context injection, reliable); `Stop` reads the reply back |
 | opencode | **Production** (plugin) + **experimental** (fallback) | `langcouch install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback; `session.idle` reads the reply back |
 | Codex CLI | **Production** | `langcouch install codex [--scope project\|user]` | `UserPromptSubmit` hook in `hooks.json` (context injection, reliable); `Stop` reads the reply back |
+| Gemini CLI | **Beta** (not live-tested yet) | `langcouch install gemini [--scope project\|user]` | `BeforeAgent` hook in `settings.json` (JSON `additionalContext`); `AfterAgent` reads the reply back |
 | Hermes Agent | **Production** | `langcouch install hermes` | `pre_llm_call` plugin hook (context appended to your message); `post_llm_call` reads the reply back |
 | OpenClaw | **Production** | `langcouch install openclaw` | `before_prompt_build` plugin hook (`prependContext`); `agent_end` reads the reply back |
 
@@ -204,6 +221,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `status` | level and progress for every language with state |
 | `lang [code]` | switch target language / list available ones (your own are marked `local`) |
 | `validate <code> [--full]` | check a wordlist, e.g. one you added in `~/.langcouch/wordlists/` |
+| `native [en\|ru\|uz]` | your language: translations when a message's language is unclear, quiz answers, spinner tips |
 | `level <1-10\|up\|down>` | weaving intensity |
 | `mode [1\|2\|3]` | weave algorithm: 3 interval ladder (default), 2 only words that fit, 1 every listed word |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
@@ -216,6 +234,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `install claude [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks |
 | `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for opencode |
 | `install codex [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks in Codex CLI's `hooks.json` |
+| `install gemini [--scope project\|user]` | beta: register the BeforeAgent, SessionStart and AfterAgent hooks in Gemini CLI's `settings.json` |
 | `install hermes` | install the Hermes Agent plugin into `$HERMES_HOME/plugins/langcouch/` |
 | `install openclaw` | generate the OpenClaw plugin and print the commands that link and enable it |
 
@@ -257,6 +276,7 @@ Once a reply is finished, the hook also reads it (the host hands it over, or Cla
 - **Manual Claude Code hook:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` in `.claude/settings.json` (or `~/.claude/settings.json` if you installed with `--scope user`).
 - **opencode:** delete `langcouch.ts` from `.opencode/plugin/` (or `~/.config/opencode/plugin/`) and the section between `<!-- langcouch:start -->` and `<!-- langcouch:end -->` in `AGENTS.md`.
 - **Codex CLI:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` from `~/.codex/hooks.json` (or `.codex/hooks.json` for `--scope project`).
+- **Gemini CLI:** remove the `BeforeAgent`, `SessionStart` and `AfterAgent` entries named `langcouch` from `~/.gemini/settings.json` (or `.gemini/settings.json` for `--scope project`).
 - **Hermes Agent:** `hermes plugins disable langcouch`, then delete `~/.hermes/plugins/langcouch/` (or under your `$HERMES_HOME`).
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, then delete `~/.langcouch/openclaw-plugin/`.
 - **Your progress:** `rm -rf ~/.langcouch` (skip this if you might come back — progress survives reinstalls).
@@ -271,7 +291,7 @@ The most valuable contribution is your language, and [docs/AddLanguage.md](docs/
 - Tier 2 vocabulary (→1000 words per language), unlocked at ~80% core absorption
 - Lexical chunks (whole phrases) once most of the core is absorbed
 - Spanish gerunds in the spinner verbs ("Pensando…")
-- Gemini CLI adapter
+- Gemini CLI out of beta, after a live run
 - More languages — yours? ([docs/AddLanguage.md](docs/AddLanguage.md))
 
 ## License

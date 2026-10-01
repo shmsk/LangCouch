@@ -83,7 +83,8 @@ function validConfig(c: unknown): c is Config {
     (c.algorithm === undefined || c.algorithm === 1 || c.algorithm === 2 || c.algorithm === 3) &&
     (c.enabled === undefined || typeof c.enabled === "boolean") &&
     (c.spinner === undefined || typeof c.spinner === "boolean") &&
-    (c.seenVersion === undefined || typeof c.seenVersion === "string")
+    (c.seenVersion === undefined || typeof c.seenVersion === "string") &&
+    (c.nativeAsked === undefined || typeof c.nativeAsked === "boolean")
   );
 }
 
