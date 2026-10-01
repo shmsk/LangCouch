@@ -283,6 +283,14 @@ Javob tugagach, hook uni ham oʻqiydi (xost oʻzi uzatadi yoki u Claude Codeʼni
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, keyin `~/.langcouch/openclaw-plugin/` papkasini oʻchiring.
 - **Progressingiz:** `rm -rf ~/.langcouch` (agar qaytib kelishingiz mumkin boʻlsa, buni bajarmang — progress qayta oʻrnatishlardan omon qoladi).
 
+## Fikr-mulohaza
+
+Gʻoyangiz bormi yoki nimadir jonga tegyaptimi? Ikkalasi ham foydali.
+
+- **Aniq istak:** [funksiya taklif qiling](https://github.com/shmsk/LangCouch/issues/new?template=feature-request.md).
+- **Xom gʻoya yoki savol:** [muhokama boshlang](https://github.com/shmsk/LangCouch/discussions).
+- **Nimadir buzildi:** [xato haqida xabar bering](https://github.com/shmsk/LangCouch/issues/new?template=bug-report.md).
+
 ## Hissa qoʻshish
 
 Eng qimmatli hissa — bu sizning tilingiz, va [docs/AddLanguage.md](docs/AddLanguage.md) AI agentingiz uni boshidan oxirigacha bajara olishi uchun yozilgan. Ishlab chiqish sikli, testlar va asosiy qoidalar [CONTRIBUTING.md](CONTRIBUTING.md) da berilgan.

@@ -281,6 +281,14 @@ Once a reply is finished, the hook also reads it (the host hands it over, or Cla
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, then delete `~/.langcouch/openclaw-plugin/`.
 - **Your progress:** `rm -rf ~/.langcouch` (skip this if you might come back — progress survives reinstalls).
 
+## Feedback
+
+Got an idea, or is something annoying you? Either is useful.
+
+- **A concrete wish:** [open a feature request](https://github.com/shmsk/LangCouch/issues/new?template=feature-request.md).
+- **A rough idea or a question:** [start a discussion](https://github.com/shmsk/LangCouch/discussions).
+- **Something broken:** [file a bug](https://github.com/shmsk/LangCouch/issues/new?template=bug-report.md).
+
 ## Contributing
 
 The most valuable contribution is your language, and [docs/AddLanguage.md](docs/AddLanguage.md) is written so your AI agent can do it end-to-end. Dev loop, tests and ground rules are in [CONTRIBUTING.md](CONTRIBUTING.md).

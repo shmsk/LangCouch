@@ -283,6 +283,14 @@ langcouch import ~/Downloads/langcouch-export-2026-10-01.json   # на друг�
 - **OpenClaw:** `openclaw plugins uninstall langcouch`, затем удалите `~/.langcouch/openclaw-plugin/`.
 - **Ваш прогресс:** `rm -rf ~/.langcouch` (не делайте этого, если можете вернуться: прогресс переживает переустановку).
 
+## Обратная связь
+
+Есть идея или что-то бесит? Пригодится и то, и другое.
+
+- **Конкретное пожелание:** [предложите фичу](https://github.com/shmsk/LangCouch/issues/new?template=feature-request.md).
+- **Сырая идея или вопрос:** [начните обсуждение](https://github.com/shmsk/LangCouch/discussions).
+- **Что-то сломалось:** [сообщите о баге](https://github.com/shmsk/LangCouch/issues/new?template=bug-report.md).
+
 ## Участие в проекте
 
 Самый ценный вклад — ваш язык, и [docs/AddLanguage.md](docs/AddLanguage.md) написан так, чтобы ваш AI-агент мог сделать всё сам. Цикл разработки, тесты и базовые правила — в [CONTRIBUTING.md](CONTRIBUTING.md).
