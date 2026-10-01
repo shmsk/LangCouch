@@ -113,6 +113,8 @@ describe.skipIf(!hasPython)("hermes plugin (python3 + fake CLI)", () => {
   test("/langcouch routes arguments to the CLI", () => {
     const out = run(setup("cmd", ECHO_CLI), "level up");
     expect(out.cmd).toBe("ran: level up");
+    expect(run(setup("transfer", ECHO_CLI), "import '~/My Files/b.json' --config").cmd).toBe("ran: import ~/My Files/b.json --config");
+    expect(run(setup("transfer2", ECHO_CLI), "export").cmd).toBe("ran: export");
   });
 
   test("/langcouch shows CLI errors from stderr", () => {

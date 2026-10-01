@@ -100,7 +100,7 @@ export function lastAssistantText(messages: unknown): string {
 }
 
 // Subcommands safe to run from a chat; quiz is interactive, init/install touch host config.
-const COMMANDS = ["lang", "level", "mode", "pause", "resume", "status", "validate", "instruction"];
+const COMMANDS = ["lang", "level", "mode", "pause", "resume", "status", "validate", "instruction", "export", "import"];
 
 export function runCommand(rawArgs: string, spawn: SpawnFn = defaultSpawn): string {
   const args = rawArgs.trim().split(/\s+/).filter(Boolean);
@@ -181,7 +181,7 @@ export function buildPlugin(spawn: SpawnFn = defaultSpawn) {
 
       api.registerCommand({
         name: "langcouch",
-        description: "LangCouch: lang, level, pause, resume, status",
+        description: "LangCouch: lang, level, pause, resume, status, export, import",
         acceptsArgs: true,
         handler: (ctx) => {
           try {

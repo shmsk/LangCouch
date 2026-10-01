@@ -57,6 +57,18 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
     for (const [key, b] of Object.entries(bestBefore)) expect(after[key]?.exposures ?? 0).toBeGreaterThanOrEqual(b.exposures);
   });
 
+  test("exports and imports onto a fresh machine without loss", () => {
+    const dir = copy();
+    const fresh = mkdtempSync(join(tmpdir(), `langcouch-upgrade-${version}-to-`));
+    const bundle = join(fresh, "..", `${fresh.split("/").pop()}.json`);
+    expect(run(dir, ["export", bundle]).status).toBe(0);
+    expect(run(fresh, ["import", bundle]).status).toBe(0);
+    const before = best(states(dir));
+    const after = best(states(fresh));
+    for (const [key, b] of Object.entries(before)) expect(after[key]).toEqual(b);
+    expect(run(fresh, ["status"]).status).toBe(0);
+  });
+
   test("no progress is lost after a few replies", () => {
     const dir = copy();
     const before = best(states(dir));
@@ -66,5 +78,22 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
       expect(after[key]?.exposures ?? 0).toBeGreaterThanOrEqual(b.exposures);
       expect(after[key]?.recalls ?? 0).toBeGreaterThanOrEqual(b.recalls);
     }
+  });
+});
+
+// Export files made by released versions must keep importing. One file per format version
+// in tests/export-fixtures/; never edit an old one.
+const EXPORTS = join(import.meta.dir, "export-fixtures");
+
+describe.each(readdirSync(EXPORTS))("export file %s", (file) => {
+  test("imports on top of existing progress and keeps both", () => {
+    const dir = mkdtempSync(join(tmpdir(), "langcouch-upgrade-export-"));
+    writeFileSync(join(dir, "state.es.json"), JSON.stringify({ "zz-local-only": { exposures: 2, lastSeen: "2026-10-01T00:00:00.000Z" } }));
+    const r = spawnSync("bun", [CLI, "import", join(EXPORTS, file)], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+    expect(r.status).toBe(0);
+    const bundle = JSON.parse(readFileSync(join(EXPORTS, file), "utf8")) as { states: Record<string, State> };
+    const es = JSON.parse(readFileSync(join(dir, "state.es.json"), "utf8")) as State;
+    expect(es["zz-local-only"]?.exposures).toBe(2);
+    for (const [key, v] of Object.entries(bundle.states.es ?? {})) expect(es[key]?.exposures).toBe(v.exposures);
   });
 });

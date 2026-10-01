@@ -11,6 +11,10 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek.
 
+## What's new in 0.7.0
+
+- **Take your progress to another machine.** `langcouch export` saves it to one file, `langcouch import <file>` merges it in on the other side. If you already started learning there, nothing is lost: see [Moving to another machine](#moving-to-another-machine).
+
 ## What's new in 0.6.0
 
 - **Spaced repetition.** Each word comes back after 30 minutes, 8 hours, a day, 4 days, 2 weeks, a month, then 6 months. It moves up a step only when a reply actually used it.
@@ -204,6 +208,8 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `mode [1\|2\|3]` | weave algorithm: 3 interval ladder (default), 2 only words that fit, 1 every listed word |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
 | `pause` / `resume` | kill switch for weaving |
+| `export [file\|-] [--force]` | save progress, settings and your own wordlists to one file, `~/langcouch-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
+| `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |
 | `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
 | `instruction` | print the weave instruction (without marking exposures) |
 | `hook` | CLI-hook mode: before a reply, builds the instruction and scans your prompt for recalls; after it (a `Stop` payload), counts the words the reply used. Exits 0 on any error so it never breaks the host session |
@@ -223,6 +229,21 @@ A plugin cannot ship spinner tips itself, so this writes to your `~/.claude/sett
 - **Only our lines.** Every added tip starts with `LangCouch · `; your own tips, `excludeDefault` and every other key are left alone. If the file is not valid JSON, nothing is written.
 - **Backup + atomic write.** The original file is copied to `~/.langcouch/settings.backup.json` before the first change.
 - **Clean off.** `/langcouch:spinner off` removes every `LangCouch · ` line by its prefix, and the `spinnerTipsOverride` key too if we created it.
+
+## Moving to another machine
+
+Progress lives in `~/.langcouch/`, so every CLI on one machine already shares it. To carry it to another computer:
+
+```bash
+langcouch export                 # writes ~/langcouch-export-YYYY-MM-DD.json
+langcouch import ~/Downloads/langcouch-export-2026-10-01.json   # on the other machine
+```
+
+In a chat the same works as `/langcouch:export` and `/langcouch:import <file>` (Claude Code) or `/langcouch export` and `/langcouch import <file>` (Hermes, OpenClaw).
+
+Import merges, it never overwrites. If you already started the same language on the other machine, words only it has stay, words only the export has are added, and a word both have keeps the better record: more exposures and recalls, the higher step on the review ladder. Your local settings stay unless you pass `--config`, and your own wordlists are kept if they differ. Before changing anything, import copies the old files to `~/.langcouch/backups/`. Importing the same file twice, or sending it back, changes nothing.
+
+One trade-off: if you learned the same word on both machines, its counts are not added up (5 and 10 become 10, not 15). Adding them would count everything twice the moment a file goes back and forth.
 
 ## Privacy
 

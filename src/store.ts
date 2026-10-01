@@ -1,18 +1,38 @@
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSync, readdirSync, realpathSync, statSync } from "node:fs";
 import type { Concept, Config, FalseFriend, State, Word, WordMapping, WordState } from "./types.ts";
 import { grammarKey, type GrammarItem } from "./grammar.ts";
 import { patternKey, type Pattern } from "./patterns.ts";
+import { stepOf } from "./ladder.ts";
 
 export const DATA_DIR = process.env.LANGCOUCH_DIR ?? join(homedir(), ".langcouch");
 const CONFIG_PATH = () => join(DATA_DIR, "config.json");
-const STATE_PATH = (lang: string) => join(DATA_DIR, `state.${lang}.json`);
+/** A language code never names a path: no separators, no "..". Legit codes (pt-BR, es-419) pass untouched. */
+const pathSafe = (lang: string) => !/[/\\]|\.\./.test(lang);
+const STATE_PATH = (lang: string) => {
+  if (!pathSafe(lang)) throw new Error(`langcouch: "${lang}" is not a language code`);
+  return join(DATA_DIR, `state.${lang}.json`);
+};
 
 export const DEFAULT_CONFIG: Config = { lang: "es", native: "en", level: 2 };
 
-function readJson<T>(path: string, what: string): T {
+/**
+ * Write JSON through a temp file and a rename, so a crash, a second session or a sync client
+ * never sees half a file. The temp name never matches state.<lang>.json.
+ */
+export function writeJsonAtomic(path: string, data: unknown): void {
+  // A symlinked file (someone syncing it elsewhere) is written at its target, keeping its mode.
+  const target = existsSync(path) ? realpathSync(path) : path;
+  const mode = existsSync(target) ? statSync(target).mode & 0o777 : null;
+  const tmp = `${target}.tmp-${process.pid}`;
+  writeFileSync(tmp, JSON.stringify(data, null, 2));
+  if (mode !== null) chmodSync(tmp, mode);
+  renameSync(tmp, target);
+}
+
+export function readJson<T>(path: string, what: string): T {
   const raw = readFileSync(path, "utf8");
   try {
     return JSON.parse(raw) as T;
@@ -27,7 +47,7 @@ export function initConfig(overrides: Partial<Config> = {}): { config: Config; c
     return { config: loadConfig(), created: false }; // idempotent: never clobber
   }
   const config: Config = { ...DEFAULT_CONFIG, ...overrides };
-  writeFileSync(CONFIG_PATH(), JSON.stringify(config, null, 2));
+  writeJsonAtomic(CONFIG_PATH(), config);
   return { config, created: true };
 }
 
@@ -44,25 +64,27 @@ export function loadConfig(): Config {
 
 export function saveConfig(config: Config): void {
   mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(CONFIG_PATH(), JSON.stringify(config, null, 2));
+  writeJsonAtomic(CONFIG_PATH(), config);
 }
 
-function readStateFile(lang: string): State {
+/** One state file as it is on disk (a variant's file holds only its own keys). */
+export function readStateFile(lang: string): State {
   if (!existsSync(STATE_PATH(lang))) return {};
   return readJson<State>(STATE_PATH(lang), `state ${lang}`);
 }
 
-function writeStateFile(lang: string, state: State): void {
+export function writeStateFile(lang: string, state: State): void {
   mkdirSync(DATA_DIR, { recursive: true });
-  writeFileSync(STATE_PATH(lang), JSON.stringify(state, null, 2));
+  writeJsonAtomic(STATE_PATH(lang), state);
 }
 
 /** Two records of one word, folded without losing progress (legacy variant files met their base). */
-function mergeWordState(a: WordState | undefined, b: WordState | undefined): WordState | undefined {
+export function mergeWordState(a: WordState | undefined, b: WordState | undefined): WordState | undefined {
   if (!a || !b) return a ?? b;
   const recalls = Math.max(a.recalls ?? 0, b.recalls ?? 0);
-  // ladder fields travel together, from the record that climbed higher
-  const ladder = (b.step ?? -1) > (a.step ?? -1) ? b : a;
+  // ladder fields travel together, from the record that climbed higher; a record from before
+  // the ladder counts at the step the ladder would give it (an absorbed word is not step 0)
+  const ladder = stepOf(b) > stepOf(a) ? b : a;
   return {
     exposures: Math.max(a.exposures, b.exposures),
     lastSeen: a.lastSeen > b.lastSeen ? a.lastSeen : b.lastSeen,
@@ -195,6 +217,7 @@ export function baseLang(lang: string): string | null {
 
 /** First existing `<lang>.json`: the user dir wins over the bundled one. */
 function resolveData(userDir: string, bundledDir: string, lang: string): string | null {
+  if (!pathSafe(lang)) return null;
   for (const dir of [userDir, bundledDir]) {
     const path = join(dir, `${normalizeLang(lang)}.json`);
     if (existsSync(path)) return path;

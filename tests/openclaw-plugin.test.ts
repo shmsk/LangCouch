@@ -85,6 +85,8 @@ describe("openclaw plugin — /langcouch", () => {
   test("routes arguments and returns CLI output", () => {
     const { command } = load(makeFakeSpawn("ok").spawn);
     expect(command({ args: "level up" }).text).toBe("ran: level up");
+    expect(command({ args: "import ~/b.json" }).text).toBe("ran: import ~/b.json");
+    expect(command({ args: "export" }).text).toBe("ran: export");
   });
 
   test("shows stderr on CLI errors", () => {

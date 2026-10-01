@@ -13,6 +13,10 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi.
 
+## 0.7.0 da nima yangi
+
+- **Natijangizni boshqa kompyuterga olib oʻtish mumkin.** `langcouch export` uni bitta faylga saqlaydi, `langcouch import <fayl>` esa boshqa tomonda qoʻshib qoʻyadi. U yerda allaqachon oʻrganishni boshlagan boʻlsangiz ham hech narsa yoʻqolmaydi: [Boshqa kompyuterga koʻchirish](#boshqa-kompyuterga-koʻchirish) boʻlimiga qarang.
+
 ## 0.6.0 da nima yangi
 
 - **Oraliqli takrorlash.** Har bir soʻz 30 daqiqa, 8 soat, bir kun, 4 kun, 2 hafta, bir oy va keyin 6 oydan soʻng qaytadi. Javob uni haqiqatan ishlatgandagina soʻz keyingi pogʻonaga oʻtadi.
@@ -206,6 +210,8 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `mode [1\|2\|3]` | toʻqish algoritmi: 3 oraliqlar zinasi (standart), 2 faqat joyiga tushadigan soʻzlar, 1 roʻyxatdagi har bir soʻz |
 | `quiz [n]` | oʻzlashtirishni tekshiradi (standart 5 ta soʻz); notoʻgʻri javob berilgan soʻz yana aylanmaga qaytadi |
 | `pause` / `resume` | toʻqishni oʻchirish/qayta yoqish tugmasi |
+| `export [fayl\|-] [--force]` | natija, sozlamalar va oʻz lugʻatlaringizni bitta faylga saqlash, odatda `~/langcouch-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
+| `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |
 | `spinner <on\|off\|status>` | ixtiyoriy: oʻrganayotgan soʻzlaringiz Claude Code spinner maslahatlarida |
 | `instruction` | toʻqish koʻrsatmasini chop etadi (duchor boʻlishlarni belgilamasdan) |
 | `hook` | CLI-hook rejimi: javobdan oldin koʻrsatma tuzadi va soʻrovingizni yodga tushirishlar uchun skanerlaydi; undan keyin (`Stop` yuki) javob ishlatgan soʻzlarni hisoblaydi. Har qanday xatoda 0 bilan chiqadi, shuning uchun xost sessiyasini hech qachon buzmaydi |
@@ -225,6 +231,21 @@ Plagin spinner maslahatlarini oʻzi yetkazib bera olmaydi, shuning uchun bu funk
 - **Faqat bizning qatorlar.** Qoʻshilgan har bir maslahat `LangCouch · ` bilan boshlanadi; sizning maslahatlaringiz, `excludeDefault` va boshqa barcha kalitlar oʻzgarmaydi. Fayl yaroqli JSON boʻlmasa, hech narsa yozilmaydi.
 - **Zaxira nusxa va atomar yozish.** Birinchi oʻzgarishdan oldin asl fayl `~/.langcouch/settings.backup.json` ga nusxalanadi.
 - **Toza oʻchirish.** `/langcouch:spinner off` `LangCouch · ` prefiksli barcha qatorlarni, agar `spinnerTipsOverride` kalitini biz yaratgan boʻlsak, uni ham oʻchiradi.
+
+## Boshqa kompyuterga koʻchirish
+
+Natija `~/.langcouch/` ichida saqlanadi, shuning uchun bitta kompyuterdagi barcha CLI'lar uni allaqachon birga koʻradi. Uni boshqa kompyuterga olib oʻtish uchun:
+
+```bash
+langcouch export                 # ~/langcouch-export-YYYY-MM-DD.json faylini yozadi
+langcouch import ~/Downloads/langcouch-export-2026-10-01.json   # boshqa kompyuterda
+```
+
+Chatda ham xuddi shunday: `/langcouch:export` va `/langcouch:import <fayl>` (Claude Code) yoki `/langcouch export` va `/langcouch import <fayl>` (Hermes, OpenClaw).
+
+Import ustidan yozmaydi, birlashtiradi. Agar boshqa kompyuterda shu tilni allaqachon boshlagan boʻlsangiz, faqat oʻsha yerda bor soʻzlar qoladi, faqat eksportda bor soʻzlar qoʻshiladi, ikkalasida ham bor soʻz uchun esa yaxshiroq yozuv qoladi: koʻproq koʻrsatish va yodga tushirish, takrorlash zinapoyasining yuqoriroq pogʻonasi. Lokal sozlamalar `--config` berilmasa oʻzgarmaydi, oʻz lugʻatlaringiz farq qilsa saqlab qolinadi. Biror narsani oʻzgartirishdan oldin import eski fayllarni `~/.langcouch/backups/` ga nusxalaydi. Bir faylni ikki marta import qilish yoki uni qaytarib yuborish hech narsani oʻzgartirmaydi.
+
+Bitta murosa: bir soʻzni ikkala kompyuterda ham oʻrgangan boʻlsangiz, hisoblagichlar qoʻshilmaydi (5 va 10 — 15 emas, 10 boʻladi). Qoʻshilsa, fayl borib-kelishi bilan hammasi ikki marta hisoblanib ketardi.
 
 ## Maxfiylik
 

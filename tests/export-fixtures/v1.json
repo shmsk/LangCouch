@@ -1,0 +1,235 @@
+{
+  "format": "langcouch-export",
+  "formatVersion": 1,
+  "pluginVersion": "0.7.0",
+  "exportedAt": "2026-10-01T05:24:27.641Z",
+  "config": {
+    "lang": "es",
+    "native": "en",
+    "level": 8
+  },
+  "states": {
+    "es": {
+      "house": {
+        "exposures": 6,
+        "lastSeen": "2026-09-30T18:18:15.978Z",
+        "recalls": 6
+      },
+      "big": {
+        "exposures": 5,
+        "lastSeen": "2026-09-30T18:18:15.978Z",
+        "recalls": 6
+      },
+      "time": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "day": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "year": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "man": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "woman": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "child": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "world": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "life": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "hand": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.852Z"
+      },
+      "p:tion": {
+        "exposures": 3,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "eye": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "head": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "water": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "work": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "city": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "country": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "place": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "moment": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.879Z"
+      },
+      "night": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "form": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "part": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "thing": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "word": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "name": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "friend": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "family": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.904Z"
+      },
+      "father": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "mother": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "son": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "brother": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "door": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "window": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "table": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "book": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.928Z"
+      },
+      "p:ism": {
+        "exposures": 3,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "paper": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "letter": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "idea": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "problem": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "question": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "answer": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "story": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "truth": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.953Z"
+      },
+      "reason": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "example": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "case": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "number": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "week": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "month": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "hour": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      },
+      "minute": {
+        "exposures": 1,
+        "lastSeen": "2026-09-30T18:18:15.978Z"
+      }
+    }
+  },
+  "user": {
+    "wordlists": {},
+    "grammar": {},
+    "patterns": {},
+    "falseFriends": {}
+  }
+}

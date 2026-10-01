@@ -6,6 +6,24 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.7.0] - 2026-10-01
+
+### Added
+- `langcouch export` saves your progress, settings and own wordlists to one file, and
+  `langcouch import <file>` merges it into another machine. Words only the other machine
+  has stay, words only the file has are added, and a word on both keeps the better record.
+  Your settings stay unless you pass `--config`. The old files are backed up to
+  `~/.langcouch/backups/` first, and importing the same file again changes nothing.
+  The export goes to `~/langcouch-export-<date>.json` unless you name a file, and an
+  existing file is replaced only with `--force`.
+- `/langcouch:export` and `/langcouch:import` in Claude Code; `/langcouch export` and
+  `/langcouch import` in Hermes Agent and OpenClaw.
+
+### Changed
+- Progress and settings files are now written through a temporary file and a rename, so a
+  crash or a sync client never leaves half a file behind. A file you symlinked elsewhere
+  is written at its target and keeps its permissions.
+
 ## [0.6.0] - 2026-09-30
 
 **Upgrade notes**

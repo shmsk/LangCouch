@@ -30,7 +30,7 @@ TIMEOUT = 5
 
 # Subcommands safe to run from a chat. quiz is interactive and init/install
 # touch the host config, so they stay terminal-only.
-COMMANDS = ("lang", "level", "mode", "pause", "resume", "status", "validate", "instruction")
+COMMANDS = ("lang", "level", "mode", "pause", "resume", "status", "validate", "instruction", "export", "import")
 
 
 def _runtimes():
@@ -116,6 +116,6 @@ def register(ctx):
     ctx.register_command(
         "langcouch",
         handler=langcouch_command,
-        description="LangCouch: lang, level, pause, resume, status",
-        args_hint="<lang|level|pause|resume|status> [args]",
+        description="LangCouch: lang, level, pause, resume, status, export, import",
+        args_hint="<lang|level|pause|resume|status|export|import> [args]",
     )

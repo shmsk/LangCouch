@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 import { createInterface } from "node:readline/promises";
-import { basename } from "node:path";
-import { readFileSync } from "node:fs";
+import { basename, dirname, join, resolve, sep } from "node:path";
+import { homedir } from "node:os";
+import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, loadPatterns, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
 import { langName } from "./instruction.ts";
@@ -16,6 +17,7 @@ import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./reca
 import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
 import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
+import { exportBundle, importBundle, parseBundle, formatImportReport, formatExportSummary } from "./transfer.ts";
 import { installClaude } from "../adapters/claude/install.ts";
 import { installCodex } from "../adapters/codex/install.ts";
 import { installOpencode } from "../adapters/opencode/install.ts";
@@ -300,6 +302,9 @@ const MODE_NAMES: Record<1 | 2 | 3, string> = {
   3: "words that fit plus a nudge, translations fade on an interval ladder, counted when the reply uses them",
 };
 
+/** A path typed by hand; chat hosts pass "~/x" through unexpanded. */
+const userPath = (p: string) => resolve(p === "~" || p.startsWith("~/") ? homedir() + p.slice(1) : p);
+
 const [cmd, ...args] = process.argv.slice(2);
 
 try {
@@ -505,6 +510,45 @@ try {
     case "status":
       console.log(args.includes("--absorbed") ? absorbedListView() : status());
       break;
+    case "export": {
+      const { bundle, skipped } = exportBundle();
+      // the home folder by default: a chat host's working directory could be anywhere
+      const target = args.find((a) => !a.startsWith("--")) ?? join(homedir(), `langcouch-export-${bundle.exportedAt.slice(0, 10)}.json`);
+      const json = JSON.stringify(bundle, null, 2) + "\n";
+      if (target === "-") {
+        process.stdout.write(json);
+        break;
+      }
+      const path = userPath(target);
+      const dataDir = existsSync(DATA_DIR) ? realpathSync(DATA_DIR) : resolve(DATA_DIR);
+      const parent = existsSync(dirname(path)) ? realpathSync(dirname(path)) : dirname(path);
+      if (parent === dataDir || parent.startsWith(dataDir + sep)) {
+        throw new Error(`langcouch: ${path} is inside ${DATA_DIR}, where it could replace your progress; pick another place`);
+      }
+      if (existsSync(path) && !args.includes("--force")) {
+        throw new Error(`langcouch: ${path} already exists; add --force to replace it, or give another file name`);
+      }
+      writeFileSync(path, json);
+      console.log(formatExportSummary(bundle, path, skipped));
+      break;
+    }
+    case "import": {
+      const file = args.find((a) => !a.startsWith("--"));
+      if (!file) {
+        console.error("usage: langcouch import <file> [--config]");
+        process.exit(1);
+      }
+      const path = userPath(file);
+      let raw: unknown;
+      try {
+        raw = JSON.parse(readFileSync(path, "utf8"));
+      } catch (e) {
+        throw new Error(`langcouch: cannot read ${path} as JSON (${e instanceof Error ? e.message : String(e)}) — nothing was imported`);
+      }
+      const report = importBundle(parseBundle(raw), { takeConfig: args.includes("--config") });
+      console.log(formatImportReport(report, path));
+      break;
+    }
     case "install": {
       if (args[0] === "claude") {
         const scope = args.includes("--scope") ? args[args.indexOf("--scope") + 1] : "project";
@@ -550,6 +594,8 @@ try {
           "  level <1-10|up|down>      weaving intensity",
           "  mode [1|2|3]              weave algorithm: 3 interval ladder (default), 2 fit only, 1 every word",
           "  quiz [n]                  absorption check (default 5 words)",
+          "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
+          "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
           "  instruction               print the weave instruction (without marking exposures)",
           "  hook                      CLI-hook mode (marks exposures, always exit 0)",
