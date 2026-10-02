@@ -11,6 +11,10 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
+## What's new in 0.7.6
+
+- **Placement test.** Already know part of a language? `langcouch placement` (or `/langcouch:placement` in Claude Code) asks the listed words, and the ones you translate right skip the new-word stage. LangCouch offers it when you start a language and whenever you say the words are too easy.
+
 ## What's new in 0.7.5
 
 - **Translations in the language you write in.** Write to the agent in Russian and you get **casa** (дом); write in English and you get **casa** (house). No setting to switch. If LangCouch can't tell the language, it uses your `native` and asks you once which one you want.
@@ -45,7 +49,7 @@ I read a lot every day, and these days most of that text is my AI agents' replie
 # restart the session — replies start weaving Spanish (default: es, level 2)
 ```
 
-Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, and add your own language with `/langcouch:add-language <language>`.
+Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, `/langcouch:placement`, and add your own language with `/langcouch:add-language <language>`.
 
 **Glosses in your language:** translations follow the language of your message. Cyrillic gets Russian; Latin gets your `native` if it is `en` or `uz` (Uzbek, Latin script), else English. `langcouch native <en|ru|uz>` (default `en`) sets the fallback for a message LangCouch can't read, and the language of quiz answers and spinner tips.
 
@@ -156,6 +160,7 @@ flowchart LR
 - **Translations fade**: a new word comes as **casa** (house). From the fourth step it appears as plain **casa**, with the translation in one closing line (`casa = house · nombre = name`). From step five (absorbed) there is no translation at all, and absorbed words come back as a rotating sample the model may use freely, so the share of the language in replies grows
 - **Only where it fits, plus a nudge**: the model weaves a word only where the reply already needs its meaning, so nothing is invented to host a word. The one exception is one or two words that kept missing: those may go into a short aside or a closing line, never into code, facts or text you will copy
 - **Recall signal**: exposure is not knowledge. A word you use in your own prompt, or answer right in `quiz`, climbs a step; a wrong quiz answer sends it back to the start
+- **Placement test**: already know part of a language? `langcouch placement` in a terminal, or `/langcouch:placement` in Claude Code, asks the listed words you haven't absorbed yet, most common first. Each word you translate right skips the new-word stage and goes straight to the absorbed pool (reviewed in two weeks); a word you don't know just stays new. Progress saves after every word, so you can stop and carry on later. LangCouch offers the test once when you start a language, and again whenever you say the words are too easy
 - **Modes**: `langcouch mode 3` is the above (default). `mode 2` weaves only words that fit, and `mode 1` asks for every listed word; both count a word when it is served
 - **Levels 1–10**: words from level 1; [word-building rules](#word-building-rules) from level 2 (`patterns/<lang>.json`); collocations from 4 and simple sentences from 7, using the constructions in `grammar/<lang>.json` where a language has them
 - **Native language**: when you learn your own native language (e.g. `en` with native `en`), glosses fall back to another language
@@ -225,6 +230,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `level <1-10\|up\|down>` | weaving intensity |
 | `mode [1\|2\|3]` | weave algorithm: 3 interval ladder (default), 2 only words that fit, 1 every listed word |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
+| `placement [n] [--reset]` | check which listed words you already know: type a translation, Enter = don't know, `q` = stop; known words skip the new-word stage. `placement next [n]` / `placement answer <word>=<translation>...` do the same one batch at a time (what `/langcouch:placement` uses); `--reset` asks the "don't know" words again |
 | `pause` / `resume` | kill switch for weaving |
 | `export [file\|-] [--force]` | save progress, settings and your own wordlists to one file, `~/langcouch-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
 | `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |

@@ -6,6 +6,18 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.7.6] - 2026-10-02
+
+### Added
+- Placement test for a language you already partly know: `langcouch placement` in a
+  terminal, or `/langcouch:placement` in Claude Code. It asks the listed words you haven't
+  absorbed yet, most common first. A right translation sends the word straight to the
+  absorbed pool (reviewed in two weeks), so it is no longer taught as new; a word you don't
+  know stays new. Progress saves after every word, and the next run carries on where you
+  stopped. `langcouch placement --reset` asks the "don't know" words again.
+- LangCouch offers the test once when you start a language, and again whenever you say the
+  words are too easy ("слишком простые слова", "I already know these words").
+
 ## [0.7.5] - 2026-10-01
 
 ### Added

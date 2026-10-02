@@ -77,6 +77,10 @@ export interface Config {
   algorithm?: 1 | 2 | 3;
   /** The hook already asked once which language translations should be in (or `langcouch native` set it). */
   nativeAsked?: boolean;
+  /** Placement test, per language: concept ids answered "don't know", so the next run carries on. */
+  placementSkipped?: Record<string, string[]>;
+  /** Languages whose start-of-use placement offer has been made (it is made once). */
+  placementOffered?: string[];
 }
 
 /** Algorithm 3 since 0.6.0; a config without the field gets it. `langcouch mode 1` brings the old weave back. */

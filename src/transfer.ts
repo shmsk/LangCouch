@@ -62,6 +62,7 @@ export function exportBundle(now: Date = new Date()): { bundle: Bundle; skipped:
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const count = (v: unknown) => typeof v === "number" && Number.isInteger(v) && v >= 0;
 const optCount = (v: unknown) => v === undefined || count(v);
+const strings = (v: unknown) => Array.isArray(v) && v.every((x) => typeof x === "string");
 const isTime = (v: unknown) => typeof v === "string" && Number.isFinite(Date.parse(v));
 
 function validRecord(v: unknown): v is WordState {
@@ -84,7 +85,9 @@ function validConfig(c: unknown): c is Config {
     (c.enabled === undefined || typeof c.enabled === "boolean") &&
     (c.spinner === undefined || typeof c.spinner === "boolean") &&
     (c.seenVersion === undefined || typeof c.seenVersion === "string") &&
-    (c.nativeAsked === undefined || typeof c.nativeAsked === "boolean")
+    (c.nativeAsked === undefined || typeof c.nativeAsked === "boolean") &&
+    (c.placementSkipped === undefined || (isObject(c.placementSkipped) && Object.values(c.placementSkipped).every(strings))) &&
+    (c.placementOffered === undefined || strings(c.placementOffered))
   );
 }
 

@@ -13,6 +13,10 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
+## 0.7.6 da nima yangi
+
+- **Daraja testi.** Tilning bir qismini allaqachon bilasizmi? `langcouch placement` (yoki Claude Code'da `/langcouch:placement`) roʻyxatdagi soʻzlarni soʻraydi, toʻgʻri tarjima qilganlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. LangCouch testni til boshlanganda va soʻzlar juda oson deb yozsangiz taklif qiladi.
+
 ## 0.7.5 da nima yangi
 
 - **Tarjimalar siz yozayotgan tilda.** Agentga ruscha yozsangiz, **casa** (дом) keladi; inglizcha yozsangiz, **casa** (house). Hech narsani almashtirish shart emas. LangCouch tilni aniqlay olmasa, sizning `native` tilingizni oladi va qaysi tilni xohlashingizni bir marta soʻraydi.
@@ -47,7 +51,7 @@ Men har kuni koʻp oʻqiyman, va hozir bu matnning katta qismi terminaldagi AI a
 # restart the session — replies start weaving Spanish (default: es, level 2)
 ```
 
-Sozlash shart emas: na `npm install`, na build bosqichi kerak — hook birinchi ishlatilganda oʻz konfiguratsiyasini avtomatik yaratadi. Uni Claude Code ichidan `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on` buyruqlari bilan boshqaring, oʻz tilingizni esa `/langcouch:add-language <language>` bilan qoʻshing.
+Sozlash shart emas: na `npm install`, na build bosqichi kerak — hook birinchi ishlatilganda oʻz konfiguratsiyasini avtomatik yaratadi. Uni Claude Code ichidan `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, `/langcouch:placement` buyruqlari bilan boshqaring, oʻz tilingizni esa `/langcouch:add-language <language>` bilan qoʻshing.
 
 **Oʻz tilingizdagi glosslar:** tarjimalar xabaringiz tiliga mos keladi. Kirill yozuvi ruscha tarjima beradi; lotin yozuvi `native` qiymatingizni beradi, agar u `en` yoki `uz` (oʻzbek, lotin yozuvi) boʻlsa, aks holda inglizcha. `langcouch native <en|ru|uz>` (standart `en`) LangCouch oʻqiy olmaydigan xabar uchun zaxira tilni, shuningdek quiz javoblari va spinner maslahatlari tilini belgilaydi.
 
@@ -158,6 +162,7 @@ flowchart LR
 - **Tarjimalar soʻnadi**: yangi soʻz **casa** (house) koʻrinishida keladi. Toʻrtinchi pogʻonadan boshlab u oddiy **casa** boʻlib turadi, tarjima esa oxirgi bir qatorda beriladi (`casa = house · nombre = name`). Beshinchi pogʻonadan (oʻzlashtirilgan) tarjima umuman boʻlmaydi, oʻzlashtirilgan soʻzlar esa model erkin ishlatishi mumkin boʻlgan aylanuvchi tanlama sifatida qaytadi, shuning uchun javoblarda til ulushi oshib boradi
 - **Faqat joyiga tushsa, yana turtki**: model soʻzni faqat javobga uning maʼnosi baribir kerak boʻlgan joyga toʻqiydi, shuning uchun soʻz uchun hech narsa oʻylab topilmaydi. Yagona istisno: tez-tez tushib qolgan bir-ikki soʻzni qisqa chekinishga yoki yakuniy qatorga qoʻyish mumkin, lekin hech qachon kodga, faktlarga yoki nusxa koʻchiradigan matnga emas
 - **Yodga tushirish signali**: koʻrish hali bilim emas. Oʻz soʻrovingizda ishlatgan yoki `quiz`da toʻgʻri javob bergan soʻz bir pogʻona koʻtariladi; quizdagi notoʻgʻri javob uni boshiga qaytaradi
+- **Daraja testi**: tilning bir qismini allaqachon bilasizmi? Terminalda `langcouch placement` yoki Claude Code'da `/langcouch:placement` roʻyxatdagi hali oʻzlashtirilmagan soʻzlarni, eng koʻp ishlatiladiganlaridan boshlab soʻraydi. Toʻgʻri tarjima qilingan soʻz yangi soʻz bosqichini oʻtkazib, toʻgʻridan-toʻgʻri oʻzlashtirilganlarga oʻtadi (ikki haftadan keyin takrorlanadi); bilmagan soʻzingiz shunchaki yangi boʻlib qoladi. Har bir soʻzdan keyin saqlanadi, toʻxtab, keyin davom ettirish mumkin. LangCouch testni til boshlanganda bir marta, soʻzlar juda oson deb yozsangiz yana taklif qiladi
 - **Rejimlar**: `langcouch mode 3` yuqoridagilarning hammasi (standart). `mode 2` faqat joyiga tushadigan soʻzlarni toʻqiydi, `mode 1` esa roʻyxatdagi har bir soʻzni soʻraydi; ikkalasi ham soʻzni berilgan paytda hisoblaydi
 - **1–10 darajalar**: soʻzlar 1-darajadan; soʻz yasash qoidalari 2-darajadan (`patterns/<lang>.json`); soʻz birikmalari 4-darajadan va oddiy gaplar 7-darajadan, agar tilda boʻlsa, `grammar/<lang>.json` dagi qurilmalar asosida
 - **Ona tili**: agar siz oʻz ona tilingizni oʻrganayotgan boʻlsangiz (masalan, native `en` bilan `en`), glosslar boshqa tilga oʻtadi
@@ -227,6 +232,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `level <1-10\|up\|down>` | toʻqish intensivligi |
 | `mode [1\|2\|3]` | toʻqish algoritmi: 3 oraliqlar zinasi (standart), 2 faqat joyiga tushadigan soʻzlar, 1 roʻyxatdagi har bir soʻz |
 | `quiz [n]` | oʻzlashtirishni tekshiradi (standart 5 ta soʻz); notoʻgʻri javob berilgan soʻz yana aylanmaga qaytadi |
+| `placement [n] [--reset]` | roʻyxatdagi qaysi soʻzlarni allaqachon bilishingizni tekshiradi: tarjimani yozing, Enter = bilmayman, `q` = toʻxtash; bilgan soʻzlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. `placement next [n]` / `placement answer <soʻz>=<tarjima>...` xuddi shuni guruhlab bajaradi (`/langcouch:placement` shundan foydalanadi); `--reset` «bilmayman» javobli soʻzlarni qayta soʻraydi |
 | `pause` / `resume` | toʻqishni oʻchirish/qayta yoqish tugmasi |
 | `export [fayl\|-] [--force]` | natija, sozlamalar va oʻz lugʻatlaringizni bitta faylga saqlash, odatda `~/langcouch-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
 | `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |

@@ -15,6 +15,7 @@ import { putServed, staleServed, takeServed, settleServed, lastReply, readTail }
 import { buildInstruction } from "./instruction.ts";
 import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
+import { placementQueue, answerPlacement, skippedFor, withSkipped, placementStarted, detectTooEasy, OFFER_TOO_EASY, offerAtStart } from "./placement.ts";
 import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
 import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
@@ -38,6 +39,9 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
   // translations follow the language the user just wrote in; quiz, spinner and status stay on `native`
   const gloss = promptGlossLang(prompt, saved.native);
   const ask = gloss.unsure === "unknown" && saved.nativeAsked !== true;
+  // placement: offered when the user says the words are too easy, and once per language at the start
+  const tooEasy = prompt !== "" && detectTooEasy(prompt);
+  const offerStart = !tooEasy && eventName !== "SessionStart" && !placementStarted(saved, saved.lang) && !(saved.placementOffered ?? []).includes(saved.lang);
   const config: Config = { ...saved, native: gloss.lang };
   const algorithm = algorithmOf(config);
   const words = loadWordlist(config.lang);
@@ -71,7 +75,15 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
   const cue = rule ? patternCue(rule, config.native, normalizeLang(config.lang), falseFriendsFor(config.lang)) : null;
   // asked once: a user who ignores the question isn't asked again
   if (ask && mark) saveConfig({ ...loadConfig(), nativeAsked: true }); // re-read: never undo a change made meanwhile
-  return buildInstruction(config, picks, grammar, cue, algorithm, known, ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : null);
+  if (offerStart && mark) {
+    const fresh = loadConfig();
+    saveConfig({ ...fresh, placementOffered: [...(fresh.placementOffered ?? []), config.lang] });
+  }
+  const extra = [
+    ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : "",
+    tooEasy ? OFFER_TOO_EASY : offerStart ? offerAtStart(langName(config.lang)) : "",
+  ].filter(Boolean);
+  return buildInstruction(config, picks, grammar, cue, algorithm, known, extra.length ? extra.join(" ") : null);
 }
 
 /**
@@ -426,6 +438,98 @@ try {
       console.log(`Score: ${correct}/${candidates.length}`);
       break;
     }
+    case "placement": {
+      const config = loadConfig();
+      const lang = config.lang;
+      const words = loadWordlist(lang);
+      const state = loadState(lang);
+      if (algorithmOf(config) === 3) migrate(state);
+      const skipped = skippedFor(config, lang);
+      const now = () => new Date().toISOString();
+      // re-read the config before writing: never undo a change made meanwhile (the hook may run in between)
+      const save = () => {
+        saveState(lang, state);
+        saveConfig(withSkipped(loadConfig(), lang, skipped));
+      };
+      const gloss = (w: Word) => glossFor(w, config.native, lang);
+      const known = () => words.filter((w) => isAbsorbed(state[w.id])).length;
+      const left = () => placementQueue(words, state, skipped).length;
+      const summary = () => `${langName(lang)}: ${known()} of ${words.length} words known, ${left()} left to check`;
+      const sub = args[0];
+      if (sub === "--reset") {
+        saveConfig(withSkipped(loadConfig(), lang, []));
+        console.log(`Placement for ${lang} starts over: words you answered "don't know" will be asked again. Words already marked known stay known.`);
+        break;
+      }
+      if (sub === "next") {
+        // non-interactive half for agents (no stdin through a Bash tool): print a batch, answers come back via `answer`
+        const n = Math.max(1, Math.trunc(Number(args[1])) || 10);
+        const batch = placementQueue(words, state, skipped).slice(0, n);
+        if (batch.length === 0) {
+          console.log(`Placement done. ${summary()}.`);
+          break;
+        }
+        console.log(`Translate each word (any of en/ru/uz is fine), leave blank if you don't know it:\n${batch.map((w, i) => `${i + 1}. ${w.target}`).join("\n")}\n(${left()} left to check)`);
+        break;
+      }
+      if (sub === "answer") {
+        const pairs = args.slice(1);
+        if (pairs.length === 0 || pairs.some((p) => !p.includes("="))) {
+          console.error('usage: langcouch placement answer "<word>=<translation>" ... (empty translation = don\'t know)');
+          process.exit(1);
+        }
+        const queue = new Map(placementQueue(words, state, skipped).map((w) => [w.target.toLowerCase(), w]));
+        let right = 0;
+        const lines: string[] = [];
+        for (const p of pairs) {
+          const at = p.indexOf("=");
+          const target = p.slice(0, at).trim().toLowerCase();
+          const w = queue.get(target);
+          if (!w) {
+            lines.push(`  · ${target}: not in the placement queue (already placed or not in the list), skipped`);
+            continue;
+          }
+          queue.delete(target);
+          const { ok } = answerPlacement(words, state, skipped, w, p.slice(at + 1), lang, now());
+          if (ok) right++;
+          lines.push(ok ? `  ✓ ${w.target}` : `  ✗ ${w.target} = ${gloss(w)}, stays new`);
+        }
+        save();
+        console.log(`${lines.join("\n")}\nKnown this round: ${right}. ${summary()}.`);
+        break;
+      }
+      if (sub !== undefined && !/^\d+$/.test(sub)) {
+        console.error("usage: langcouch placement [n] | next [n] | answer <word>=<translation>... | --reset");
+        process.exit(1);
+      }
+      const queue = placementQueue(words, state, skipped);
+      if (queue.length === 0) {
+        console.log(`Placement done. ${summary()}. \`langcouch placement --reset\` asks the "don't know" words again.`);
+        break;
+      }
+      const n = sub ? Math.max(1, Number(sub)) : queue.length;
+      console.log(`Placement: type a translation (en/ru/uz), Enter = don't know, q = stop. Progress saves after every word.\n${summary()}.`);
+      // a line iterator, not rl.question: piped answers that arrive at once would be dropped between questions
+      const rl = createInterface({ input: process.stdin, terminal: false });
+      const lines = rl[Symbol.asyncIterator]();
+      let asked = 0;
+      let right = 0;
+      for (const w of queue.slice(0, n)) {
+        process.stdout.write(`${w.target} → `);
+        const line = await lines.next();
+        if (line.done) break; // input closed (Ctrl-D): everything answered so far is saved
+        const answer = String(line.value);
+        if (answer.trim().toLowerCase() === "q") break;
+        const { ok } = answerPlacement(words, state, skipped, w, answer, lang, now());
+        asked++;
+        if (ok) right++;
+        console.log(ok ? "  ✓ known" : `  ✗ ${w.target} = ${gloss(w)}`);
+        save();
+      }
+      rl.close();
+      console.log(`\nKnown this round: ${right}/${asked}. ${summary()}.${left() ? " Run `langcouch placement` again to carry on." : ""}`);
+      break;
+    }
     case "level": {
       const config = loadConfig();
       const arg = args[0] ?? "";
@@ -489,6 +593,7 @@ try {
       loadWordlist(code); // fail now, not in the hook, if a variant's base is missing or a file is broken
       saveConfig({ ...config, lang: code });
       console.log(`Language: ${config.lang} → ${code} (progress is per-language, ${config.lang} is kept)`);
+      if (!placementStarted(config, code)) console.log(`Already know some ${langName(code)}? \`langcouch placement\` (or /langcouch:placement in Claude Code) checks the list and marks the words you know.`);
       break;
     }
     case "validate": {
@@ -639,6 +744,8 @@ try {
           "  level <1-10|up|down>      weaving intensity",
           "  mode [1|2|3]              weave algorithm: 3 interval ladder (default), 2 fit only, 1 every word",
           "  quiz [n]                  absorption check (default 5 words)",
+          "  placement [n]             check which listed words you already know; they skip the new-word stage",
+          "  placement next [n] / answer <word>=<translation>...   the same, one batch at a time (for agents)",
           "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
           "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
