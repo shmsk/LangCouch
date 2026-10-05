@@ -311,6 +311,7 @@ function status(): string {
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
     `Spinner tips: ${config.spinner ? "on" : "off (langcouch spinner on)"}`,
+    `Due cards in status line: ${config.cardsStatus ? "on" : "off (langcouch cards-status on)"}`,
     `Data: ${DATA_DIR}`,
     top ? `Most exposed:\n${top}` : `No exposures yet — run a session with the hook installed.`,
   ]
@@ -738,6 +739,20 @@ try {
       }
       break;
     }
+    case "cards-status": {
+      const sub = args[0] ?? "status";
+      if (sub === "on" || sub === "off") {
+        saveConfig({ ...loadConfig(), cardsStatus: sub === "on" });
+        console.log(sub === "on" ? "Due-card count in the status line: on (from the next session start or /cards)" : "Due-card count in the status line: off (gone from the next session start or /cards)");
+      } else if (sub === "status") {
+        const v = loadConfig().cardsStatus;
+        console.log(`Due-card count in the status line: ${v === true ? "on" : v === false ? "off" : "off (never chosen; /cards asks once)"}`);
+      } else {
+        console.error("usage: langcouch cards-status <on|off|status>");
+        process.exit(1);
+      }
+      break;
+    }
     case "status":
       console.log(args.includes("--absorbed") ? absorbedListView() : status());
       break;
@@ -839,6 +854,7 @@ try {
           "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
           "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
+          "  cards-status <on|off|status>   due-card count in the Claude Code status line (opt-in)",
           "  instruction               print the weave instruction (without marking exposures)",
           "  hook                      CLI-hook mode (marks exposures, always exit 0)",
           "  install claude [--scope project|user]   register the hook in Claude Code",

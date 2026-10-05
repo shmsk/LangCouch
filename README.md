@@ -14,6 +14,7 @@ LangCouch weaves words from the language you're learning into your AI coding age
 ## What's new in 0.9.2
 
 - **Cards accept what you meant.** "to work", "the child" and common synonyms ("kid" for child) are right now. After a miss, "My answer was right" takes it back.
+- **The due count in the status line is now opt-in.** It is off until you say yes: `/cards` asks once at the end of a round, `/langcouch:cards-status on|off` changes it.
 
 ## What's new in 0.9.1
 
@@ -265,6 +266,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `export [file\|-] [--force]` | save progress, settings and your own wordlists to one file, `~/langcouch-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
 | `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |
 | `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
+| `cards-status <on\|off\|status>` | opt-in: how many cards are due, in the Claude Code status line (`/cards` asks once) |
 | `instruction` | print the weave instruction (without marking exposures) |
 | `hook` | CLI-hook mode: before a reply, builds the instruction and scans your prompt for recalls; after it (a `Stop` payload), counts the words the reply used. Exits 0 on any error so it never breaks the host session |
 | `install claude [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks |

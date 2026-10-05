@@ -52,7 +52,8 @@ async function cards<T>($: Engine, args: string[]): Promise<T> {
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))
 
 async function showStatus($: Engine, status: CardStatus) {
-  $.ui.status(status.paused || status.due === 0 ? undefined : `🃏 ${status.due} due`)
+  // opt-in: the status line is the user's space, nothing shows there until they say yes
+  $.ui.status(status.statusLine !== true || status.paused || status.due === 0 ? undefined : `🃏 ${status.due} due`)
 }
 
 async function start($: Engine) {
@@ -126,6 +127,20 @@ async function grade($: Engine, ok: boolean) {
   await record($, ['grade', card.id, card.kind, card.dir, ok ? 'ok' : 'fail'])
 }
 
+/** The once-only question on the done screen: show the due count in the status line? */
+async function chooseStatusLine($: Engine, on: boolean) {
+  try {
+    const cli = await findCli($)
+    const { exitCode, stderr } = await $.process.run(['/bin/sh', cli, 'cards-status', on ? 'on' : 'off'])
+    if (exitCode !== 0) throw new Error(stderr.trim() || 'langcouch cards-status failed')
+    const status = await cards<CardStatus>($, ['status'])
+    await showStatus($, status)
+    await update($, view, (v): CardsView => (v.phase === 'done' ? { ...v, status } : v))
+  } catch (err) {
+    await update($, view, (): CardsView => ({ phase: 'error', message: message(err) }))
+  }
+}
+
 async function advance($: Engine) {
   await update($, view, (v): CardsView => {
     if (v.phase !== 'result') return v
@@ -189,6 +204,15 @@ export const register: Register = on => {
           <Text dimColor>
             {v.status.due} due · {v.status.known} known · {v.status.placementLeft} left to place
           </Text>
+          {v.status.statusLine === null && (
+            <Box flexDirection="column">
+              <Text>Show how many cards are due in the status line? You can change it later: /langcouch:cards-status</Text>
+              <Box flexDirection="row" gap={1}>
+                <Button key="statusYes" onPress={() => void chooseStatusLine($, true)}>Yes, show it</Button>
+                <Button key="statusNo" onPress={() => void chooseStatusLine($, false)}>No</Button>
+              </Box>
+            </Box>
+          )}
           <Box flexDirection="row" gap={1}>
             <Button key="again" variant="primary" autoFocus onPress={() => void start($)}>Another round</Button>
             <Button key="close" role="dismiss" onPress={close}>Close</Button>

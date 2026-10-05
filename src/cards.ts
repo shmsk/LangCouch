@@ -151,6 +151,8 @@ export interface CardStatus {
   learning: number;
   placementLeft: number;
   total: number;
+  /** Show the due count in the status line: true/false as chosen, null = never asked. */
+  statusLine: boolean | null;
 }
 
 export function cardStatus(words: Word[], state: State, config: Config, now: string): CardStatus {
@@ -167,5 +169,6 @@ export function cardStatus(words: Word[], state: State, config: Config, now: str
     learning: started,
     placementLeft: placementQueue(words, state, skippedFor(config, config.lang)).length,
     total: words.length,
+    statusLine: config.cardsStatus ?? null,
   };
 }

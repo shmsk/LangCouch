@@ -3,18 +3,24 @@ import type { Engine } from 'claude-code/testing'
 import type { On, RenderSurface } from 'claude-code'
 
 // A stand-in for `langcouch cards ...`: two cards, a forward review and a reverse one.
-const STATUS = { lang: 'it', paused: false, due: 2, known: 10, learning: 3, placementLeft: 40, total: 432 }
+const BASE = { lang: 'it', paused: false, due: 2, known: 10, learning: 3, placementLeft: 40, total: 432 }
 const CARDS = [
   { id: 'house', kind: 'review', dir: 'forward', prompt: 'casa' },
   { id: 'time', kind: 'review', dir: 'reverse', prompt: 'время' },
 ]
 const EXPECTED: Record<string, string> = { house: 'дом', time: 'tempo' }
 
-function fakeCli(on: On, { paused = false } = {}) {
+function fakeCli(on: On, { paused = false, statusLine = null as boolean | null } = {}) {
   const calls: string[][] = []
   surfaceStubs(on)
   mock.env(on, { LANGCOUCH_CLI: '/fake/cli.sh' })
   on('process.run', async (_$, e) => {
+    if (e.argv[2] === 'cards-status') {
+      calls.push(e.argv.slice(2))
+      statusLine = e.argv[3] === 'on'
+      return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
+    }
+    const STATUS = { ...BASE, statusLine }
     const args = e.argv.slice(3) // /bin/sh <cli> cards ...
     calls.push(args)
     const [sub, id = '', , , ...rest] = args
@@ -29,11 +35,17 @@ function fakeCli(on: On, { paused = false } = {}) {
   return calls
 }
 
+const statusLines: unknown[] = []
 function surfaceStubs(on: On) {
+  statusLines.length = 0
   on('ui.open', async () => ({ value: { isPlaced: true } as const }))
   on('ui.close', async () => ({ value: undefined }))
-  on('ui.status', async () => ({ value: undefined }))
+  on('ui.status', async (_$, e) => {
+    statusLines.push(e)
+    return { value: undefined }
+  })
 }
+const shownDue = () => statusLines.some((e) => JSON.stringify(e).includes('🃏'))
 
 const PROPS = { title: 'LangCouch cards', isFocused: true, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 20 }, view: {} } as const
 const mountOn = async <S extends RenderSurface>($: Engine, surface: S) => {
@@ -75,6 +87,42 @@ test('"my answer was right" turns a miss into a hit: kid for child', async ($, o
   expect(await ui.find({ key: 'accept' })).toBeUndefined() // nothing typed, nothing to overrule
   await ui.press({ key: 'next' })
   expect(await ui.find({ text: /Round done: 1 of 2 right/ })).toBeDefined()
+})
+
+describe('status line is opt-in', () => {
+  test('never asked: no count in the status line, the done screen asks once; yes turns it on', async ($, on) => {
+    const calls = fakeCli(on)
+    const ui = await mountOn($, 'terminal')
+    await ui.press({ key: 'dontknow' })
+    await ui.press({ key: 'next' })
+    await ui.press({ key: 'dontknow' })
+    await ui.press({ key: 'next' })
+    expect(await ui.find({ text: /Round done/ })).toBeDefined()
+    expect(shownDue()).toBe(false)
+    expect(await ui.find({ text: /Show how many cards are due in the status line/ })).toBeDefined()
+    await ui.press({ key: 'statusYes' })
+    expect(calls).toContainEqual(['cards-status', 'on'])
+    expect(shownDue()).toBe(true)
+    expect(await ui.find({ key: 'statusYes' })).toBeUndefined()
+  })
+
+  test('chosen off: no count and no question', async ($, on) => {
+    fakeCli(on, { statusLine: false })
+    const ui = await mountOn($, 'terminal')
+    for (let i = 0; i < 2; i++) {
+      await ui.press({ key: 'dontknow' })
+      await ui.press({ key: 'next' })
+    }
+    expect(await ui.find({ text: /Round done/ })).toBeDefined()
+    expect(await ui.find({ key: 'statusYes' })).toBeUndefined()
+    expect(shownDue()).toBe(false)
+  })
+
+  test('chosen on: the count shows', async ($, on) => {
+    fakeCli(on, { statusLine: true })
+    await mountOn($, 'terminal')
+    expect(shownDue()).toBe(true)
+  })
 })
 
 test('mobile: no text field, the answer is shown and self-graded', async ($, on) => {

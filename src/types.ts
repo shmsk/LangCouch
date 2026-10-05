@@ -73,6 +73,8 @@ export interface Config {
   enabled?: boolean;
   /** Spanish words in the Claude Code spinner tips. Opt-in; toggled by `spinner on|off`. */
   spinner?: boolean;
+  /** The due-card count in the Claude Code status line. Opt-in: unset = never asked (the cards pane asks once), toggled by `cards-status on|off`. */
+  cardsStatus?: boolean;
   /** Last plugin version whose changelog `status` has shown; a newer one shows once. */
   seenVersion?: string;
   /**

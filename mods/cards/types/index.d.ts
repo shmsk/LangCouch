@@ -13,6 +13,8 @@ export type CardStatus = {
   learning: number
   placementLeft: number
   total: number
+  /** The due count in the status line: chosen on/off, or null = never asked (the done screen asks once). */
+  statusLine?: boolean | null
 }
 
 /** What an answer came to: the right answer is shown after a hit and a miss alike. */

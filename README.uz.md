@@ -16,6 +16,7 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 ## 0.9.2 da nima yangi
 
 - **Kartochkalar maʼnoni qabul qiladi.** «to work», «the child» va koʻp uchraydigan sinonimlar («kid», child oʻrniga) endi toʻgʻri hisoblanadi. Xatodan keyin «My answer was right» tugmasi uni bekor qiladi.
+- **Holat qatoridagi kartochkalar soni endi ixtiyoriy.** Siz rozilik bermaguningizcha u oʻchiq: `/cards` raund oxirida bir marta soʻraydi, `/langcouch:cards-status on|off` almashtiradi.
 
 ## 0.9.1 da nima yangi
 
@@ -267,6 +268,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `export [fayl\|-] [--force]` | natija, sozlamalar va oʻz lugʻatlaringizni bitta faylga saqlash, odatda `~/langcouch-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
 | `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |
 | `spinner <on\|off\|status>` | ixtiyoriy: oʻrganayotgan soʻzlaringiz Claude Code spinner maslahatlarida |
+| `cards-status <on\|off\|status>` | ixtiyoriy: takrorlashni kutayotgan kartochkalar soni Claude Code holat qatorida (`/cards` bir marta soʻraydi) |
 | `instruction` | toʻqish koʻrsatmasini chop etadi (duchor boʻlishlarni belgilamasdan) |
 | `hook` | CLI-hook rejimi: javobdan oldin koʻrsatma tuzadi va soʻrovingizni yodga tushirishlar uchun skanerlaydi; undan keyin (`Stop` yuki) javob ishlatgan soʻzlarni hisoblaydi. Har qanday xatoda 0 bilan chiqadi, shuning uchun xost sessiyasini hech qachon buzmaydi |
 | `install claude [--scope project\|user]` | UserPromptSubmit, SessionStart va Stop hooklarini roʻyxatdan oʻtkazadi |

@@ -93,7 +93,7 @@ describe("answers", () => {
 describe("status", () => {
   test("counts due, known, learning and placement left; reports the pause", () => {
     const state: State = markKnown({ time: { exposures: 2, lastSeen: EARLIER, step: 1, due: EARLIER } }, "house", NOW);
-    expect(cardStatus(WORDS, state, { ...CONFIG, enabled: false }, NOW)).toEqual({ lang: "it", paused: true, due: 1, known: 1, learning: 1, placementLeft: 3, total: 5 });
+    expect(cardStatus(WORDS, state, { ...CONFIG, enabled: false }, NOW)).toEqual({ lang: "it", paused: true, due: 1, known: 1, learning: 1, placementLeft: 3, total: 5, statusLine: null });
   });
 });
 
@@ -182,6 +182,18 @@ describe("cards CLI", () => {
     expect(out.status.placementLeft).toBe(miss.status.placementLeft);
     expect(out.status.known).toBe(miss.status.known + 1);
     expect(run(dir, "accept", card.id, card.kind, card.dir, "not json").status).toBe(1);
+  });
+
+  test("cards-status: off until chosen, then on/off sticks and shows in cards status", () => {
+    const dir = fresh({ lang: "it", native: "ru", level: 2 });
+    expect(JSON.parse(run(dir, "status").stdout).statusLine).toBeNull();
+    const cs = (...a: string[]) => spawnSync("bun", [CLI, "cards-status", ...a], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+    expect(cs().stdout).toContain("never chosen");
+    expect(cs("on").status).toBe(0);
+    expect(JSON.parse(run(dir, "status").stdout).statusLine).toBe(true);
+    expect(cs("off").status).toBe(0);
+    expect(JSON.parse(run(dir, "status").stdout).statusLine).toBe(false);
+    expect(cs("maybe").status).toBe(1);
   });
 
   test("a bad answer call fails loudly", () => {

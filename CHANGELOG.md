@@ -17,6 +17,13 @@ after an update. If an update ever needs you to do something, its section starts
 ### Added
 - "My answer was right" after a miss: it takes the miss back and records the card as right,
   for answers no list foresees. `langcouch cards accept` is the command behind it.
+- `/langcouch:cards-status on|off|status`: the due-card count in the status line.
+
+### Changed
+- The due-card count (`🃏 96 due`) no longer appears in the Claude Code status line unless
+  you turn it on. The status line is your space: `/cards` asks once at the end of a round, and
+  `/langcouch:cards-status on` turns it on any time. If you liked it in 0.9.0/0.9.1, say yes
+  there or run that command.
 
 ## [0.9.1] - 2026-10-05
 
