@@ -11,6 +11,10 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
+## What's new in 0.9.3
+
+- **Cards look like cards.** In the Desktop Code tab, VS Code and mobile, `/cards` shows a flashcard: the word big, a progress bar, the answer in green or red, the score as a ring. The terminal pane is unchanged.
+
 ## What's new in 0.9.2
 
 - **Cards accept what you meant.** "to work", "the child" and common synonyms ("kid" for child) are right now. After a miss, "My answer was right" takes it back.
@@ -70,7 +74,7 @@ I read a lot every day, and these days most of that text is my AI agents' replie
 
 Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, `/langcouch:placement`, and add your own language with `/langcouch:add-language <language>`.
 
-**Flashcards:** `/cards` opens a pane in the terminal, the Desktop Code tab, VS Code and mobile. It reviews the words that are due both ways (the language you learn → yours, and from the 3rd ladder step also yours → the one you learn), then asks placement words. LangCouch itself grades and records every card, so cards and woven replies share one progress. macOS and Linux; part of LangCouch since 0.9.1.
+**Flashcards:** `/cards` opens a pane in the terminal, the Desktop Code tab, VS Code and mobile. It reviews the words that are due both ways (the language you learn → yours, and from the 3rd ladder step also yours → the one you learn), then asks placement words. LangCouch itself grades and records every card, so cards and woven replies share one progress. macOS and Linux; part of LangCouch since 0.9.1. Outside the terminal each card is drawn as a flashcard (since 0.9.3). Needs Claude Code 2.1.287 or newer; the Desktop app updates its own copy, so if `/cards` is missing there, update the app.
 
 **Glosses in your language:** translations follow the language of your message. Cyrillic gets Russian; Latin gets your `native` if it is `en` or `uz` (Uzbek, Latin script), else English. `langcouch native <en|ru|uz>` (default `en`) sets the fallback for a message LangCouch can't read, and the language of quiz answers and spinner tips.
 

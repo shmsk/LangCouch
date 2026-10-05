@@ -13,6 +13,10 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
+## 0.9.3 da nima yangi
+
+- **Kartochkalar haqiqiy kartochkaga oʻxshaydi.** Desktop'ning Code boʻlimida, VS Code'da va telefonda `/cards` fleshkartani koʻrsatadi: soʻz yirik qilib, raund uchun progress chizigʻi, javob yashil yoki qizil rangda, oxirida natija halqa shaklida. Terminaldagi panel oʻzgarmadi.
+
 ## 0.9.2 da nima yangi
 
 - **Kartochkalar maʼnoni qabul qiladi.** «to work», «the child» va koʻp uchraydigan sinonimlar («kid», child oʻrniga) endi toʻgʻri hisoblanadi. Xatodan keyin «My answer was right» tugmasi uni bekor qiladi.
@@ -72,7 +76,7 @@ Men har kuni koʻp oʻqiyman, va hozir bu matnning katta qismi terminaldagi AI a
 
 Sozlash shart emas: na `npm install`, na build bosqichi kerak — hook birinchi ishlatilganda oʻz konfiguratsiyasini avtomatik yaratadi. Uni Claude Code ichidan `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, `/langcouch:placement` buyruqlari bilan boshqaring, oʻz tilingizni esa `/langcouch:add-language <language>` bilan qoʻshing.
 
-**Kartochkalar:** `/cards` buyrugʻi ochadi: terminalda, Desktop'ning Code boʻlimida, VS Code'da va telefonda ochiladigan panel. U vaqti kelgan soʻzlarni ikki tomonga takrorlaydi (oʻrganilayotgan til → sizning tilingiz, zinapoyaning 3-bosqichidan esa sizning tilingiz → oʻrganilayotgan til), keyin daraja testi soʻzlarini soʻraydi. Har bir kartochkani LangCouch oʻzi tekshiradi va yozib boradi, shuning uchun kartochkalar va javoblarga toʻqilgan soʻzlarning natijasi bitta. macOS va Linux; 0.9.1 dan beri LangCouch ichida.
+**Kartochkalar:** `/cards` buyrugʻi ochadi: terminalda, Desktop'ning Code boʻlimida, VS Code'da va telefonda ochiladigan panel. U vaqti kelgan soʻzlarni ikki tomonga takrorlaydi (oʻrganilayotgan til → sizning tilingiz, zinapoyaning 3-bosqichidan esa sizning tilingiz → oʻrganilayotgan til), keyin daraja testi soʻzlarini soʻraydi. Har bir kartochkani LangCouch oʻzi tekshiradi va yozib boradi, shuning uchun kartochkalar va javoblarga toʻqilgan soʻzlarning natijasi bitta. macOS va Linux; 0.9.1 dan beri LangCouch ichida. Terminaldan tashqarida har bir kartochka fleshkarta sifatida chiziladi (0.9.3 dan beri). Claude Code 2.1.287 yoki undan yangisi kerak; Desktop ilovasida Claude Code'ning oʻz nusxasi bor, shuning uchun u yerda `/cards` boʻlmasa, ilovani yangilang.
 
 **Oʻz tilingizdagi glosslar:** tarjimalar xabaringiz tiliga mos keladi. Kirill yozuvi ruscha tarjima beradi; lotin yozuvi `native` qiymatingizni beradi, agar u `en` yoki `uz` (oʻzbek, lotin yozuvi) boʻlsa, aks holda inglizcha. `langcouch native <en|ru|uz>` (standart `en`) LangCouch oʻqiy olmaydigan xabar uchun zaxira tilni, shuningdek quiz javoblari va spinner maslahatlari tilini belgilaydi.
 

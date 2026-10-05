@@ -6,6 +6,19 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.3] - 2026-10-05
+
+### Changed
+- `/cards` looks like a flashcard app in the Desktop Code tab, VS Code and mobile: the word
+  big in the middle of a card, a progress bar for the round, the answer under a line in green
+  or red, and the score as a ring at the end. It follows the light or dark theme. The terminal
+  pane is unchanged.
+- Where you grade yourself (mobile), 1 is "Didn't" and 2 is "Knew it".
+
+### Fixed
+- The README now says that the pane needs Claude Code 2.1.287 or newer. The Desktop app runs
+  its own copy of Claude Code: if `/cards` is missing there, update the app.
+
 ## [0.9.2] - 2026-10-05
 
 ### Fixed

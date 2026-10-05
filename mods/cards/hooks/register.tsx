@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Card, CardResult, CardStatus, CardsView } from '../types'
+import { cardSvg, doneSvg } from './svg'
 
 // The mod draws; the LangCouch CLI picks, grades and records every card
 // (`langcouch cards ...`, JSON out), so progress lives in one place: ~/.langcouch.
@@ -169,8 +170,11 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const els = $.ui.resolve(e)
+    const { Box, Text, Button } = els
     const Input = e.surface === 'mobile' ? undefined : $.ui.resolve(e).Input
+    // desktop, VS Code and mobile draw SVG: there the card looks like a flashcard app
+    const Svg = e.surface === 'terminal' ? undefined : $.ui.resolve(e).Svg
     const v = await read($, view)
     const close = () => void $.ui.close({ id: PANE })
 
@@ -197,6 +201,83 @@ export const register: Register = on => {
           <Button key="close" role="dismiss" autoFocus onPress={close}>Close</Button>
         </Box>
       )
+    const statusQuestion = v.phase === 'done' && v.status.statusLine === null && (
+      <Box flexDirection="column">
+        <Text>Show how many cards are due in the status line? You can change it later: /langcouch:cards-status</Text>
+        <Box flexDirection="row" gap={1}>
+          <Button key="statusYes" onPress={() => void chooseStatusLine($, true)}>Yes, show it</Button>
+          <Button key="statusNo" onPress={() => void chooseStatusLine($, false)}>No</Button>
+        </Box>
+      </Box>
+    )
+
+    if (Svg) {
+      if (v.phase === 'done')
+        return (
+          <Box flexDirection="column" gap={1}>
+            <Svg
+              source={doneSvg({ right: v.right, total: v.cards.length, due: v.status.due, known: v.status.known, left: v.status.placementLeft })}
+              alt={`Round done: ${v.right} of ${v.cards.length} right. ${v.status.due} due, ${v.status.known} known, ${v.status.placementLeft} left to place.`}
+            />
+            {statusQuestion}
+            <Box flexDirection="row" gap={1}>
+              <Button key="again" variant="primary" autoFocus onPress={() => void start($)}>Another round</Button>
+              <Button key="close" role="dismiss" onPress={close}>Close</Button>
+            </Box>
+          </Box>
+        )
+      const card = v.cards[v.index]!
+      const ask_ = ask(card, v.status.lang)
+      const back =
+        v.phase === 'result' ? { expected: v.last!.expected, ok: v.last!.ok, typed: v.typed } : v.phase === 'revealed' ? { expected: v.expected ?? '' } : undefined
+      const face = (
+        <Svg
+          source={cardSvg({ kind: card.kind, index: v.index, total: v.cards.length, lang: v.status.lang, prompt: card.prompt, ask: ask_, answer: back })}
+          alt={[`${card.kind === 'placement' ? 'Placement' : 'Review'} ${v.index + 1} of ${v.cards.length}: ${card.prompt}. ${ask_}`, back && `${back.ok === undefined ? '' : back.ok ? 'Right: ' : 'Wrong: '}${back.expected}`].filter(Boolean).join(' ')}
+        />
+      )
+      if (v.phase === 'result') {
+        const last = v.last!
+        return (
+          <Box flexDirection="column" gap={1}>
+            {face}
+            {last.known && card.kind === 'placement' && <Text dimColor>Marked known: it skips the new-word stage.</Text>}
+            <Box flexDirection="row" gap={1}>
+              <Button key="next" variant="primary" autoFocus onPress={() => void advance($)}>
+                {v.index + 1 < v.cards.length ? 'Next' : 'Finish'}
+              </Button>
+              {!last.ok && v.typed && last.undo && (
+                <Button key="accept" onPress={() => void accept($)}>My answer was right</Button>
+              )}
+            </Box>
+          </Box>
+        )
+      }
+      if (v.phase === 'revealed')
+        return (
+          <Box flexDirection="column" gap={1}>
+            {face}
+            <Box flexDirection="row" gap={1}>
+              <Button key="didnt" hotkey="1" onPress={() => void grade($, false)}>Didn't</Button>
+              <Button key="knew" hotkey="2" variant="primary" autoFocus onPress={() => void grade($, true)}>Knew it</Button>
+            </Box>
+          </Box>
+        )
+      return (
+        <Box flexDirection="column" gap={1}>
+          {face}
+          {Input ? (
+            <Box flexDirection="column" gap={1}>
+              <Input key="answer" placeholder="Type the answer, Enter to check" submitLabel="check" autoFocus onSubmit={text => void answer($, text)} />
+              <Button key="dontknow" dimColor onPress={() => void answer($, '')}>Don't know</Button>
+            </Box>
+          ) : (
+            <Button key="show" variant="primary" autoFocus onPress={() => void reveal($)}>Show answer</Button>
+          )}
+        </Box>
+      )
+    }
+
     if (v.phase === 'done')
       return (
         <Box flexDirection="column">

@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On, RenderSurface } from 'claude-code'
+import { cardSvg, esc, fitSize } from '../hooks/svg'
 
 // A stand-in for `langcouch cards ...`: two cards, a forward review and a reverse one.
 const BASE = { lang: 'it', paused: false, due: 2, known: 10, learning: 3, placementLeft: 40, total: 432 }
@@ -54,7 +55,7 @@ const mountOn = async <S extends RenderSurface>($: Engine, surface: S) => {
 }
 
 describe('typed answers', () => {
-  for (const surface of ['terminal', 'desktop', 'vscode'] as const)
+  for (const surface of ['terminal'] as const)
     test(`${surface}: a right answer, then don't know, then the round summary`, async ($, on) => {
       const calls = fakeCli(on)
       const ui = await mountOn($, surface)
@@ -125,15 +126,68 @@ describe('status line is opt-in', () => {
   })
 })
 
-test('mobile: no text field, the answer is shown and self-graded', async ($, on) => {
+// desktop, VS Code and mobile draw the card as SVG: the word big, the answer under a rule
+const card = async (ui: { find: (q: { type: string }) => Promise<{ props: Record<string, unknown> } | undefined> }) => {
+  const svg = await ui.find({ type: 'Svg' })
+  return { alt: String(svg?.props.alt ?? ''), source: String(svg?.props.source ?? '') }
+}
+
+describe('flashcard on rich surfaces', () => {
+  for (const surface of ['desktop', 'vscode'] as const)
+    test(`${surface}: a right answer, then don't know, then the score ring`, async ($, on) => {
+      const calls = fakeCli(on)
+      const ui = await mountOn($, surface)
+      await ui.drawn() // rejects if the surface refused the tree
+      expect((await card(ui)).alt).toBe('Review 1 of 2: casa. Translate:')
+      expect((await card(ui)).source).toContain('>casa</text>')
+      expect(await ui.find({ type: 'Text', text: 'casa' })).toBeUndefined() // the word is on the card, not repeated
+      await ui.input({ key: 'answer', text: 'дом' })
+      expect((await card(ui)).alt).toContain('Right: дом')
+      expect((await card(ui)).source).toContain('✓ дом')
+      await ui.press({ key: 'next' })
+      expect((await card(ui)).alt).toContain('In it?')
+      await ui.press({ key: 'dontknow' })
+      expect((await card(ui)).alt).toContain('Wrong: tempo')
+      expect(calls).toContainEqual(['answer', 'house', 'review', 'forward', 'дом'])
+      await ui.press({ key: 'next' })
+      await ui.drawn()
+      expect((await card(ui)).alt).toMatch(/Round done: 1 of 2 right/)
+      expect((await card(ui)).source).toContain('stroke-dasharray')
+      expect(await ui.find({ key: 'statusYes' })).toBeDefined() // the once-only question is still asked
+    })
+
+  test('a wrong typed answer shows what you wrote and keeps "my answer was right"', async ($, on) => {
+    fakeCli(on)
+    const ui = await mountOn($, 'desktop')
+    await ui.input({ key: 'answer', text: 'жилище' })
+    expect((await card(ui)).source).toContain('you wrote: жилище')
+    expect(await ui.find({ key: 'accept' })).toBeDefined()
+  })
+})
+
+test('mobile: no text field, the answer is shown and self-graded with hotkeys', async ($, on) => {
   const calls = fakeCli(on)
   const ui = await mountOn($, 'mobile')
+  await ui.drawn()
   expect(await ui.find({ type: 'Input' })).toBeUndefined()
   await ui.press({ key: 'show' })
-  expect(await ui.find({ text: '= дом' })).toBeDefined()
+  expect((await card(ui)).alt).toMatch(/casa\. Translate: дом$/)
+  expect((await ui.find({ key: 'didnt' }))?.props.hotkey).toBe('1')
+  expect((await ui.find({ key: 'knew' }))?.props.hotkey).toBe('2')
   await ui.press({ key: 'knew' })
-  expect(await ui.find({ text: '✓ дом' })).toBeDefined()
+  expect((await card(ui)).alt).toContain('Right: дом')
   expect(calls).toContainEqual(['grade', 'house', 'review', 'forward', 'ok'])
+})
+
+test('the SVG escapes words and shrinks long ones', () => {
+  const svg = cardSvg({ kind: 'review', index: 0, total: 1, lang: 'it', prompt: `<b>&"x"'`, ask: 'Translate:', answer: { expected: 'a < b', ok: true } })
+  expect(svg).toContain('&lt;b&gt;&amp;&quot;x&quot;&#39;')
+  expect(svg).not.toContain('<b>')
+  expect(svg).toContain('✓ a &lt; b')
+  expect(esc('plain')).toBe('plain')
+  expect(fitSize('casa', 280, 40, 16)).toBe(40)
+  expect(fitSize('precipitevolissimevolmente', 280, 40, 16)).toBeLessThan(20)
+  expect(fitSize('x'.repeat(200), 280, 40, 16)).toBe(16)
 })
 
 test('paused LangCouch shows the pause, not cards', async ($, on) => {
