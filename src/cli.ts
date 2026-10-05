@@ -17,6 +17,7 @@ import { buildInstruction } from "./instruction.ts";
 import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { placementQueue, answerPlacement, skippedFor, withSkipped, placementStarted, detectTooEasy, OFFER_TOO_EASY, offerAtStart } from "./placement.ts";
+import { answerCard, cardQueue, cardStatus, revealCard } from "./cards.ts";
 import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
 import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
@@ -455,6 +456,56 @@ try {
       console.log(`Score: ${correct}/${candidates.length}`);
       break;
     }
+    case "cards": {
+      // JSON for the cards mod: it draws, this grades and records
+      const config = loadConfig();
+      const lang = config.lang;
+      const words = loadWordlist(lang);
+      const state = loadState(lang);
+      if (algorithmOf(config) === 3) migrate(state);
+      const now = new Date().toISOString();
+      const out = (v: unknown) => console.log(JSON.stringify(v));
+      const sub = args[0];
+      if (sub === "status") {
+        out(cardStatus(words, state, config, now));
+        break;
+      }
+      if (sub === "next") {
+        const n = Math.max(1, Math.trunc(Number(args[1])) || 10);
+        const status = cardStatus(words, state, config, now);
+        out({ status, cards: status.paused ? [] : cardQueue(words, state, config, n, now) });
+        break;
+      }
+      if (sub === "reveal") {
+        const [id, dir] = args.slice(1);
+        if (!id || (dir !== "forward" && dir !== "reverse")) {
+          console.error("usage: langcouch cards reveal <id> <forward|reverse>");
+          process.exit(1);
+        }
+        out({ expected: revealCard(words, config, { id, dir }) });
+        break;
+      }
+      if (sub === "answer" || sub === "grade") {
+        const [id, kind, dir, ...rest] = args.slice(1);
+        const graded = sub === "grade" ? rest[0] : "ok";
+        if (!id || (kind !== "review" && kind !== "placement") || (dir !== "forward" && dir !== "reverse") || (graded !== "ok" && graded !== "fail")) {
+          console.error(`usage: langcouch cards answer <id> <review|placement> <forward|reverse> [answer...] (no answer = don't know)
+       langcouch cards grade <id> <review|placement> <forward|reverse> <ok|fail>   self-graded, where no answer can be typed`);
+          process.exit(1);
+        }
+        // a self-grade is recorded as the right answer or as "don't know", through the same path as a typed one
+        const answer = sub === "grade" ? (graded === "ok" ? revealCard(words, config, { id, dir }) : "") : rest.join(" ");
+        const skipped = skippedFor(config, lang);
+        const result = answerCard(words, state, config, skipped, { id, kind, dir }, answer, now);
+        saveState(lang, state);
+        // re-read the config before writing: never undo a change made meanwhile (the hook may run in between)
+        if (kind === "placement") saveConfig(withSkipped(loadConfig(), lang, skipped));
+        out({ ...result, status: cardStatus(words, state, loadConfig(), now) });
+        break;
+      }
+      console.error("usage: langcouch cards status | next [n] | answer <id> <review|placement> <forward|reverse> [answer...] | reveal <id> <dir> | grade <id> <kind> <dir> <ok|fail>");
+      process.exit(1);
+    }
     case "placement": {
       const config = loadConfig();
       const lang = config.lang;
@@ -763,6 +814,7 @@ try {
           "  quiz [n]                  absorption check (default 5 words)",
           "  placement [n]             check which listed words you already know; they skip the new-word stage",
           "  placement next [n] / answer <word>=<translation>...   the same, one batch at a time (for agents)",
+          "  cards status | next [n] | answer <id> <kind> <dir> [answer] | reveal | grade   flashcards as JSON (for the cards mod)",
           "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
           "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",

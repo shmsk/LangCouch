@@ -13,6 +13,11 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
+## 0.9.0 da nima yangi
+
+- **Kartochkalar.** `/plugin install langcouch-cards@langcouch` `/cards` buyrugʻini qoʻshadi: avval vaqti kelgan soʻzlar, ikki tomonga (zinapoyaning 3-bosqichidan sizning tilingiz → oʻrganilayotgan til ham), keyin daraja testi soʻzlari. Natija toʻqish bilan umumiy.
+- **Eski maʼlumotlar.** 0.7.6 dan oldingi versiyalar maʼlumotlari endi tekshirilmaydi: avval 0.7.6 ga yangilang (CHANGELOG, Upgrade notes).
+
 ## 0.8.0 da nima yangi
 
 - **1 dan 1000 gacha sonlar.** Endi har bir til istalgan son tuziladigan 30 ta sonni (0–20, oʻnliklar, 100, 1000) oʻrgatadi, har javobda bittadan, raqam yonida: 3 (**tre**). Qolganini qisqa qoidalar tushuntiradi: ingliz tilida 11 va 12 ni yodlash kerak, keyin *-teen*; fransuz tilida 70 bu 60+10, 80 esa 4×20; turk tilida oʻnliklarni yodlash kerak.
@@ -57,6 +62,8 @@ Men har kuni koʻp oʻqiyman, va hozir bu matnning katta qismi terminaldagi AI a
 ```
 
 Sozlash shart emas: na `npm install`, na build bosqichi kerak — hook birinchi ishlatilganda oʻz konfiguratsiyasini avtomatik yaratadi. Uni Claude Code ichidan `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, `/langcouch:placement` buyruqlari bilan boshqaring, oʻz tilingizni esa `/langcouch:add-language <language>` bilan qoʻshing.
+
+**Kartochkalar (ixtiyoriy):** `/plugin install langcouch-cards@langcouch` `/cards` buyrugʻini qoʻshadi: terminalda, Desktop'ning Code boʻlimida, VS Code'da va telefonda ochiladigan panel. U vaqti kelgan soʻzlarni ikki tomonga takrorlaydi (oʻrganilayotgan til → sizning tilingiz, zinapoyaning 3-bosqichidan esa sizning tilingiz → oʻrganilayotgan til), keyin daraja testi soʻzlarini soʻraydi. Har bir kartochkani LangCouch oʻzi tekshiradi va yozib boradi, shuning uchun kartochkalar va javoblarga toʻqilgan soʻzlarning natijasi bitta. macOS va Linux; LangCouch 0.9.0 yoki yangiroq versiyasi kerak.
 
 **Oʻz tilingizdagi glosslar:** tarjimalar xabaringiz tiliga mos keladi. Kirill yozuvi ruscha tarjima beradi; lotin yozuvi `native` qiymatingizni beradi, agar u `en` yoki `uz` (oʻzbek, lotin yozuvi) boʻlsa, aks holda inglizcha. `langcouch native <en|ru|uz>` (standart `en`) LangCouch oʻqiy olmaydigan xabar uchun zaxira tilni, shuningdek quiz javoblari va spinner maslahatlari tilini belgilaydi.
 
@@ -247,6 +254,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `mode [1\|2\|3]` | toʻqish algoritmi: 3 oraliqlar zinasi (standart), 2 faqat joyiga tushadigan soʻzlar, 1 roʻyxatdagi har bir soʻz |
 | `quiz [n]` | oʻzlashtirishni tekshiradi (standart 5 ta soʻz); notoʻgʻri javob berilgan soʻz yana aylanmaga qaytadi |
 | `placement [n] [--reset]` | roʻyxatdagi qaysi soʻzlarni allaqachon bilishingizni tekshiradi: tarjimani yozing, Enter = bilmayman, `q` = toʻxtash; bilgan soʻzlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. `placement next [n]` / `placement answer <soʻz>=<tarjima>...` xuddi shuni guruhlab bajaradi (`/langcouch:placement` shundan foydalanadi); `--reset` «bilmayman» javobli soʻzlarni qayta soʻraydi |
+| `cards status \| next [n] \| answer … \| reveal … \| grade …` | kartochkalar modi (`/cards`) uchun JSON: nimani takrorlash vaqti kelgani, har bir kartochkani tekshirish va yozib borish; oʻzingiz chaqirishingiz shart emas |
 | `pause` / `resume` | toʻqishni oʻchirish/qayta yoqish tugmasi |
 | `export [fayl\|-] [--force]` | natija, sozlamalar va oʻz lugʻatlaringizni bitta faylga saqlash, odatda `~/langcouch-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
 | `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |

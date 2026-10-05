@@ -7,9 +7,13 @@ node_modules/
 # internal working docs (kept local, not part of the public repo)
 ISA.md
 LOOP.md
+ISA.html
 Plans/
 .claude/
 # local install smoke-test output (never committed)
 /.smoke-opencode/
 # weave eval raw replies (local only)
 /evals/out/
+# laid by Claude Code when a mod loads (engine types + generated tsconfig)
+mods/*/.claude-plugin/types/
+mods/*/tsconfig.json

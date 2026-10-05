@@ -1,2 +1,4 @@
 [test]
 preload = ["./tests/setup.ts"]
+# mods/*/tests run under `claude plugin test`, against the engine, not here
+root = "tests"

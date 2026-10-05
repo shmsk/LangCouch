@@ -6,6 +6,25 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.0] - 2026-10-05
+
+### Upgrade notes
+1. If you are on a version older than 0.7.6, update to 0.7.6 first, run `langcouch status`
+   once, and only then update to this version. Data from before 0.7.6 is no longer tested, so it may not carry over.
+   You can tell which version you have from `langcouch status`, or `/plugin` in Claude Code.
+
+### Added
+- Flashcards: `/plugin install langcouch-cards@langcouch` adds `/cards`, a pane in the
+  terminal, the Desktop Code tab, VS Code and mobile. It reviews the words that are due, the
+  most overdue first, then asks placement words. From the 3rd ladder step a card can also ask
+  the other way: your language → the one you learn. Where there is no text field (mobile)
+  you show the answer and say whether you knew it. The status line shows how many words are due.
+- `langcouch cards status | next | answer | reveal | grade`: the JSON the cards mod reads.
+  Every card is graded and recorded by LangCouch, so cards and replies share one progress.
+
+### Changed
+- Data written by 0.4.0–0.7.5 is no longer tested or supported: update through 0.7.6 (see Upgrade notes).
+
 ## [0.8.0] - 2026-10-05
 
 ### Added

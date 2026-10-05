@@ -69,6 +69,20 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
     expect(run(fresh, ["status"]).status).toBe(0);
   });
 
+  test("cards read it and a card answer keeps every other word's progress", () => {
+    const dir = copy();
+    const before = best(states(dir));
+    const next = run(dir, ["cards", "next", "5"]);
+    expect(next.status).toBe(0);
+    const { cards, status } = JSON.parse(next.stdout) as { cards: { id: string; kind: string; dir: string }[]; status: { total: number } };
+    expect(status.total).toBeGreaterThan(0);
+    expect(cards.length).toBeGreaterThan(0);
+    const card = cards[0]!;
+    expect(run(dir, ["cards", "answer", card.id, card.kind, card.dir, "?"]).status).toBe(0);
+    const after = best(states(dir));
+    for (const [key, b] of Object.entries(before)) if (key !== card.id) expect(after[key]?.exposures ?? 0).toBeGreaterThanOrEqual(b.exposures);
+  });
+
   test("no progress is lost after a few replies", () => {
     const dir = copy();
     const before = best(states(dir));

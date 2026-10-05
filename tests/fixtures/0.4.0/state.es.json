@@ -1,8 +1,0 @@
-{
-  "house": { "exposures": 9, "recalls": 2, "lastSeen": "2026-09-28T10:00:00.000Z" },
-  "time": { "exposures": 4, "lastSeen": "2026-09-28T10:00:00.000Z" },
-  "car": { "exposures": 6, "recalls": 1, "lastSeen": "2026-09-27T10:00:00.000Z" },
-  "g:def-article": { "exposures": 3, "lastSeen": "2026-09-28T10:00:00.000Z" },
-  "p:tion": { "exposures": 3, "lastSeen": "2026-09-28T10:00:00.000Z" },
-  "p:ism": { "exposures": 1, "lastSeen": "2026-09-28T10:00:00.000Z" }
-}

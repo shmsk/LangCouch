@@ -1,0 +1,11 @@
+{
+  "name": "langcouch-cards",
+  "version": "0.1.0",
+  "description": "Flashcards for LangCouch: review due words both ways and place the ones you already know, in a pane",
+  "author": {
+    "name": "Kirill Shumskii",
+    "url": "https://github.com/shmsk"
+  },
+  "homepage": "https://github.com/shmsk/LangCouch",
+  "types": "./types/index.d.ts"
+}

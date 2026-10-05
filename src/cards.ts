@@ -1,0 +1,144 @@
+import type { Config, State, Word } from "./types.ts";
+import { glossFor, isAbsorbed } from "./types.ts";
+import { dueOf, isDue, stepOf } from "./ladder.ts";
+import { applyQuizResult, checkAnswer } from "./recall.ts";
+import { answerPlacement, placementQueue, skippedFor } from "./placement.ts";
+
+/**
+ * Flashcards: the review half of the ladder, driven by the learner instead of by replies.
+ * Due words come first (most overdue first), then the placement queue fills the rest, so
+ * a new learner places first and a placed one reviews. Every card is graded here, never by
+ * the UI or the model; the cards mod only draws what `cards next` returns.
+ */
+
+export type CardDir = "forward" | "reverse";
+export type CardKind = "review" | "placement";
+
+export interface Card {
+  id: string;
+  kind: CardKind;
+  dir: CardDir;
+  /** What the learner sees: the target word (forward) or its gloss in their language (reverse). */
+  prompt: string;
+}
+
+/** From this ladder step on, review cards alternate: odd steps ask native → target. */
+export const REVERSE_FROM_STEP = 3;
+
+export const cardDir = (step: number): CardDir => (step >= REVERSE_FROM_STEP && step % 2 === 1 ? "reverse" : "forward");
+
+/** Started words due for review, most overdue first, one card per shared lemma. */
+export function dueCards(words: Word[], state: State, now: string): Word[] {
+  const seen = new Set<string>();
+  return words
+    .filter((w) => {
+      const s = state[w.id];
+      return s !== undefined && (s.exposures > 0 || (s.recalls ?? 0) > 0 || (s.step ?? 0) > 0) && isDue(s, now);
+    })
+    .sort((a, b) => dueOf(state[a.id]).localeCompare(dueOf(state[b.id])))
+    .filter((w) => !seen.has(w.target) && !!seen.add(w.target));
+}
+
+export function cardQueue(words: Word[], state: State, config: Config, n: number, now: string): Card[] {
+  const lang = config.lang;
+  const due = dueCards(words, state, now).map((w): Card => {
+    const dir = cardDir(stepOf(state[w.id]));
+    return { id: w.id, kind: "review", dir, prompt: dir === "reverse" ? glossFor(w, config.native, lang) : w.target };
+  });
+  const taken = new Set(due.map((c) => words.find((w) => w.id === c.id)!.target));
+  const placement = placementQueue(words, state, skippedFor(config, lang))
+    .filter((w) => !taken.has(w.target))
+    .map((w): Card => ({ id: w.id, kind: "placement", dir: "forward", prompt: w.target }));
+  return [...due, ...placement].slice(0, n);
+}
+
+const ARTICLES = new Set(["il", "lo", "la", "i", "gli", "le", "un", "uno", "una", "el", "los", "las", "unos", "unas", "les", "une", "der", "die", "das", "ein", "eine", "o", "a", "os", "as", "um", "uma", "the", "an", "to", "bir"]);
+
+/** Lowercase, trimmed, accents folded (casà = casa), apostrophes unified, a leading article or "to" dropped. */
+export function foldTarget(s: string): string {
+  const t = s.toLowerCase().trim().normalize("NFD").replace(/\p{M}/gu, "").replace(/[ʻʼ‘’`´]/g, "'").replace(/\s+/g, " ");
+  const elided = t.replace(/^(l|un|d)'\s*/, "");
+  const [first, ...rest] = elided.split(" ");
+  return rest.length && ARTICLES.has(first!) ? rest.join(" ") : elided;
+}
+
+/** Native → target: the answer names the word itself (its lemma, or the base lemma of a regional variant). */
+export function checkReverse(answer: string, word: Word): boolean {
+  const a = foldTarget(answer);
+  if (!a) return false;
+  return [word.target, word.baseTarget].filter((x): x is string => !!x).some((t) => foldTarget(t) === a);
+}
+
+export interface CardResult {
+  ok: boolean;
+  /** The right answer, shown after a miss and after a hit alike. */
+  expected: string;
+  step: number;
+  due: string;
+  known: boolean;
+}
+
+/**
+ * Grade one card and record it. Review: a right answer climbs every concept it names
+ * (mañana is tomorrow and morning), a wrong or empty one resets the card's own concept.
+ * A reverse card accepts any word whose gloss reads the same in the learner's language.
+ * Placement: a right answer marks the word known, a wrong one goes on the skip list.
+ * `skipped` is the config's list for this language, changed in place.
+ */
+export function answerCard(words: Word[], state: State, config: Config, skipped: string[], card: Pick<Card, "id" | "kind" | "dir">, answer: string, now: string): CardResult {
+  const lang = config.lang;
+  const word = words.find((w) => w.id === card.id);
+  if (!word) throw new Error(`langcouch: no word "${card.id}" in the ${lang} list`);
+  const gloss = glossFor(word, config.native, lang);
+  let ok: boolean;
+  if (card.kind === "placement") {
+    ok = answerPlacement(words, state, skipped, word, answer, lang, now).ok;
+  } else if (card.dir === "reverse") {
+    const same = words.filter((w) => glossFor(w, config.native, lang) === gloss);
+    const matched = same.filter((w) => checkReverse(answer, w));
+    ok = matched.length > 0;
+    if (ok) for (const w of matched) applyQuizResult(state, w.id, true);
+    else applyQuizResult(state, word.id, false);
+  } else {
+    const matched = words.filter((w) => w.target === word.target && checkAnswer(answer, w, lang));
+    ok = matched.length > 0;
+    if (ok) for (const w of matched) applyQuizResult(state, w.id, true);
+    else applyQuizResult(state, word.id, false);
+  }
+  const s = state[word.id];
+  return { ok, expected: card.dir === "reverse" ? word.target : gloss, step: stepOf(s), due: s ? dueOf(s) : "", known: isAbsorbed(s) };
+}
+
+/** The right answer for a card, without recording anything: what a self-graded card shows before "knew it / didn't". */
+export function revealCard(words: Word[], config: Config, card: Pick<Card, "id" | "dir">): string {
+  const word = words.find((w) => w.id === card.id);
+  if (!word) throw new Error(`langcouch: no word "${card.id}" in the ${config.lang} list`);
+  return card.dir === "reverse" ? word.target : glossFor(word, config.native, config.lang);
+}
+
+export interface CardStatus {
+  lang: string;
+  paused: boolean;
+  due: number;
+  known: number;
+  learning: number;
+  placementLeft: number;
+  total: number;
+}
+
+export function cardStatus(words: Word[], state: State, config: Config, now: string): CardStatus {
+  const known = words.filter((w) => isAbsorbed(state[w.id])).length;
+  const started = words.filter((w) => {
+    const s = state[w.id];
+    return s && !isAbsorbed(s) && (s.exposures > 0 || (s.recalls ?? 0) > 0 || (s.step ?? 0) > 0);
+  }).length;
+  return {
+    lang: config.lang,
+    paused: config.enabled === false,
+    due: dueCards(words, state, now).length,
+    known,
+    learning: started,
+    placementLeft: placementQueue(words, state, skippedFor(config, config.lang)).length,
+    total: words.length,
+  };
+}

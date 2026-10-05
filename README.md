@@ -11,6 +11,11 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
+## What's new in 0.9.0
+
+- **Flashcards.** `/plugin install langcouch-cards@langcouch` adds `/cards`: due words first, both ways (from the 3rd ladder step also your language → the one you learn), then placement words. Same progress as the weave.
+- **Older data.** Data from before 0.7.6 is no longer tested: update through 0.7.6 first (CHANGELOG, Upgrade notes).
+
 ## What's new in 0.8.0
 
 - **Numbers 1–1000.** Every language now teaches the 30 numerals that every number is built from (0–20, the tens, 100, 1000), one per reply, woven next to its digit: 3 (**tre**). Short rules explain the rest: in English learn 11 and 12, then it's *-teen*; in French 70 is 60+10 and 80 is 4×20; in Turkish the tens are words to learn.
@@ -55,6 +60,8 @@ I read a lot every day, and these days most of that text is my AI agents' replie
 ```
 
 Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/langcouch:status`, `/langcouch:lang pt`, `/langcouch:level up`, `/langcouch:mode 3`, `/langcouch:pause` / `/langcouch:resume`, `/langcouch:spinner on`, `/langcouch:placement`, and add your own language with `/langcouch:add-language <language>`.
+
+**Flashcards (optional):** `/plugin install langcouch-cards@langcouch` adds `/cards`, a pane in the terminal, the Desktop Code tab, VS Code and mobile. It reviews the words that are due both ways (the language you learn → yours, and from the 3rd ladder step also yours → the one you learn), then asks placement words. LangCouch itself grades and records every card, so cards and woven replies share one progress. macOS and Linux; needs LangCouch 0.9.0 or later.
 
 **Glosses in your language:** translations follow the language of your message. Cyrillic gets Russian; Latin gets your `native` if it is `en` or `uz` (Uzbek, Latin script), else English. `langcouch native <en|ru|uz>` (default `en`) sets the fallback for a message LangCouch can't read, and the language of quiz answers and spinner tips.
 
@@ -245,6 +252,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `mode [1\|2\|3]` | weave algorithm: 3 interval ladder (default), 2 only words that fit, 1 every listed word |
 | `quiz [n]` | absorption check (default 5 words); a failed word goes back into rotation |
 | `placement [n] [--reset]` | check which listed words you already know: type a translation, Enter = don't know, `q` = stop; known words skip the new-word stage. `placement next [n]` / `placement answer <word>=<translation>...` do the same one batch at a time (what `/langcouch:placement` uses); `--reset` asks the "don't know" words again |
+| `cards status \| next [n] \| answer … \| reveal … \| grade …` | JSON for the cards mod (`/cards`): what is due, grading and recording each card; you don't need to call it yourself |
 | `pause` / `resume` | kill switch for weaving |
 | `export [file\|-] [--force]` | save progress, settings and your own wordlists to one file, `~/langcouch-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
 | `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |
