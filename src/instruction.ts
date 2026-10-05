@@ -3,6 +3,7 @@ import { glossFor, grammarStage, wordsPerResponse, INLINE_GLOSS_MAX_STEP, GLOSSA
 import type { Pick } from "./scheduler.ts";
 import type { GrammarItem } from "./grammar.ts";
 import type { PatternCue } from "./patterns.ts";
+import { numeralValue, pickedNumeral, type NumberCue } from "./numbers.ts";
 
 const LANG_NAMES = new Intl.DisplayNames(["en"], { type: "language" });
 
@@ -30,12 +31,15 @@ export function langName(code: string): string {
  * Algorithm 3 is algorithm 2 plus a nudge (1-2 long-overdue words allowed as an
  * aside or a closing line) and translations that fade with the ladder step:
  * inline, then only in a closing glossary line, then none (`known`).
+ *
+ * A numeral among the picks (at most one) is woven next to its digit, 3 (**tre**), so the
+ * fact stays readable. `num` is a number rule; it takes the word-building rule's slot.
  */
 export type WeaveAlgorithm = 1 | 2 | 3;
 
 export const INSTRUCTION_BUDGET = 2400;
 
-export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = [], ask: string | null = null): string {
+export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = [], ask: string | null = null, num: NumberCue | null = null): string {
   const name = langName(config.lang);
   const base = config.lang.split("-")[0]!;
   const region = BASE_REGION[base] ?? langName(base);
@@ -46,7 +50,8 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
   const stage = grammarStage(config.level);
   const grammarContrast = grammar?.baseExample ? `; ${region}: ${grammar.baseExample}` : "";
 
-  if (algorithm === 3) return ladderInstruction(config, picks, grammar, rule, known, item, ask);
+  if (num) rule = null; // one rule line per reply
+  if (algorithm === 3) return ladderInstruction(config, picks, grammar, rule, known, item, ask, num);
 
   const fitOnly = algorithm === 2;
   const lines = [
@@ -83,8 +88,9 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
     );
   }
 
+  lines.push(...numberLines(picks, num));
   lines.push(
-    `Forbidden: touching code blocks, inline code, identifiers, commands, paths, URLs, quotes, or technical terms; translating the whole reply; weaving words not on the list${rule ? " (the one rule word aside)" : ""}.`,
+    `Forbidden: touching code blocks, inline code, identifiers, commands, paths, URLs, quotes, or technical terms; translating the whole reply; weaving words not on the list${rule || num ? " (the one rule word aside)" : ""}.`,
     `Never weave into text the user will copy or send (a post, email, message, summary, document, commit message): keep it free of ${name} words and weave only in your own words around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
@@ -95,7 +101,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
 }
 
 /** Algorithm 3: fit words, a capped nudge, and translations that fade with the ladder step. */
-function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null, rule: PatternCue | null, known: Word[], item: (p: Pick) => string, ask: string | null): string {
+function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null, rule: PatternCue | null, known: Word[], item: (p: Pick) => string, ask: string | null, num: NumberCue | null): string {
   const name = langName(config.lang);
   const base = config.lang.split("-")[0]!;
   const region = BASE_REGION[base] ?? langName(base);
@@ -140,8 +146,9 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
     const avoid = rule.avoid.length > 0 ? ` Never use: ${rule.avoid.join(", ")}.` : "";
     lines.push(`Word-building rule: ${rule.from} → ${rule.to} (e.g. ${rule.example}). If the reply needs such a word, use one even if unlisted, translated in parentheses, only when the meaning matches exactly.${notThese}${avoid}`);
   }
+  lines.push(...numberLines(picks, num));
   lines.push(
-    `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply or weave unlisted words${rule ? " (the rule word aside)" : ""}.`,
+    `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply or weave unlisted words${rule || num ? " (the rule word aside)" : ""}.`,
     `Anything the user will copy or send (post, email, message, summary, document, commit message) stays entirely free of ${name} words: weave only in your text around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
@@ -161,6 +168,20 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   }
   if (fit.length) lines.splice(knownAt, 0, label + fit.join(", "));
   return lines.join("\n");
+}
+
+/** The numeral line (when a numeral is picked) and the number rule line (when one is served). */
+function numberLines(picks: Pick[], num: NumberCue | null): string[] {
+  const out: string[] = [];
+  const numeral = pickedNumeral(picks.map((p) => p.word));
+  const value = numeral ? numeralValue(numeral.id) : null;
+  if (numeral && value !== null) {
+    out.push(`Numeral: where your prose has the number ${value}, write ${value} (**${numeral.target}**), digit first so the fact stays (spelled out: just **${numeral.target}**); never in code or copy-out text.`);
+  }
+  if (num) {
+    out.push(`Number rule: ${num.hint} (e.g. ${num.example}). A number in your prose built this way may get its word the same way, even if unlisted.`);
+  }
+  return out;
 }
 
 export { wordsPerResponse };

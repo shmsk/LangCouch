@@ -5,6 +5,7 @@ import { chmodSync, mkdirSync, readFileSync, writeFileSync, renameSync, existsSy
 import type { Concept, Config, FalseFriend, State, Word, WordMapping, WordState } from "./types.ts";
 import { grammarKey, type GrammarItem } from "./grammar.ts";
 import { patternKey, type Pattern } from "./patterns.ts";
+import { numberKey, type NumberRule } from "./numbers.ts";
 import { stepOf } from "./ladder.ts";
 
 export const DATA_DIR = process.env.LANGCOUCH_DIR ?? join(homedir(), ".langcouch");
@@ -116,6 +117,8 @@ export function sharedWithBase(lang: string): Set<string> | null {
   for (const g of grammarFile(base)) if (!overridden.has(g.id)) shared.add(grammarKey(g.id));
   const ownRules = new Set(patternsFile(code).map((p) => p.id));
   for (const p of patternsFile(base)) if (!ownRules.has(p.id)) shared.add(patternKey(p.id));
+  const ownNumberRules = new Set(numberRulesFile(code).map((r) => r.id));
+  for (const r of numberRulesFile(base)) if (!ownNumberRules.has(r.id)) shared.add(numberKey(r.id));
   return shared;
 }
 
@@ -161,6 +164,8 @@ const PATTERNS_DIR = join(REPO_ROOT, "patterns");
 const USER_PATTERNS_DIR = join(DATA_DIR, "patterns");
 const FALSE_FRIENDS_DIR = join(REPO_ROOT, "falseFriends");
 const USER_FALSE_FRIENDS_DIR = join(DATA_DIR, "falseFriends");
+const NUMBERS_DIR = join(REPO_ROOT, "numbers");
+const USER_NUMBERS_DIR = join(DATA_DIR, "numbers");
 export const CONCEPTS_PATH = join(REPO_ROOT, "concepts.json");
 const CHANGELOG_PATH = join(REPO_ROOT, "CHANGELOG.md");
 
@@ -302,6 +307,21 @@ export function loadPatterns(lang: string): Pattern[] {
   if (!base) return own;
   const byId = new Map(patternsFile(base).map((p) => [p.id, p]));
   for (const p of own) byId.set(p.id, p);
+  return [...byId.values()];
+}
+
+function numberRulesFile(lang: string): NumberRule[] {
+  const path = resolveData(USER_NUMBERS_DIR, NUMBERS_DIR, lang);
+  return path ? readJson<NumberRule[]>(path, `numbers ${lang}`) : [];
+}
+
+/** How numbers are built in a language, in teaching order; a variant's file overlays its base's by id. */
+export function loadNumberRules(lang: string): NumberRule[] {
+  const base = baseLang(normalizeLang(lang));
+  const own = numberRulesFile(lang);
+  if (!base) return own;
+  const byId = new Map(numberRulesFile(base).map((r) => [r.id, r]));
+  for (const r of own) byId.set(r.id, r);
   return [...byId.values()];
 }
 

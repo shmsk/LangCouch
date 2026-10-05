@@ -1,4 +1,4 @@
-import type { FalseFriend, State } from "./types.ts";
+import { meansFor, type FalseFriend, type State } from "./types.ts";
 
 /**
  * A word-building rule: one native suffix maps to one target suffix, so a learner who
@@ -83,7 +83,7 @@ export function patternCue(p: Pattern, native: string, lang: string, falseFriend
     notThese: falseFriends
       .filter((f) => f.register === "neutral" && f.pattern === p.id)
       .slice(0, 2)
-      .map((f) => `${f.target} = ${f.means}`),
+      .map((f) => `${f.target} = ${meansFor(f, native, lang)}`),
     avoid: falseFriends.filter((f) => f.register === "vulgar" && f.vulgarIn?.includes(lang)).map((f) => f.target),
   };
 }

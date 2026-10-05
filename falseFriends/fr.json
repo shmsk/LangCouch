@@ -1,7 +1,7 @@
 [
-  { "target": "déception", "means": "disappointment", "register": "neutral", "looksLike": { "en": "deception" }, "pattern": "tion", "source": "https://en.wiktionary.org/wiki/d%C3%A9ception" },
-  { "target": "actuellement", "means": "currently", "register": "neutral", "looksLike": { "en": "actually" }, "pattern": "ly", "source": "https://en.wiktionary.org/wiki/actuellement" },
-  { "target": "librairie", "means": "bookshop", "register": "neutral", "looksLike": { "en": "library" }, "source": "https://en.wiktionary.org/wiki/librairie" },
-  { "target": "journal", "means": "newspaper", "register": "neutral", "looksLike": { "en": "journal", "ru": "журнал" }, "source": "https://en.wiktionary.org/wiki/journal" },
-  { "target": "sensible", "means": "sensitive", "register": "neutral", "looksLike": { "en": "sensible" }, "source": "https://en.wiktionary.org/wiki/sensible" }
+  { "target": "déception", "means": { "en": "disappointment", "ru": "разочарование", "uz": "umidsizlik, hafsala pir bo'lishi" }, "register": "neutral", "looksLike": { "en": "deception" }, "pattern": "tion", "source": "https://en.wiktionary.org/wiki/d%C3%A9ception" },
+  { "target": "actuellement", "means": { "en": "currently", "ru": "в настоящее время", "uz": "hozirda" }, "register": "neutral", "looksLike": { "en": "actually" }, "pattern": "ly", "source": "https://en.wiktionary.org/wiki/actuellement" },
+  { "target": "librairie", "means": { "en": "bookshop", "ru": "книжный магазин", "uz": "kitob do'koni" }, "register": "neutral", "looksLike": { "en": "library" }, "source": "https://en.wiktionary.org/wiki/librairie" },
+  { "target": "journal", "means": { "en": "newspaper", "ru": "газета", "uz": "gazeta" }, "register": "neutral", "looksLike": { "en": "journal", "ru": "журнал" }, "source": "https://en.wiktionary.org/wiki/journal" },
+  { "target": "sensible", "means": { "en": "sensitive", "ru": "чувствительный", "uz": "sezgir" }, "register": "neutral", "looksLike": { "en": "sensible" }, "source": "https://en.wiktionary.org/wiki/sensible" }
 ]

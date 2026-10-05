@@ -23,6 +23,7 @@ import { buildInstruction, langName } from "../src/instruction.ts";
 import { pickWords, tierProgress } from "../src/scheduler.ts";
 import { pickGrammar, grammarKey } from "../src/grammar.ts";
 import { isAbsorbed } from "../src/types.ts";
+import { MAX_NUMERALS } from "../src/numbers.ts";
 
 const userWordlists = join(dir, "wordlists");
 const userGrammar = join(dir, "grammar");
@@ -200,7 +201,10 @@ describe.each([
     const words = loadWordlist(variant);
     expect(words.find((w) => w.id === regional)?.baseTarget).toBe(baseWord);
     expect(words.find((w) => w.id === shared)?.baseTarget).toBeUndefined();
-    const regionalCount = words.filter((w) => w.baseTarget).length;
+    // a reply carries at most MAX_NUMERALS numerals, so regional numerals beyond that wait their turn
+    const regionalWords = words.filter((w) => w.baseTarget);
+    const regionalNumerals = regionalWords.filter((w) => w.pos === "num").length;
+    const regionalCount = regionalWords.length - regionalNumerals + Math.min(regionalNumerals, MAX_NUMERALS);
     const picks = pickWords(words, {}, regionalCount);
     expect(picks.every((p) => p.word.baseTarget)).toBe(true);
     const text = buildInstruction({ lang: variant, native: "en", level: 2 }, picks);

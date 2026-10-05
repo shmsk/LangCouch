@@ -3,12 +3,13 @@ import { createInterface } from "node:readline/promises";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, loadPatterns, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, loadPatterns, loadNumberRules, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
 import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
 import { pickGrammar, markGrammarShown, grammarProgress, type GrammarItem } from "./grammar.ts";
 import { pickPattern, markPatternShown, patternCue, patternProgress, PATTERN_MIN_LEVEL, type Pattern } from "./patterns.ts";
+import { pickNumberRule, markNumberRuleShown, numberCue, numberRuleProgress, pickedNumeral, type NumberRule } from "./numbers.ts";
 import { pickWords, markExposed, unlockedWords, tierProgress, type Pick } from "./scheduler.ts";
 import { migrate, pickLadder } from "./ladder.ts";
 import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "./served.ts";
@@ -61,7 +62,9 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
   if (picks.length === 0) return "";
   const stage = grammarStage(config.level);
   const grammar = stage >= 2 ? pickGrammar(loadGrammar(config.lang), words, state, stage) : null;
-  const rule = config.level >= PATTERN_MIN_LEVEL ? pickPattern(loadPatterns(config.lang), config.native, state) : null;
+  // a picked numeral brings its number rule while one is still new; it takes the word-building rule's slot
+  const numberRule = pickedNumeral(picks.map((p) => p.word)) ? pickNumberRule(loadNumberRules(config.lang), state) : null;
+  const rule = !numberRule && config.level >= PATTERN_MIN_LEVEL ? pickPattern(loadPatterns(config.lang), config.native, state) : null;
   if (mark) {
     if (algorithm !== 3) markExposed(state, picks, now);
     else if (eventName !== "SessionStart") {
@@ -70,6 +73,7 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
     }
     if (grammar) markGrammarShown(state, grammar, now);
     if (rule) markPatternShown(state, rule, now);
+    if (numberRule) markNumberRuleShown(state, numberRule, now);
     saveState(config.lang, state);
   }
   const cue = rule ? patternCue(rule, config.native, normalizeLang(config.lang), falseFriendsFor(config.lang)) : null;
@@ -83,7 +87,8 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
     ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : "",
     tooEasy ? OFFER_TOO_EASY : offerStart ? offerAtStart(langName(config.lang)) : "",
   ].filter(Boolean);
-  return buildInstruction(config, picks, grammar, cue, algorithm, known, extra.length ? extra.join(" ") : null);
+  const num = numberRule ? numberCue(numberRule, config.native) : null;
+  return buildInstruction(config, picks, grammar, cue, algorithm, known, extra.length ? extra.join(" ") : null, num);
 }
 
 /**
@@ -195,6 +200,15 @@ function safePatterns(lang: string): Pattern[] {
   }
 }
 
+/** Load number rules, degrading to [] like safeGrammar. */
+function safeNumberRules(lang: string): NumberRule[] {
+  try {
+    return loadNumberRules(lang);
+  } catch {
+    return [];
+  }
+}
+
 /** Load grammar, degrading to [] if the file is missing or malformed — status must never crash. */
 function safeGrammar(lang: string): GrammarItem[] {
   try {
@@ -260,6 +274,8 @@ function status(): string {
       : null;
 
   const pp = patternProgress(safePatterns(config.lang), config.native, state);
+  const np = numberRuleProgress(safeNumberRules(config.lang), state);
+  const numberLine = np.total > 0 ? `Number rules: ${np.introduced}/${np.total} introduced` : null;
   const patternLine =
     pp.total > 0
       ? `Word-building rules: ${pp.introduced}/${pp.total} introduced` +
@@ -289,6 +305,7 @@ function status(): string {
     regionalLine,
     grammarLine,
     patternLine,
+    numberLine,
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
     `Spinner tips: ${config.spinner ? "on" : "off (langcouch spinner on)"}`,

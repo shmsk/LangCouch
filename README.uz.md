@@ -13,6 +13,11 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
+## 0.8.0 da nima yangi
+
+- **1 dan 1000 gacha sonlar.** Endi har bir til istalgan son tuziladigan 30 ta sonni (0–20, oʻnliklar, 100, 1000) oʻrgatadi, har javobda bittadan, raqam yonida: 3 (**tre**). Qolganini qisqa qoidalar tushuntiradi: ingliz tilida 11 va 12 ni yodlash kerak, keyin *-teen*; fransuz tilida 70 bu 60+10, 80 esa 4×20; turk tilida oʻnliklarni yodlash kerak.
+- **Soxta doʻstlar sizning tilingizda.** Soʻz yasash qoidasi yonidagi ogohlantirish endi haqiqiy maʼnoni faqat inglizcha emas, ruscha yoki oʻzbekcha ham beradi: *attualmente = hozir*.
+
 ## 0.7.6 da nima yangi
 
 - **Daraja testi.** Tilning bir qismini allaqachon bilasizmi? `langcouch placement` (yoki Claude Code'da `/langcouch:placement`) roʻyxatdagi soʻzlarni soʻraydi, toʻgʻri tarjima qilganlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. LangCouch testni til boshlanganda va soʻzlar juda oson deb yozsangiz taklif qiladi.
@@ -155,7 +160,7 @@ flowchart LR
 ```
 
 - **Kontseptga bogʻlangan lugʻat**: maʼnolar `concepts.json`da bir marta saqlanadi (id, pos, tier, har bir ona til uchun glosslar); har bir `wordlists/<lang>.json` esa yupqa kontsept→lemma xaritasi, shuning uchun yangi til qoʻshish — bitta kichik fayl, va glosslar hech qachon bir-biridan chetlanmaydi
-- **Soʻz roʻyxatlari**: har bir til uchun ~400 ta asosiy mazmun soʻzi (ot/fe'l/sifat/ravish), yordamchi soʻzlarsiz; tier maydoni →1000 soʻzlik bosqich uchun joy ajratadi, u yadro ~80% oʻzlashtirilganda ochiladi
+- **Soʻz roʻyxatlari**: har bir til uchun ~400 ta asosiy mazmun soʻzi (ot/fe'l/sifat/ravish) va 30 ta son, yordamchi soʻzlarsiz; tier maydoni →1000 soʻzlik bosqich uchun joy ajratadi, u yadro ~80% oʻzlashtirilganda ochiladi
 - **Har bir til boʻyicha progress**: holat `~/.langcouch/state.<lang>.json` faylida, kontsept id boʻyicha saqlanadi — progress lemma tuzatishlaridan omon qoladi va tillar oʻrtasida solishtirish mumkin ("siz *quyosh* soʻzini 5 tildan 3 tasida bilasiz")
 - **Oraliqlar zinasi**: har bir soʻz 30 daqiqadan, 8 soatdan, 1 kundan, 4 kundan, 2 haftadan, 1 oydan, soʻng 6 oydan keyin qaytadi. U zinadan bir pogʻona faqat vaqti kelganda javob uni haqiqatan ishlatsagina koʻtariladi; vaqti kelgan soʻzlar birinchi turadi, har bir roʻyxatning choragi esa yangi soʻzlar uchun boʻsh qoladi
 - **Halol hisob**: javobdan keyin Stop hooki (yoki xostning "javobdan keyin" hodisasi) uni qayta oʻqiydi va faqat javob ishlatgan soʻzlar koʻrsatilgan hisoblanadi. Bunday hodisasi yoʻq xost avvalgidek berilgan soʻzlarni hisoblaydi
@@ -169,18 +174,18 @@ flowchart LR
 
 ## Qoʻllab-quvvatlanadigan tillar
 
-| Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari |
-|---|---|---|---|---|
-| Ingliz tili (AQSH) | `en` | 402 | — | 7 (rus tilida soʻzlashuvchilar uchun) |
-| Ingliz tili (Britaniya) | `en-GB` | 402, AQSH bilan bir xil, 9 tasidan tashqari (*colour*, *centre*, *film*…) | — | 7 (AQSHdan) |
-| Nemis tili | `de` | 402 | — | 8 |
-| Fransuz tili | `fr` | 402 | — | 8 |
-| Italyan tili | `it` | 402 | — | 8 |
-| Ispan tili (Ispaniya) | `es` | 402 | 10 | 8 |
-| Ispan tili (Lotin Amerikasi) | `es-419` | 402, Ispaniya bilan bir xil, 9 tasidan tashqari (*carro*, *computadora*, *lindo*…) | 10 + 2 mintaqaviy (*ustedes*, bugungi ish uchun preterit) | 8 (Ispaniyadan) |
-| Portugal tili (Portugaliya) | `pt` | 402 | — | 8 |
-| Portugal tili (Braziliya) | `pt-BR` | 402, Portugaliya bilan bir xil, 8 tasidan tashqari (*trem*, *celular*, *cachorro*…) | — | 8 (Portugaliyadan) |
-| Turk tili | `tr` | 402 | — | 5 |
+| Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari | Son qoidalari |
+|---|---|---|---|---|---|
+| Ingliz tili (AQSH) | `en` | 432 | — | 7 (rus tilida soʻzlashuvchilar uchun) | 5 |
+| Ingliz tili (Britaniya) | `en-GB` | 432, AQSH bilan bir xil, 9 tasidan tashqari (*colour*, *centre*, *film*…) | — | 7 (AQSHdan) | 5 (1 tasi oʻziniki: hundred dan keyin *and*) |
+| Nemis tili | `de` | 432 | — | 8 | 7 |
+| Fransuz tili | `fr` | 432 | — | 8 | 8 |
+| Italyan tili | `it` | 432 | — | 8 | 7 |
+| Ispan tili (Ispaniya) | `es` | 432 | 10 | 8 | 7 |
+| Ispan tili (Lotin Amerikasi) | `es-419` | 432, Ispaniya bilan bir xil, 9 tasidan tashqari (*carro*, *computadora*, *lindo*…) | 10 + 2 mintaqaviy (*ustedes*, bugungi ish uchun preterit) | 8 (Ispaniyadan) | 7 (Ispaniyadan) |
+| Portugal tili (Portugaliya) | `pt` | 432 | — | 8 | 6 |
+| Portugal tili (Braziliya) | `pt-BR` | 432, Portugaliya bilan bir xil, 12 tasidan tashqari (*trem*, *celular*, *dezesseis*…) | — | 8 (Portugaliyadan) | 6 (1 tasi oʻziniki: *dezesseis*) |
+| Turk tili | `tr` | 432 | — | 5 | 5 |
 
 Kod tilni almashtirish uchun kerak, masalan `/langcouch:lang es-419` (yoki shunchaki `/langcouch:lang latam`).
 
@@ -200,8 +205,17 @@ Koʻp soʻzlar bir nechta tilda bir xil tuziladi. *Revolution* ispanchada *revol
 - **Roʻyxatdan tashqari:** qoidani oʻrgatayotgan javob shu qoida boʻyicha tuzilgan yana bitta soʻzni ishlatishi mumkin, hatto u sizning ~400 soʻzingiz orasida boʻlmasa ham.
 - **Sizning tomoningiz:** qoʻshimcha ona tilingizda koʻrsatiladi. Ingliz tilida soʻzlashuvchi *-tion → -ción* ni, rus tilida soʻzlashuvchi *-ция → -ción* ni koʻradi. Oʻzbek tili uchun alohida qoidalar hozircha yoʻq, shuning uchun inglizcha tomoni koʻrsatiladi.
 - **Progress:** qoida uchta javobdan keyin kiritilgan hisoblanadi, soʻng keyingisi boshlanadi. `status` buni *Word-building rules: 1/8 introduced* deb koʻrsatadi.
-- **Soxta doʻstlar:** qoida unga oʻxshagan, lekin boshqa maʼnoli soʻzlar haqida ogohlantiradi, masalan *-al* yonida *actual = current*.
+- **Soxta doʻstlar:** qoida unga oʻxshagan, lekin boshqa maʼnoli soʻzlar haqida ogohlantiradi, masalan *-al* yonida *actual = joriy*. Maʼno siz yozayotgan tilda beriladi.
 - **Maʼlumotlar qayerda:** qoidalar `patterns/<lang>.json` da, soxta doʻstlar va qoʻpol soʻzlar `falseFriends/<lang>.json` da. Har bir tildagi qoidalar soni “Qoʻllab-quvvatlanadigan tillar” jadvalida. Har bir qoida va misol lugʻat bilan (asosan Wiktionary) solishtirilgan, soʻng boshqa yetkazib beruvchining ikkinchi modeli tomonidan tekshirilgan.
+
+## Sonlar
+
+1000 gacha boʻlgan har qanday son 30 ta soʻzdan tuziladi: 0–20, oʻnliklar, 100 va 1000. Ular roʻyxatingizda oddiy soʻzlar kabi turadi, har javobda bittadan koʻp emas, va fakt oʻqiladigan qolishi uchun raqam yonida toʻqiladi: *deploy 3 (**tre**) daqiqa davom etdi*.
+
+- **Qolgani qoidalar orqali.** Javobda son boʻlsa, LangCouch kattaroq sonlar qanday tuzilishini ham koʻrsatadi, bir vaqtda bitta qoida: *11–16 tayyor soʻzlar: undici, dodici… (e.g. 13 = tredici)*. Shundan soʻng javob shu tarzda tuzilgan sonni ishlatishi mumkin, hatto u roʻyxatda boʻlmasa ham.
+- **Har bir tilning oʻz mantiqi bor.** Ingliz tilida 11 va 12 ni yodlaysiz, keyin *-teen*. Fransuz tilida 70 bu *soixante-dix* (60+10), 80 esa *quatre-vingts* (4×20). Nemis tilida birlik oldin keladi: *einundzwanzig* (bir-va-yigirma). Turk tilida oʻnliklarni yodlash kerak, oʻzbekcha soʻzlashuvchilar ulardan bir nechtasini taniydi (*kırk*, *elli*).
+- **Progress:** qoida uchta javobdan keyin kiritilgan hisoblanadi, soʻng oʻrin soʻz yasash qoidasiga qaytadi. `status` buni *Number rules: 2/7 introduced* deb koʻrsatadi.
+- **Maʼlumotlar qayerda:** sonlar soʻz roʻyxatlarida, qoidalar `numbers/<lang>.json` da, har biri Wiktionary sahifasiga havola qiladi (barcha havolalar tekshirilgan) va ikkinchi model tomonidan koʻrib chiqilgan.
 
 Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangilanishdan keyin `status` yangi versiyadagi oʻzgarishlarni bir marta koʻrsatadi.
 

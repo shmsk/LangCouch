@@ -18,7 +18,7 @@ export const BUNDLE_FORMAT = "langcouch-export";
 export const BUNDLE_VERSION = 1;
 
 /** The user's own data files next to progress; each folder holds <lang>.json files. */
-const USER_DIRS = ["wordlists", "grammar", "patterns", "falseFriends"] as const;
+const USER_DIRS = ["wordlists", "grammar", "patterns", "falseFriends", "numbers"] as const;
 type UserDir = (typeof USER_DIRS)[number];
 
 export interface Bundle {

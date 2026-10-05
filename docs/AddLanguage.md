@@ -84,12 +84,28 @@ Word-building rules teach one suffix that turns a whole family of known words in
 False friends warn about words that look like a rule but mean something else. Mirror `falseFriends/es.json`:
 
 ```json
-{ "target": "actual", "means": "current", "register": "neutral", "looksLike": { "en": "actual" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/actual" }
+{ "target": "actual", "means": { "en": "current", "ru": "текущий", "uz": "joriy" }, "register": "neutral", "looksLike": { "en": "actual" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/actual" }
 ```
 
-`pattern` ties it to a rule; only false friends with a `pattern` are shown, next to that rule. A word that is rude somewhere gets `"register": "vulgar"` and `"vulgarIn": ["<code>"]` for the codes where it is rude. Such words are never taught; the tests fail if one is a lemma or an example in those codes, and the instruction tells the agent to avoid it. Never put a vulgar word in `examples`.
+`means` gives the real meaning in every native language (`en`, `ru`, `uz`); the learner sees theirs, falling back to English. A plain string still loads, but then every learner sees that one language. `pattern` ties it to a rule; only false friends with a `pattern` are shown, next to that rule. A word that is rude somewhere gets `"register": "vulgar"` and `"vulgarIn": ["<code>"]` for the codes where it is rude. Such words are never taught; the tests fail if one is a lemma or an example in those codes, and the instruction tells the agent to avoid it. Never put a vulgar word in `examples`.
 
 Check every example and false friend against a live dictionary, then run the Step 6 audit on these files too.
+
+## Step 4c — numbers: the 30 numerals and `numbers/<code>.json`
+
+Numbers are taught as building blocks plus rules. The wordlist maps the 30 numeral concepts (`num-0` … `num-20`, `num-30` … `num-90`, `num-100`, `num-1000`) to the standalone counting form ("uno", "cien", "mil"); `--full` validation fails without them. Put them early in the wordlist (after the first ~40 entries): the file order is the order new words come in. A reply carries at most one numeral, woven next to its digit: `3 (**tre**)`.
+
+`numbers/<code>.json` holds 4–8 rules, in teaching order, that let a learner build any number up to 1000 from those blocks:
+
+```json
+{ "id": "teens", "hint": { "en": "17-19: dicia-/dician- + unit, one word", "ru": "17-19: dicia-/dician- + единица, одним словом", "uz": "17-19: dicia-/dician- + birlik, bitta so'z" }, "example": { "value": 17, "target": "diciassette" }, "source": "https://en.wiktionary.org/wiki/diciassette" }
+```
+
+- `hint`: what to memorize and what follows a pattern, in every native language, at most 110 characters each.
+- `example`: one number the rule builds, spelled correctly; up to 1000, except a thousands rule may show 2000 to make its point (*dos mil*).
+- A regional variant may override a base rule with a file of its own, using the same `id`.
+
+A rule is shown when a numeral is in the reply and some rule is still new (shown fewer than 3 times); it then takes the word-building rule's place.
 
 ## Step 5 — Validate
 

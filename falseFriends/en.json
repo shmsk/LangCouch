@@ -1,7 +1,7 @@
 [
-  { "target": "magazine", "means": "журнал", "register": "neutral", "looksLike": { "ru": "магазин" }, "source": "https://en.wiktionary.org/wiki/magazine" },
-  { "target": "accurate", "means": "точный", "register": "neutral", "looksLike": { "ru": "аккуратный" }, "source": "https://en.wiktionary.org/wiki/accurate" },
-  { "target": "fabric", "means": "ткань", "register": "neutral", "looksLike": { "ru": "фабрика" }, "source": "https://en.wiktionary.org/wiki/fabric" },
-  { "target": "genial", "means": "дружелюбный", "register": "neutral", "looksLike": { "ru": "гениальный" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/genial" },
-  { "target": "sympathy", "means": "сочувствие", "register": "neutral", "looksLike": { "ru": "симпатия" }, "source": "https://en.wiktionary.org/wiki/sympathy" }
+  { "target": "magazine", "means": {"en": "a periodical publication with articles and photos", "ru": "журнал", "uz": "jurnal"}, "register": "neutral", "looksLike": { "ru": "магазин" }, "source": "https://en.wiktionary.org/wiki/magazine" },
+  { "target": "accurate", "means": {"en": "exact and free of errors", "ru": "точный", "uz": "aniq, to'g'ri"}, "register": "neutral", "looksLike": { "ru": "аккуратный" }, "source": "https://en.wiktionary.org/wiki/accurate" },
+  { "target": "fabric", "means": {"en": "cloth or textile material", "ru": "ткань", "uz": "mato, gazlama"}, "register": "neutral", "looksLike": { "ru": "фабрика" }, "source": "https://en.wiktionary.org/wiki/fabric" },
+  { "target": "genial", "means": {"en": "friendly, cheerful and kind", "ru": "дружелюбный", "uz": "samimiy, xushmuomala"}, "register": "neutral", "looksLike": { "ru": "гениальный" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/genial" },
+  { "target": "sympathy", "means": {"en": "feeling sorry for someone's trouble; compassion", "ru": "сочувствие", "uz": "hamdardlik, achinish"}, "register": "neutral", "looksLike": { "ru": "симпатия" }, "source": "https://en.wiktionary.org/wiki/sympathy" }
 ]

@@ -1,6 +1,6 @@
 [
-  { "target": "camera", "means": "room", "register": "neutral", "looksLike": { "en": "camera" }, "source": "https://en.wiktionary.org/wiki/camera" },
-  { "target": "parente", "means": "relative", "register": "neutral", "looksLike": { "en": "parent" }, "source": "https://en.wiktionary.org/wiki/parente" },
-  { "target": "simpatico", "means": "nice, likeable", "register": "neutral", "looksLike": { "en": "sympathetic" }, "pattern": "ic", "source": "https://en.wiktionary.org/wiki/simpatico" },
-  { "target": "attualmente", "means": "currently, now", "register": "neutral", "looksLike": { "en": "actually" }, "pattern": "ly", "source": "https://en.wiktionary.org/wiki/attualmente" }
+  { "target": "camera", "means": { "en": "room", "ru": "комната", "uz": "xona" }, "register": "neutral", "looksLike": { "en": "camera" }, "source": "https://en.wiktionary.org/wiki/camera" },
+  { "target": "parente", "means": { "en": "relative", "ru": "родственник", "uz": "qarindosh" }, "register": "neutral", "looksLike": { "en": "parent" }, "source": "https://en.wiktionary.org/wiki/parente" },
+  { "target": "simpatico", "means": { "en": "nice, likeable", "ru": "приятный, симпатичный", "uz": "yoqimli, xushmuomala" }, "register": "neutral", "looksLike": { "en": "sympathetic" }, "pattern": "ic", "source": "https://en.wiktionary.org/wiki/simpatico" },
+  { "target": "attualmente", "means": { "en": "currently, now", "ru": "сейчас, в настоящее время", "uz": "hozir, hozirgi paytda" }, "register": "neutral", "looksLike": { "en": "actually" }, "pattern": "ly", "source": "https://en.wiktionary.org/wiki/attualmente" }
 ]

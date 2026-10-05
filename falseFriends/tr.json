@@ -1,6 +1,6 @@
 [
-  { "target": "kolej", "means": "a high school that teaches in a foreign language, or the name of some vocational schools", "register": "neutral", "looksLike": { "en": "college", "ru": "колледж" }, "source": "https://tr.wiktionary.org/wiki/kolej" },
-  { "target": "fabrika", "means": "factory (an industrial plant)", "register": "neutral", "looksLike": { "en": "fabric" }, "source": "https://en.wiktionary.org/wiki/fabrika#Turkish" },
-  { "target": "aktüel", "means": "current, topical, up to date", "register": "neutral", "looksLike": { "en": "actual" }, "source": "https://en.wiktionary.org/wiki/akt%C3%BCel#Turkish" },
-  { "target": "sempatik", "means": "warm, likeable, affable (a nice person)", "register": "neutral", "looksLike": { "en": "sympathetic" }, "source": "https://en.wiktionary.org/wiki/sempatik#Turkish" }
+  { "target": "kolej", "means": {"en": "a high school that teaches in a foreign language, or the name of some vocational schools", "ru": "школа с обучением на иностранном языке или название некоторых профессиональных школ", "uz": "chet tilida o'qitadigan maktab yoki ayrim kasb maktablarining nomi"}, "register": "neutral", "looksLike": {"en": "college", "ru": "колледж"}, "source": "https://tr.wiktionary.org/wiki/kolej" },
+  { "target": "fabrika", "means": {"en": "factory (an industrial plant)", "ru": "фабрика, завод (промышленное предприятие)", "uz": "fabrika, zavod (sanoat korxonasi)"}, "register": "neutral", "looksLike": {"en": "fabric"}, "source": "https://en.wiktionary.org/wiki/fabrika#Turkish" },
+  { "target": "aktüel", "means": {"en": "current, topical, up to date", "ru": "текущий, актуальный, злободневный", "uz": "joriy, dolzarb, hozirgi"}, "register": "neutral", "looksLike": {"en": "actual"}, "source": "https://en.wiktionary.org/wiki/akt%C3%BCel#Turkish" },
+  { "target": "sempatik", "means": {"en": "warm, likeable, affable (a nice person)", "ru": "симпатичный, располагающий, приятный (о человеке)", "uz": "yoqimli, ochiq ko'ngilli, xushmuomala (odam haqida)"}, "register": "neutral", "looksLike": {"en": "sympathetic"}, "source": "https://en.wiktionary.org/wiki/sempatik#Turkish" }
 ]

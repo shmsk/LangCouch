@@ -27,7 +27,7 @@ export const grammarKey = (id: string) => `g:${id}`;
 export const isGrammarKey = (key: string) => key.startsWith("g:");
 
 export function absorbedByPos(words: Word[], state: State): Record<Pos, number> {
-  const counts: Record<Pos, number> = { noun: 0, verb: 0, adj: 0, adv: 0 };
+  const counts: Record<Pos, number> = { noun: 0, verb: 0, adj: 0, adv: 0, num: 0 };
   for (const w of words) if (isAbsorbed(state[w.id])) counts[w.pos]++;
   return counts;
 }

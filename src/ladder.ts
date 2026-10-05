@@ -1,6 +1,7 @@
 import type { State, Word, WordState } from "./types.ts";
 import { absorbedByScore, isWordKey, ABSORBED_STEP, KNOWN_SAMPLE, LADDER_MS, MAX_NUDGE, NUDGE_AFTER_MISSES } from "./types.ts";
 import type { Pick } from "./scheduler.ts";
+import { MAX_NUMERALS, NUM_POS } from "./numbers.ts";
 
 /**
  * Spaced scheduler for algorithm 3. A word climbs one step each time the model
@@ -106,6 +107,7 @@ export function pickLadder(words: Word[], state: State, n: number, now: string):
     for (const w of pool) {
       if (picks.length >= limit) break;
       if (targets.has(w.target)) continue; // two concepts may share one word (mañana)
+      if (w.pos === NUM_POS && picks.filter((p) => p.pos === NUM_POS).length >= MAX_NUMERALS) continue;
       picks.push(w);
       targets.add(w.target);
     }

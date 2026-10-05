@@ -1,5 +1,6 @@
 import type { State, Word } from "./types.ts";
 import { isAbsorbed, TIER_UNLOCK_RATIO } from "./types.ts";
+import { MAX_NUMERALS, NUM_POS } from "./numbers.ts";
 
 export interface Pick {
   word: Word;
@@ -119,6 +120,7 @@ export function pickWords(words: Word[], state: State, n: number): Pick[] {
     for (const w of pool) {
       if (picks.length >= limit) break;
       if (picks.includes(w) || targets.has(w.target)) continue;
+      if (w.pos === NUM_POS && picks.filter((p) => p.pos === NUM_POS).length >= MAX_NUMERALS) continue;
       picks.push(w);
       targets.add(w.target);
     }

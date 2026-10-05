@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import type { Concept, WordMapping } from "./types.ts";
 
-const POS = new Set(["noun", "verb", "adj", "adv"]);
+const POS = new Set(["noun", "verb", "adj", "adv", "num"]);
 
 export function validateConcepts(conceptsPath: string): { concepts: Map<string, Concept>; errors: string[] } {
   const list = JSON.parse(readFileSync(conceptsPath, "utf8")) as Concept[];

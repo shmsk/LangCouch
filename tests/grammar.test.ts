@@ -24,7 +24,7 @@ describe("grammar planner", () => {
 
   test("unlock counts absorbed words per POS", () => {
     const state = absorbedState(["casa", "mesa"]); // 2 absorbed nouns, 0 adj
-    expect(absorbedByPos(words, state)).toEqual({ noun: 2, verb: 0, adj: 0, adv: 0 });
+    expect(absorbedByPos(words, state)).toEqual({ noun: 2, verb: 0, adj: 0, adv: 0, num: 0 });
     expect(pickGrammar(items, words, state)?.id).toBe("art");
   });
 

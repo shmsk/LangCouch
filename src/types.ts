@@ -1,4 +1,4 @@
-export type Pos = "noun" | "verb" | "adj" | "adv";
+export type Pos = "noun" | "verb" | "adj" | "adv" | "num";
 
 /**
  * A language-independent meaning, authored once in concepts.json.
@@ -43,7 +43,8 @@ export interface Word {
  */
 export interface FalseFriend {
   target: string;
-  means: string;
+  /** What it really means, by native-language code ({ en, ru, uz }); a plain string (files before 0.8.0) reads as one meaning for everyone */
+  means: string | Record<string, string>;
   register: "neutral" | "vulgar";
   /** Native words it looks like, by native-language code ({ en: "embarrassed" }) */
   looksLike?: Record<string, string>;
@@ -158,6 +159,15 @@ export function glossFor(word: Word, native: string, lang?: string): string {
   const own = lang?.split("-")[0];
   const key = [native, "en", ...Object.keys(word.gloss)].find((k) => k !== own && word.gloss[k] !== undefined);
   return (key ? word.gloss[key] : word.gloss[native] ?? Object.values(word.gloss)[0]) ?? word.id;
+}
+
+/** A false friend's meaning in the learner's native language, falling back to English, then anything; like glossFor, never in the target language itself. */
+export function meansFor(f: FalseFriend, native: string, lang?: string): string {
+  const means = f.means;
+  if (typeof means === "string") return means;
+  const own = lang?.split("-")[0];
+  const key = [native, "en", ...Object.keys(means)].find((k) => k !== own && means[k] !== undefined);
+  return key ? means[key]! : "";
 }
 
 export function wordsPerResponse(level: number): number {

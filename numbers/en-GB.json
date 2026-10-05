@@ -1,0 +1,3 @@
+[
+  {"id": "hundreds", "hint": {"en": "British English puts and after hundred: three hundred and forty-two (US usually omits it).", "ru": "В британском английском после hundred ставят and: three hundred and forty-two (в США обычно опускают).", "uz": "Britaniya inglizchasida hundred dan keyin and qo'yiladi: three hundred and forty-two (AQShda odatda yo'q)."}, "example": {"value": 342, "target": "three hundred and forty-two"}, "source": "https://en.wiktionary.org/wiki/hundred"}
+]

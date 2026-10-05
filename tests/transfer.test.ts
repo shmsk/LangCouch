@@ -131,6 +131,16 @@ describe("export / import", () => {
     expect(read(b, "wordlists/xx.json")).toEqual({ house: "mine" });
   });
 
+  test("user number rules travel with the export", () => {
+    const a = machineA();
+    const rule = { id: "teens", hint: { en: "mine" }, example: { value: 17, target: "diecisiete" }, source: "https://x" };
+    put(a, "numbers/es.json", [rule]);
+    const b = machine();
+    const r = run(b, ["import", exportFrom(a)]);
+    expect(r.status).toBe(0);
+    expect(read(b, "numbers/es.json")).toEqual([rule]);
+  });
+
   test("export to stdout and a ~ path", () => {
     const a = machineA();
     const out = run(a, ["export", "-"]);

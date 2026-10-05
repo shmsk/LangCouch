@@ -1,0 +1,6 @@
+[
+  { "target": "camera", "means": "room", "register": "neutral", "looksLike": { "en": "camera" }, "source": "https://en.wiktionary.org/wiki/camera" },
+  { "target": "parente", "means": "relative", "register": "neutral", "looksLike": { "en": "parent" }, "source": "https://en.wiktionary.org/wiki/parente" },
+  { "target": "simpatico", "means": "nice, likeable", "register": "neutral", "looksLike": { "en": "sympathetic" }, "pattern": "ic", "source": "https://en.wiktionary.org/wiki/simpatico" },
+  { "target": "attualmente", "means": "currently, now", "register": "neutral", "looksLike": { "en": "actually" }, "pattern": "ly", "source": "https://en.wiktionary.org/wiki/attualmente" }
+]

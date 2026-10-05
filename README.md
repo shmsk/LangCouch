@@ -11,6 +11,11 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
+## What's new in 0.8.0
+
+- **Numbers 1–1000.** Every language now teaches the 30 numerals that every number is built from (0–20, the tens, 100, 1000), one per reply, woven next to its digit: 3 (**tre**). Short rules explain the rest: in English learn 11 and 12, then it's *-teen*; in French 70 is 60+10 and 80 is 4×20; in Turkish the tens are words to learn.
+- **False friends in your language.** The warning next to a word-building rule now gives the real meaning in Russian or Uzbek too, not only English: *attualmente = сейчас*.
+
 ## What's new in 0.7.6
 
 - **Placement test.** Already know part of a language? `langcouch placement` (or `/langcouch:placement` in Claude Code) asks the listed words, and the ones you translate right skip the new-word stage. LangCouch offers it when you start a language and whenever you say the words are too easy.
@@ -153,7 +158,7 @@ flowchart LR
 ```
 
 - **Concept-keyed vocabulary**: meanings live once in `concepts.json` (id, pos, tier, glosses per native language); each `wordlists/<lang>.json` is a thin concept→lemma map, so adding a language is one small file and glosses never drift
-- **Wordlists**: ~400 core content words per language (noun/verb/adj/adv), no function words; the tier field reserves room for the →1000-word band, unlocked when the core is ~80% absorbed
+- **Wordlists**: ~400 core content words per language (noun/verb/adj/adv) plus the 30 numerals, no function words; the tier field reserves room for the →1000-word band, unlocked when the core is ~80% absorbed
 - **Per-language progress**: state lives in `~/.langcouch/state.<lang>.json`, keyed by concept id — progress survives lemma fixes and can be compared across languages ("you know *sun* in 3 of 5")
 - **Interval ladder**: each word comes back after 30 min, 8 h, 1 day, 4 days, 2 weeks, 1 month, then 6 months. It climbs a step only when a reply actually uses it while it is due; words that are due come first, and a quarter of each list stays open for new words
 - **Honest counting**: after the reply, a Stop hook (or the host's after-reply event) reads it back, and only the words it used count as shown. A host without such an event counts the words served, as before
@@ -167,18 +172,18 @@ flowchart LR
 
 ## Supported languages
 
-| Language | Code | Words | Grammar constructions | Word-building rules |
-|---|---|---|---|---|
-| English (US) | `en` | 402 | — | 7 (for Russian speakers) |
-| English (UK) | `en-GB` | 402, same as US except 9 (*colour*, *centre*, *film*…) | — | 7 (from US) |
-| German | `de` | 402 | — | 8 |
-| French | `fr` | 402 | — | 8 |
-| Italian | `it` | 402 | — | 8 |
-| Spanish (Spain) | `es` | 402 | 10 | 8 |
-| Spanish (Latin America) | `es-419` | 402, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) |
-| Portuguese (Portugal) | `pt` | 402 | — | 8 |
-| Portuguese (Brazil) | `pt-BR` | 402, same as Portugal except 8 (*trem*, *celular*, *cachorro*…) | — | 8 (from Portugal) |
-| Turkish | `tr` | 402 | — | 5 |
+| Language | Code | Words | Grammar constructions | Word-building rules | Number rules |
+|---|---|---|---|---|---|
+| English (US) | `en` | 432 | — | 7 (for Russian speakers) | 5 |
+| English (UK) | `en-GB` | 432, same as US except 9 (*colour*, *centre*, *film*…) | — | 7 (from US) | 5 (1 own: *and* after hundred) |
+| German | `de` | 432 | — | 8 | 7 |
+| French | `fr` | 432 | — | 8 | 8 |
+| Italian | `it` | 432 | — | 8 | 7 |
+| Spanish (Spain) | `es` | 432 | 10 | 8 | 7 |
+| Spanish (Latin America) | `es-419` | 432, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) | 7 (from Spain) |
+| Portuguese (Portugal) | `pt` | 432 | — | 8 | 6 |
+| Portuguese (Brazil) | `pt-BR` | 432, same as Portugal except 12 (*trem*, *celular*, *dezesseis*…) | — | 8 (from Portugal) | 6 (1 own: *dezesseis*) |
+| Turkish | `tr` | 432 | — | 5 | 5 |
 
 The code is what you pass to switch languages, e.g. `/langcouch:lang es-419` (or simply `/langcouch:lang latam`).
 
@@ -198,8 +203,17 @@ Many words are built the same way in several languages. *Revolution* is *revoluc
 - **Beyond the word list:** a reply that teaches a rule may also use one more word built by it, even if that word isn't one of your ~400.
 - **Your side of the rule:** the suffix is shown in your native language. An English speaker sees *-tion → -ción*, a Russian speaker sees *-ция → -ción*. Some rules exist for one side only: *-ly → -mente* for English speakers, *-ировать → -ieren* (*kopieren*) for Russian speakers.
 - **Progress:** a rule counts as introduced after three replies, and then the next one starts. `status` shows it as *Word-building rules: 1/8 introduced*.
-- **False friends:** a rule warns about words that look like it but mean something else, e.g. *actual = current* next to *-al*.
+- **False friends:** a rule warns about words that look like it but mean something else, e.g. *actual = current* next to *-al*. The meaning comes in the language you write in.
 - **Where the data lives:** rules in `patterns/<lang>.json`, false friends and rude words in `falseFriends/<lang>.json`. The table in [Supported languages](#supported-languages) shows how many rules each language has. Every rule and example was checked against a dictionary (mostly Wiktionary) and then audited by a second model from another vendor.
+
+## Numbers
+
+Every number up to 1000 is built from 30 words: 0–20, the tens, 100 and 1000. Those are on your list like any other word, at most one per reply, woven next to its digit so the fact stays readable: *the deploy took 3 (**tre**) minutes*.
+
+- **The rest is rules.** When a numeral is in the reply, LangCouch also shows how bigger numbers are built, one rule at a time: *11–16 are fixed words: undici, dodici… (e.g. 13 = tredici)*. A reply may then use a number built that way, even if it isn't on your list.
+- **Each language has its own logic.** In English you learn 11 and 12, then it's *-teen*. In French 70 is *soixante-dix* (60+10) and 80 is *quatre-vingts* (4×20). In German the unit comes first: *einundzwanzig* (one-and-twenty). In Turkish the tens are words to learn, and Uzbek speakers will recognise several (*kırk*, *elli*).
+- **Progress:** a rule counts as introduced after three replies; then the word-building rule gets its slot back. `status` shows *Number rules: 2/7 introduced*.
+- **Where the data lives:** numerals in the wordlists, rules in `numbers/<lang>.json`, each citing a Wiktionary page (every link checked) and reviewed by a second model.
 
 What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update, `status` shows the new version's changes once.
 

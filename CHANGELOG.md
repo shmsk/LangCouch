@@ -6,6 +6,23 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.8.0] - 2026-10-05
+
+### Added
+- Numbers 1–1000 in every language. The 30 numerals every number is built from (0–20, the
+  tens, 100, 1000) are on your list like other words, at most one per reply, woven next to
+  its digit so the fact stays readable: 3 (**tre**). They come early, after the first ~40 words.
+- Number rules: when a numeral is in the reply, a short rule shows how bigger numbers are
+  built, in the language you write in (English: learn 11 and 12, then -teen; French: 70 is
+  60+10, 80 is 4×20; Turkish: learn the tens). Each rule takes the word-building rule's
+  place until it has been shown three times. `status` shows "Number rules: 2/7 introduced".
+  Your own rules can go in `~/.langcouch/numbers/<lang>.json`, and export/import carries them.
+
+### Changed
+- False friends next to a word-building rule now give the real meaning in Russian or Uzbek
+  too, not only English: "attualmente = сейчас". Your own `falseFriends` files with a plain
+  text meaning keep working as before.
+
 ## [0.7.6] - 2026-10-02
 
 ### Added
