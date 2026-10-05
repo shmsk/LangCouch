@@ -1,6 +1,6 @@
 {
   "name": "langcouch",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "The cards mod on its own, for `claude plugin test mods/cards`; users get it inside the langcouch plugin",
   "author": {
     "name": "Kirill Shumskii",

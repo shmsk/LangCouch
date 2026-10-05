@@ -7,6 +7,8 @@ export type Card = { id: string; kind: CardKind; dir: CardDir; prompt: string }
 /** `langcouch cards status`, also carried by `next` and every answer. */
 export type CardStatus = {
   lang: string
+  /** The learner's language; missing from a CLI older than 0.9.4. */
+  native?: string
   paused: boolean
   due: number
   known: number

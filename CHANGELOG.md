@@ -6,6 +6,15 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.4] - 2026-10-05
+
+### Changed
+- `/cards` shows which language each word is in: a flag and the language's own name, like
+  🇮🇹 casa Italiano, and the answer as ✓ дом 🇷🇺 Русский. Words spelled the same in two
+  languages ("natural" in Spanish and English) are no longer ambiguous. The name is there
+  because some terminals (Warp) draw a flag as two boxed letters. Outside the terminal the
+  card's corner shows the flag and name of the word on it.
+
 ## [0.9.3] - 2026-10-05
 
 ### Changed

@@ -145,6 +145,8 @@ export function revealCard(words: Word[], config: Config, card: Pick<Card, "id" 
 
 export interface CardStatus {
   lang: string;
+  /** The learner's language: what a reverse card's prompt and a forward card's answer are in. */
+  native: string;
   paused: boolean;
   due: number;
   known: number;
@@ -163,6 +165,7 @@ export function cardStatus(words: Word[], state: State, config: Config, now: str
   }).length;
   return {
     lang: config.lang,
+    native: config.native,
     paused: config.enabled === false,
     due: dueCards(words, state, now).length,
     known,

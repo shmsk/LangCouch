@@ -2,6 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 import type { On, RenderSurface } from 'claude-code'
 import { cardSvg, esc, fitSize } from '../hooks/svg'
+import { langTag } from '../hooks/lang'
 
 // A stand-in for `langcouch cards ...`: two cards, a forward review and a reverse one.
 const BASE = { lang: 'it', paused: false, due: 2, known: 10, learning: 3, placementLeft: 40, total: 432 }
@@ -11,7 +12,7 @@ const CARDS = [
 ]
 const EXPECTED: Record<string, string> = { house: 'дом', time: 'tempo' }
 
-function fakeCli(on: On, { paused = false, statusLine = null as boolean | null } = {}) {
+function fakeCli(on: On, { paused = false, statusLine = null as boolean | null, native = 'ru' as string | null } = {}) {
   const calls: string[][] = []
   surfaceStubs(on)
   mock.env(on, { LANGCOUCH_CLI: '/fake/cli.sh' })
@@ -21,7 +22,7 @@ function fakeCli(on: On, { paused = false, statusLine = null as boolean | null }
       statusLine = e.argv[3] === 'on'
       return { value: { exitCode: 0, stdout: '', stderr: '', isStdoutTruncated: false, isStderrTruncated: false } }
     }
-    const STATUS = { ...BASE, statusLine }
+    const STATUS = { ...BASE, statusLine, ...(native ? { native } : {}) }
     const args = e.argv.slice(3) // /bin/sh <cli> cards ...
     calls.push(args)
     const [sub, id = '', , , ...rest] = args
@@ -204,4 +205,44 @@ test('a failing CLI is an error with a retry, not a blank pane', async ($, on) =
   const ui = await mountOn($, 'terminal')
   expect(await ui.find({ text: /could not load: boom/ })).toBeDefined()
   expect(await ui.find({ key: 'retry' })).toBeDefined()
+})
+
+describe('each word shows its language: flag and name', () => {
+  test('terminal: the Italian word, then the Russian one on the reverse card', async ($, on) => {
+    fakeCli(on)
+    const ui = await mountOn($, 'terminal')
+    expect(await ui.find({ type: 'Text', text: '🇮🇹' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Italiano' })).toBeDefined()
+    await ui.input({ key: 'answer', text: 'дом' })
+    expect(await ui.find({ text: '✓ дом' })).toBeDefined()
+    expect(await ui.find({ text: '🇷🇺 Русский' })).toBeDefined()
+    await ui.press({ key: 'next' })
+    expect(await ui.find({ type: 'Text', text: '🇷🇺' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: 'Русский' })).toBeDefined()
+    await ui.press({ key: 'dontknow' })
+    expect(await ui.find({ text: '🇮🇹 Italiano' })).toBeDefined()
+  })
+
+  test('an older CLI without native: the Russian side has no tag, the Italian one keeps it', async ($, on) => {
+    fakeCli(on, { native: null })
+    const ui = await mountOn($, 'terminal')
+    expect(await ui.find({ type: 'Text', text: 'Italiano' })).toBeDefined()
+    await ui.input({ key: 'answer', text: 'дом' })
+    expect(await ui.find({ text: /Русский/ })).toBeUndefined()
+  })
+
+  test('names: exact code, then base, then a globe', () => {
+    expect(langTag('pt-BR')).toEqual({ flag: '🇧🇷', name: 'Português (Brasil)' })
+    expect(langTag('pt').name).toBe('Português')
+    expect(langTag('es-419').flag).toBe('🇲🇽')
+    expect(langTag('en-AU').name).toBe('English')
+    expect(langTag('xx')).toEqual({ flag: '🌐', name: 'xx' })
+  })
+
+  test('SVG: the corner names the prompt language', () => {
+    const face = { kind: 'review', index: 0, total: 1, lang: 'it', prompt: 'время', ask: 'In it?' } as const
+    expect(cardSvg({ ...face, promptLang: 'ru' })).toContain('🇷🇺 РУССКИЙ')
+    expect(cardSvg({ ...face, promptLang: 'it' })).toContain('🇮🇹 ITALIANO')
+    expect(cardSvg(face)).toContain('>IT<')
+  })
 })

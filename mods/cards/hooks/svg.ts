@@ -2,6 +2,8 @@
 // with the word big in the middle, the way Anki and Memrise show it. The terminal keeps
 // its text pane. Pure string building: no DOM in the mod's environment.
 
+import { langTag } from './lang'
+
 const W = 320
 const PAD = 20
 const FONT = `system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`
@@ -45,6 +47,8 @@ export type CardFace = {
   index: number
   total: number
   lang: string
+  /** The language the prompt is in (the learner's on a reverse card): its flag and name in the corner. */
+  promptLang?: string
   prompt: string
   ask: string
   /** The answer side: after a graded answer (`ok` set) or a reveal (`ok` undefined). */
@@ -52,6 +56,13 @@ export type CardFace = {
 }
 
 const CARD_HEIGHT = 230
+
+/** The corner label: 🇮🇹 ITALIANO for the prompt's language, the target code when it is unknown. */
+const corner = (c: CardFace) => {
+  if (!c.promptLang) return c.lang.toUpperCase()
+  const { flag, name } = langTag(c.promptLang)
+  return `${flag} ${name.toUpperCase()}`
+}
 
 /** One card: progress bar, kind and position, the prompt big, then the answer under a rule. */
 export function cardSvg(c: CardFace): string {
@@ -63,7 +74,7 @@ export function cardSvg(c: CardFace): string {
     `<rect class="track" x="${PAD}" y="${PAD}" width="${inner}" height="4" rx="2"/>` +
     (bar > 0 ? `<rect class="${c.kind}" x="${PAD}" y="${PAD}" width="${bar}" height="4" rx="2"/>` : '') +
     text(PAD, 46, 'dim', 11, label, 'font-weight="600" letter-spacing="1"') +
-    text(W - PAD, 46, 'dim', 11, c.lang.toUpperCase(), 'font-weight="600" letter-spacing="1" text-anchor="end"')
+    text(W - PAD, 46, 'dim', 11, corner(c), 'font-weight="600" letter-spacing="1" text-anchor="end"')
 
   const promptY = c.answer ? 100 : 118
   body += text(W / 2, promptY, 'ink', fitSize(c.prompt, inner, 40, 16), c.prompt, 'font-weight="700" text-anchor="middle"')

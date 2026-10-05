@@ -2,6 +2,7 @@ import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
 import type { Card, CardResult, CardStatus, CardsView } from '../types'
+import { cardLangs, langTag } from './lang'
 import { cardSvg, doneSvg } from './svg'
 
 // The mod draws; the LangCouch CLI picks, grades and records every card
@@ -232,7 +233,7 @@ export const register: Register = on => {
         v.phase === 'result' ? { expected: v.last!.expected, ok: v.last!.ok, typed: v.typed } : v.phase === 'revealed' ? { expected: v.expected ?? '' } : undefined
       const face = (
         <Svg
-          source={cardSvg({ kind: card.kind, index: v.index, total: v.cards.length, lang: v.status.lang, prompt: card.prompt, ask: ask_, answer: back })}
+          source={cardSvg({ kind: card.kind, index: v.index, total: v.cards.length, lang: v.status.lang, promptLang: cardLangs(card, v.status.lang, v.status.native).prompt, prompt: card.prompt, ask: ask_, answer: back })}
           alt={[`${card.kind === 'placement' ? 'Placement' : 'Review'} ${v.index + 1} of ${v.cards.length}: ${card.prompt}. ${ask_}`, back && `${back.ok === undefined ? '' : back.ok ? 'Right: ' : 'Wrong: '}${back.expected}`].filter(Boolean).join(' ')}
         />
       )
@@ -307,14 +308,37 @@ export const register: Register = on => {
         {card.kind === 'placement' ? 'Placement' : 'Review'} · {v.index + 1}/{v.cards.length} · {v.status.lang}
       </Text>
     )
+    const langs = cardLangs(card, v.status.lang, v.status.native)
+    // The word led by its flag, its language named after it: 🇮🇹 casa Italiano
+    const promptTag = langs.prompt ? langTag(langs.prompt) : undefined
+    const prompt = promptTag ? (
+      <Box flexDirection="row" gap={1}>
+        <Text>{promptTag.flag}</Text>
+        <Text bold>{card.prompt}</Text>
+        <Text dimColor>{promptTag.name}</Text>
+      </Box>
+    ) : (
+      <Text bold>{card.prompt}</Text>
+    )
+    // The answer with its language after it: ✓ дом 🇷🇺 Русский
+    const answerTag = langs.answer ? langTag(langs.answer) : undefined
+    const answerLine = (line: JSX.Element) =>
+      answerTag ? (
+        <Box flexDirection="row" gap={1}>
+          {line}
+          <Text dimColor>{`${answerTag.flag} ${answerTag.name}`}</Text>
+        </Box>
+      ) : (
+        line
+      )
 
     if (v.phase === 'result') {
       const last = v.last!
       return (
         <Box flexDirection="column">
           {header}
-          <Text bold>{card.prompt}</Text>
-          <Text>{last.ok ? `✓ ${last.expected}` : `✗ ${last.expected}`}</Text>
+          {prompt}
+          {answerLine(<Text>{last.ok ? `✓ ${last.expected}` : `✗ ${last.expected}`}</Text>)}
           {!last.ok && v.typed && <Text dimColor>Your answer: {v.typed}</Text>}
           {last.known && card.kind === 'placement' && <Text dimColor>Marked known: it skips the new-word stage.</Text>}
           <Box flexDirection="row" gap={1}>
@@ -333,8 +357,8 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column">
           {header}
-          <Text bold>{card.prompt}</Text>
-          <Text>= {v.expected}</Text>
+          {prompt}
+          {answerLine(<Text>= {v.expected}</Text>)}
           <Box flexDirection="row" gap={1}>
             <Button key="knew" variant="primary" onPress={() => void grade($, true)}>Knew it</Button>
             <Button key="didnt" onPress={() => void grade($, false)}>Didn't</Button>
@@ -345,7 +369,7 @@ export const register: Register = on => {
     return (
       <Box flexDirection="column">
         {header}
-        <Text bold>{card.prompt}</Text>
+        {prompt}
         <Text dimColor>{ask(card, v.status.lang)}</Text>
         {Input ? (
           <Box flexDirection="column">
