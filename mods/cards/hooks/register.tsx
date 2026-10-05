@@ -7,11 +7,11 @@ import type { Card, CardResult, CardStatus, CardsView } from '../types'
 // (`langcouch cards ...`, JSON out), so progress lives in one place: ~/.langcouch.
 const PANE = 'langcouch-cards'
 const ROUND = 10
-const view = atom({ plugin: 'langcouch-cards', key: 'view' } as const, { phase: 'loading' } as CardsView)
+const view = atom({ plugin: 'langcouch', key: 'view' } as const, { phase: 'loading' } as CardsView)
 
 type Engine = EngineInterface
 
-/** Where the LangCouch CLI is: an override, a checkout this mod sits in, or the installed plugin. */
+/** Where the LangCouch CLI is: an override, the langcouch plugin this mod ships in, a checkout, or the installed plugin. */
 async function findCli($: Engine): Promise<string> {
   const exists = async (path: string) => {
     try {
@@ -23,8 +23,8 @@ async function findCli($: Engine): Promise<string> {
   }
   const override = await $.env.get('LANGCOUCH_CLI')
   if (override) return override
-  const sibling = `${$.plugin.root}/../../scripts/cli.sh`
-  if (await exists(sibling)) return sibling
+  for (const local of [`${$.plugin.root}/scripts/cli.sh`, `${$.plugin.root}/../../scripts/cli.sh`])
+    if (await exists(local)) return local
   const home = await $.env.get('HOME')
   if (home) {
     try {

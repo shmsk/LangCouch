@@ -31,6 +31,6 @@ export type CardsView =
 
 declare module 'claude-code' {
   interface PluginState {
-    'langcouch-cards': { view: CardsView }
+    langcouch: { view: CardsView }
   }
 }

@@ -10,17 +10,14 @@
       "name": "langcouch",
       "source": "./",
       "description": "Passive language immersion (diglot weave) via UserPromptSubmit hook — replies weave in vocabulary from the language you're learning",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "category": "productivity",
-      "tags": ["language-learning", "education", "hooks", "spaced-repetition"]
-    },
-    {
-      "name": "langcouch-cards",
-      "source": "./mods/cards",
-      "description": "Flashcards for LangCouch: /cards reviews due words both ways and places the ones you already know, in a pane",
-      "version": "0.1.0",
-      "category": "productivity",
-      "tags": ["language-learning", "flashcards", "spaced-repetition"]
+      "tags": [
+        "language-learning",
+        "education",
+        "hooks",
+        "spaced-repetition"
+      ]
     }
   ]
 }

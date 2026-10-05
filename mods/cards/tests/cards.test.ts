@@ -37,7 +37,7 @@ function surfaceStubs(on: On) {
 const PROPS = { title: 'LangCouch cards', isFocused: true, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 20 }, view: {} } as const
 const mountOn = async <S extends RenderSurface>($: Engine, surface: S) => {
   await $.command.run({ command: 'cards', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } })
-  return $.ui.mount({ plugin: 'langcouch-cards', surface, component: 'Pane', requestId: 'langcouch-cards', props: PROPS })
+  return $.ui.mount({ plugin: 'langcouch', surface, component: 'Pane', requestId: 'langcouch-cards', props: PROPS })
 }
 
 describe('typed answers', () => {

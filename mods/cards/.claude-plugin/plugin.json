@@ -1,7 +1,7 @@
 {
-  "name": "langcouch-cards",
-  "version": "0.1.0",
-  "description": "Flashcards for LangCouch: review due words both ways and place the ones you already know, in a pane",
+  "name": "langcouch",
+  "version": "0.9.1",
+  "description": "The cards mod on its own, for `claude plugin test mods/cards`; users get it inside the langcouch plugin",
   "author": {
     "name": "Kirill Shumskii",
     "url": "https://github.com/shmsk"

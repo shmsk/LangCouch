@@ -6,6 +6,19 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.1] - 2026-10-05
+
+### Upgrade notes
+1. If you installed the flashcards plugin in 0.9.0, remove it, or `/cards` is registered
+   twice: run `/plugin uninstall langcouch-cards@langcouch` in Claude Code. Your card progress
+   is kept: it lives in `~/.langcouch`, not in the plugin.
+2. Restart the session. `/cards` now comes from LangCouch itself.
+
+### Changed
+- Flashcards ship inside the `langcouch` plugin: `/cards` and its status line count are there
+  after a normal update, with nothing extra to install. The separate `langcouch-cards` plugin is
+  gone from the marketplace.
+
 ## [0.9.0] - 2026-10-05
 
 ### Upgrade notes

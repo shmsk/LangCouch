@@ -1,5 +1,5 @@
 {
-  "description": "LangCouch diglot weave \u2014 injects the vocabulary instruction into context; on Stop, counts the words the reply actually wove (algorithm 3)",
+  "description": "LangCouch diglot weave — injects the vocabulary instruction into context; on Stop, counts the words the reply actually wove (algorithm 3)",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -31,5 +31,8 @@
         ]
       }
     ]
-  }
+  },
+  "modules": [
+    "../mods/cards/hooks/register.tsx"
+  ]
 }
