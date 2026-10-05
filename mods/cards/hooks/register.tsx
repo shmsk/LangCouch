@@ -71,14 +71,14 @@ async function start($: Engine) {
 }
 
 /** Record a result (typed or self-graded) and move to the `result` phase. */
-async function record($: Engine, args: string[]) {
+async function record($: Engine, args: string[], typed?: string) {
   const v = await read($, view)
   if (v.phase !== 'card' && v.phase !== 'revealed') return
   try {
     const res = await cards<CardResult & { status: CardStatus }>($, args)
     const { status, ...last } = res
     await showStatus($, status)
-    await update($, view, (): CardsView => ({ ...v, phase: 'result', last, status, right: v.right + (last.ok ? 1 : 0) }))
+    await update($, view, (): CardsView => ({ ...v, phase: 'result', last, status, typed, right: v.right + (last.ok ? 1 : 0) }))
   } catch (err) {
     await update($, view, (): CardsView => ({ phase: 'error', message: message(err) }))
   }
@@ -89,7 +89,22 @@ async function answer($: Engine, text: string) {
   if (v.phase !== 'card') return
   const card = v.cards[v.index]!
   const typed = text.trim()
-  await record($, ['answer', card.id, card.kind, card.dir, ...(typed ? [typed] : [])])
+  await record($, ['answer', card.id, card.kind, card.dir, ...(typed ? [typed] : [])], typed || undefined)
+}
+
+/** "My answer was right": LangCouch takes the miss back and records the card as right (kid for child). */
+async function accept($: Engine) {
+  const v = await read($, view)
+  if (v.phase !== 'result' || !v.last?.undo) return
+  const card = v.cards[v.index]!
+  try {
+    const res = await cards<CardResult & { status: CardStatus }>($, ['accept', card.id, card.kind, card.dir, JSON.stringify(v.last.undo)])
+    const { status, ...last } = res
+    await showStatus($, status)
+    await update($, view, (): CardsView => ({ ...v, last, status, right: v.right + (last.ok ? 1 : 0) }))
+  } catch (err) {
+    await update($, view, (): CardsView => ({ phase: 'error', message: message(err) }))
+  }
 }
 
 async function reveal($: Engine) {
@@ -195,10 +210,16 @@ export const register: Register = on => {
           {header}
           <Text bold>{card.prompt}</Text>
           <Text>{last.ok ? `✓ ${last.expected}` : `✗ ${last.expected}`}</Text>
+          {!last.ok && v.typed && <Text dimColor>Your answer: {v.typed}</Text>}
           {last.known && card.kind === 'placement' && <Text dimColor>Marked known: it skips the new-word stage.</Text>}
-          <Button key="next" variant="primary" autoFocus onPress={() => void advance($)}>
-            {v.index + 1 < v.cards.length ? 'Next' : 'Finish'}
-          </Button>
+          <Box flexDirection="row" gap={1}>
+            <Button key="next" variant="primary" autoFocus onPress={() => void advance($)}>
+              {v.index + 1 < v.cards.length ? 'Next' : 'Finish'}
+            </Button>
+            {!last.ok && v.typed && last.undo && (
+              <Button key="accept" onPress={() => void accept($)}>My answer was right</Button>
+            )}
+          </Box>
         </Box>
       )
     }

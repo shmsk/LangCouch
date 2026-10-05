@@ -278,7 +278,7 @@ export function loadWordlist(lang: string): Word[] {
     const baseTarget = baseMapping[id];
     const differs = baseTarget !== undefined && baseTarget !== lemma;
     const baseNote = differs ? rude.get(baseTarget) : undefined;
-    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(differs ? { baseTarget } : {}), ...(baseNote ? { baseNote } : {}) });
+    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(c.alt ? { alt: c.alt } : {}), ...(differs ? { baseTarget } : {}), ...(baseNote ? { baseNote } : {}) });
   }
   return words;
 }

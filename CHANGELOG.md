@@ -6,6 +6,18 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.2] - 2026-10-05
+
+### Fixed
+- Cards, `quiz` and placement no longer fail a right answer worded differently: "to work"
+  for lavoro and "the child" for bambino are right (a leading the/a/an/to is ignored), and
+  common synonyms such as "kid" for child or "job" for work count too. A wrong grade used
+  to send the word back down the ladder.
+
+### Added
+- "My answer was right" after a miss: it takes the miss back and records the card as right,
+  for answers no list foresees. `langcouch cards accept` is the command behind it.
+
 ## [0.9.1] - 2026-10-05
 
 ### Upgrade notes

@@ -1,7 +1,7 @@
-import type { Config, State, Word } from "./types.ts";
+import type { Config, State, Word, WordState } from "./types.ts";
 import { glossFor, isAbsorbed } from "./types.ts";
 import { dueOf, isDue, stepOf } from "./ladder.ts";
-import { applyQuizResult, checkAnswer } from "./recall.ts";
+import { applyQuizResult, checkAnswer, dropLeading } from "./recall.ts";
 import { answerPlacement, placementQueue, skippedFor } from "./placement.ts";
 
 /**
@@ -57,9 +57,7 @@ const ARTICLES = new Set(["il", "lo", "la", "i", "gli", "le", "un", "uno", "una"
 /** Lowercase, trimmed, accents folded (casà = casa), apostrophes unified, a leading article or "to" dropped. */
 export function foldTarget(s: string): string {
   const t = s.toLowerCase().trim().normalize("NFD").replace(/\p{M}/gu, "").replace(/[ʻʼ‘’`´]/g, "'").replace(/\s+/g, " ");
-  const elided = t.replace(/^(l|un|d)'\s*/, "");
-  const [first, ...rest] = elided.split(" ");
-  return rest.length && ARTICLES.has(first!) ? rest.join(" ") : elided;
+  return dropLeading(t.replace(/^(l|un|d)'\s*/, ""), ARTICLES);
 }
 
 /** Native → target: the answer names the word itself (its lemma, or the base lemma of a regional variant). */
@@ -76,6 +74,14 @@ export interface CardResult {
   step: number;
   due: string;
   known: boolean;
+  /** On a miss only: what grading changed, so "my answer was right" can take it back (acceptCard). */
+  undo?: CardUndo;
+}
+
+/** The state before a miss: each concept's entry (null = there was none) and the ids the miss put on the skip list. */
+export interface CardUndo {
+  state: Record<string, WordState | null>;
+  skipped: string[];
 }
 
 /**
@@ -90,6 +96,9 @@ export function answerCard(words: Word[], state: State, config: Config, skipped:
   const word = words.find((w) => w.id === card.id);
   if (!word) throw new Error(`langcouch: no word "${card.id}" in the ${lang} list`);
   const gloss = glossFor(word, config.native, lang);
+  // a miss changes only this concept's entry (review) or adds to the skip list (placement)
+  const before = state[word.id] ? { ...state[word.id]! } : null;
+  const skippedBefore = new Set(skipped);
   let ok: boolean;
   if (card.kind === "placement") {
     ok = answerPlacement(words, state, skipped, word, answer, lang, now).ok;
@@ -106,7 +115,25 @@ export function answerCard(words: Word[], state: State, config: Config, skipped:
     else applyQuizResult(state, word.id, false);
   }
   const s = state[word.id];
-  return { ok, expected: card.dir === "reverse" ? word.target : gloss, step: stepOf(s), due: s ? dueOf(s) : "", known: isAbsorbed(s) };
+  const undo: CardUndo | undefined = ok ? undefined : { state: { [word.id]: before }, skipped: skipped.filter((id) => !skippedBefore.has(id)) };
+  return { ok, expected: card.dir === "reverse" ? word.target : gloss, step: stepOf(s), due: s ? dueOf(s) : "", known: isAbsorbed(s), ...(undo ? { undo } : {}) };
+}
+
+/**
+ * "My answer was right": the learner overrules a miss (kid for bambino, where only child is
+ * stored). Takes the miss back from `undo`, then records the card as answered right, through
+ * the same path as a typed right answer. `skipped` is changed in place, as in answerCard.
+ */
+export function acceptCard(words: Word[], state: State, config: Config, skipped: string[], card: Pick<Card, "id" | "kind" | "dir">, undo: CardUndo, now: string): CardResult {
+  for (const [id, prev] of Object.entries(undo.state)) {
+    if (prev) state[id] = prev;
+    else delete state[id];
+  }
+  for (const id of undo.skipped) {
+    const i = skipped.indexOf(id);
+    if (i >= 0) skipped.splice(i, 1);
+  }
+  return answerCard(words, state, config, skipped, card, revealCard(words, config, card), now);
 }
 
 /** The right answer for a card, without recording anything: what a self-graded card shows before "knew it / didn't". */

@@ -11,6 +11,10 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
+## What's new in 0.9.2
+
+- **Cards accept what you meant.** "to work", "the child" and common synonyms ("kid" for child) are right now. After a miss, "My answer was right" takes it back.
+
 ## What's new in 0.9.1
 
 - **Flashcards come with LangCouch.** `/cards` is there after a normal update, nothing extra to install. If you installed `langcouch-cards` in 0.9.0, remove it: `/plugin uninstall langcouch-cards@langcouch`.

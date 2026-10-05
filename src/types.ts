@@ -13,6 +13,8 @@ export interface Concept {
   /** Optional corpus frequency rank — reserved for tier-2+ ingestion. */
   rank?: number;
   gloss: Record<string, string>;
+  /** Other right answers by native-language code ("kid" for child): accepted when grading, never shown. */
+  alt?: Record<string, string[]>;
 }
 
 /**
@@ -30,6 +32,8 @@ export interface Word {
   pos: Pos;
   tier: number;
   gloss: Record<string, string>;
+  /** Other right answers, as on the concept: graded, never shown. */
+  alt?: Record<string, string[]>;
   /** Regional variant only: the base's lemma when this one differs (es-419 carro → es coche). */
   baseTarget?: string;
   /** Regional variant only: a warning about baseTarget here ("vulgar in much of Latin America"). */

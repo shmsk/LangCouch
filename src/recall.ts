@@ -46,23 +46,36 @@ export function applyQuizResult(state: State, id: string, ok: boolean): State {
   return state;
 }
 
+/** Drop one leading word from `set` ("to work" → "work"), never the whole answer. */
+export function dropLeading(s: string, set: ReadonlySet<string>): string {
+  const [first, ...rest] = s.split(" ");
+  return rest.length && set.has(first!) ? rest.join(" ") : s;
+}
+
+// "the child", "a kid", "to work": the meaning is right, the article is just how English says it
+const GLOSS_LEADING = new Set(["the", "a", "an", "to"]);
+
 // Uzbek Latin oʻ/gʻ/tutuq belgisi get typed with any of these; glosses store plain '.
-const normAnswer = (s: string) => s.toLowerCase().trim().replaceAll("ё", "е").replace(/[ʻʼ‘’`´]/g, "'");
+export const normAnswer = (s: string) =>
+  dropLeading(
+    s.toLowerCase().trim().replaceAll("ё", "е").replace(/[ʻʼ‘’`´]/g, "'").replace(/[.!?]+$/, "").replace(/\s+/g, " ").trim(),
+    GLOSS_LEADING,
+  );
 
 /**
- * Loose gloss comparison: lowercase, trim, ё=е, any apostrophe = ', comma/slash-separated
- * gloss variants accepted — any gloss language counts except the target's own
- * (learning en, "house" is not a translation of "house").
+ * Loose gloss comparison: lowercase, trim, ё=е, any apostrophe = ', a leading the/a/an/to
+ * dropped, comma/slash-separated gloss variants and `alt` answers accepted — any gloss
+ * language counts except the target's own (learning en, "house" is not a translation of "house").
  */
 export function checkAnswer(answer: string, word: Word, lang?: string): boolean {
   const a = normAnswer(answer);
   if (!a) return false;
   const own = lang?.split("-")[0];
-  const variants = Object.entries(word.gloss)
+  const glosses = Object.entries(word.gloss)
     .filter(([k]) => k !== own)
-    .map(([, g]) => g)
-    .flatMap((g) => g.split(/[,;/()]/))
-    .map(normAnswer)
-    .filter(Boolean);
-  return variants.includes(a);
+    .flatMap(([, g]) => g.split(/[,;/()]/));
+  const alts = Object.entries(word.alt ?? {})
+    .filter(([k]) => k !== own)
+    .flatMap(([, list]) => list);
+  return [...glosses, ...alts].map(normAnswer).filter(Boolean).includes(a);
 }

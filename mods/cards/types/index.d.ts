@@ -16,7 +16,7 @@ export type CardStatus = {
 }
 
 /** What an answer came to: the right answer is shown after a hit and a miss alike. */
-export type CardResult = { ok: boolean; expected: string; step: number; due: string; known: boolean }
+export type CardResult = { ok: boolean; expected: string; step: number; due: string; known: boolean; undo?: { state: Record<string, unknown>; skipped: string[] } }
 
 /**
  * The pane's view. `card`: asking; `revealed`: a self-graded card shows its answer
@@ -27,7 +27,7 @@ export type CardsView =
   | { phase: 'error'; message: string }
   | { phase: 'paused' }
   | { phase: 'empty'; status: CardStatus }
-  | { phase: 'card' | 'revealed' | 'result' | 'done'; cards: Card[]; index: number; right: number; status: CardStatus; expected?: string; last?: CardResult }
+  | { phase: 'card' | 'revealed' | 'result' | 'done'; cards: Card[]; index: number; right: number; status: CardStatus; expected?: string; last?: CardResult; typed?: string }
 
 declare module 'claude-code' {
   interface PluginState {

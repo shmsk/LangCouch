@@ -145,6 +145,22 @@ describe("native gloss keys", () => {
     expect(errors.some((e) => e.startsWith(`gloss.xx missing on ${list.length - 1} concepts`))).toBe(true);
     rmSync(path);
   });
+
+  test("an alt answer may not be another concept's gloss, its own gloss, or in an unknown language", () => {
+    const list = JSON.parse(readFileSync(CONCEPTS_PATH, "utf8")) as { id: string; alt?: Record<string, unknown> }[];
+    const child = list.find((c) => c.id === "child")!;
+    child.alt = { en: ["kid", "son", "child"], xx: ["nope"], ru: [] };
+    mkdirSync(dir, { recursive: true });
+    const path = join(dir, "concepts-alt.json");
+    writeFileSync(path, JSON.stringify(list));
+    const { errors } = validateConcepts(path);
+    expect(errors).toContain(`child: alt.en "son" is the gloss of son`);
+    expect(errors).toContain(`child: alt.en "child" repeats its own gloss`);
+    expect(errors).toContain("child: alt.xx is not a gloss language");
+    expect(errors).toContain("child: alt.ru must be a non-empty list of answers");
+    expect(errors.some((e) => e.includes('"kid"'))).toBe(false);
+    rmSync(path);
+  });
 });
 
 // Someone who learned the base and switches to a variant keeps the shared words;

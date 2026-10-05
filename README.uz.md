@@ -13,6 +13,10 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
+## 0.9.2 da nima yangi
+
+- **Kartochkalar maʼnoni qabul qiladi.** «to work», «the child» va koʻp uchraydigan sinonimlar («kid», child oʻrniga) endi toʻgʻri hisoblanadi. Xatodan keyin «My answer was right» tugmasi uni bekor qiladi.
+
 ## 0.9.1 da nima yangi
 
 - **Kartochkalar LangCouch ichida.** `/cards` oddiy yangilanishdan keyin paydo boʻladi, alohida hech narsa oʻrnatish shart emas. Agar 0.9.0 da `langcouch-cards` ni oʻrnatgan boʻlsangiz, uni oʻchiring: `/plugin uninstall langcouch-cards@langcouch`.

@@ -3,7 +3,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
-import { answerCard, cardDir, cardQueue, cardStatus, checkReverse, foldTarget } from "../src/cards.ts";
+import { acceptCard, answerCard, cardDir, cardQueue, cardStatus, checkReverse, foldTarget } from "../src/cards.ts";
 import { markKnown } from "../src/placement.ts";
 import { isAbsorbed, type Config, type State, type Word } from "../src/types.ts";
 
@@ -97,6 +97,41 @@ describe("status", () => {
   });
 });
 
+describe("my answer was right", () => {
+  const due = (step: number): State => ({ house: { exposures: 4, lastSeen: EARLIER, step, recalls: 2, due: EARLIER } });
+  const strip = (st: State) => Object.fromEntries(Object.entries(st).map(([k, v]) => [k, { ...v, lastSeen: undefined, due: undefined }]));
+
+  for (const [dir, step] of [["forward", 2], ["reverse", 3]] as const)
+    test(`review ${dir}: accept after a miss leaves the state of a right answer`, () => {
+      const right = due(step);
+      answerCard(WORDS, right, CONFIG, [], { id: "house", kind: "review", dir }, dir === "forward" ? "дом" : "casa", NOW);
+      const missed = due(step);
+      const miss = answerCard(WORDS, missed, CONFIG, [], { id: "house", kind: "review", dir }, "хата", NOW);
+      expect(miss.ok).toBe(false);
+      expect(miss.undo).toEqual({ state: { house: due(step).house! }, skipped: [] });
+      const res = acceptCard(WORDS, missed, CONFIG, [], { id: "house", kind: "review", dir }, miss.undo!, NOW);
+      expect(res.ok).toBe(true);
+      expect(res.undo).toBeUndefined();
+      expect(strip(missed)).toEqual(strip(right));
+    });
+
+  test("a right answer carries no undo", () => {
+    expect(answerCard(WORDS, due(2), CONFIG, [], { id: "house", kind: "review", dir: "forward" }, "дом", NOW).undo).toBeUndefined();
+  });
+
+  test("placement: accept takes the word off the skip list and marks it known", () => {
+    const state: State = {};
+    const skipped = ["time"];
+    const miss = answerCard(WORDS, state, CONFIG, skipped, { id: "house", kind: "placement", dir: "forward" }, "хата", NOW);
+    expect(skipped).toEqual(["time", "house"]);
+    expect(miss.undo).toEqual({ state: { house: null }, skipped: ["house"] });
+    const res = acceptCard(WORDS, state, CONFIG, skipped, { id: "house", kind: "placement", dir: "forward" }, miss.undo!, NOW);
+    expect(res).toMatchObject({ ok: true, known: true });
+    expect(skipped).toEqual(["time"]);
+    expect(isAbsorbed(state.house)).toBe(true);
+  });
+});
+
 describe("cards CLI", () => {
   const run = (dir: string, ...args: string[]) => spawnSync("bun", [CLI, "cards", ...args], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
   const fresh = (config: object) => {
@@ -133,6 +168,20 @@ describe("cards CLI", () => {
     const graded = JSON.parse(run(dir, "grade", card.id, card.kind, card.dir, "ok").stdout);
     expect(graded).toMatchObject({ ok: true, known: true });
     expect(graded.status.known).toBeGreaterThan(before.known);
+  });
+
+  test("accept: a placement miss becomes known, the skip list is restored", () => {
+    const dir = fresh({ lang: "it", native: "ru", level: 2 });
+    const card = JSON.parse(run(dir, "next", "1").stdout).cards[0];
+    const miss = JSON.parse(run(dir, "answer", card.id, card.kind, card.dir, "nonsense").stdout);
+    expect(miss.ok).toBe(false);
+    const res = run(dir, "accept", card.id, card.kind, card.dir, JSON.stringify(miss.undo));
+    expect(res.status).toBe(0);
+    const out = JSON.parse(res.stdout);
+    expect(out).toMatchObject({ ok: true, known: true });
+    expect(out.status.placementLeft).toBe(miss.status.placementLeft);
+    expect(out.status.known).toBe(miss.status.known + 1);
+    expect(run(dir, "accept", card.id, card.kind, card.dir, "not json").status).toBe(1);
   });
 
   test("a bad answer call fails loudly", () => {

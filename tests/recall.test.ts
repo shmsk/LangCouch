@@ -74,6 +74,23 @@ describe("quiz", () => {
     expect(checkAnswer("еж", mk("erizo", "ёж", "hedgehog"))).toBe(true);
   });
 
+  test("checkAnswer drops a leading the/a/an/to and end punctuation: to work = work", () => {
+    const work = mk("lavoro", "работа", "work");
+    for (const a of ["to work", "work", "Work!", "the work", "a work."]) expect(checkAnswer(a, work)).toBe(true);
+    expect(checkAnswer("to", work)).toBe(false); // a bare article is not an answer
+    expect(checkAnswer("to be", mk("essere", "быть", "to be"))).toBe(true);
+    expect(checkAnswer("be", mk("essere", "быть", "to be"))).toBe(true);
+  });
+
+  test("checkAnswer accepts alt answers: kid = child, never the target language alt", () => {
+    const child: Word = { ...mk("bambino", "ребёнок", "child"), alt: { en: ["kid"], ru: ["дитя"], it: ["bimbo"] } };
+    expect(checkAnswer("kid", child, "it")).toBe(true);
+    expect(checkAnswer("a kid", child, "it")).toBe(true);
+    expect(checkAnswer("дитя", child, "it")).toBe(true);
+    expect(checkAnswer("bimbo", child, "it")).toBe(false);
+    expect(checkAnswer("adult", child, "it")).toBe(false);
+  });
+
   test("checkAnswer: any apostrophe matches an Uzbek ' gloss", () => {
     const w: Word = { ...mk("hijo", "сын", "son"), gloss: { ru: "сын", en: "son", uz: "o'g'il" } };
     for (const a of ["o'g'il", "oʻgʻil", "o’g’il", "O`g`il"]) expect(checkAnswer(a, w)).toBe(true);

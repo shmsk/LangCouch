@@ -22,8 +22,9 @@ function fakeCli(on: On, { paused = false } = {}) {
     if (sub === 'status') return json({ ...STATUS, paused })
     if (sub === 'next') return json({ status: { ...STATUS, paused }, cards: paused ? [] : CARDS })
     if (sub === 'reveal') return json({ expected: EXPECTED[id] })
+    if (sub === 'accept') return json({ ok: true, expected: EXPECTED[id], step: 2, due: '', known: false, status: { ...STATUS, due: STATUS.due - 1 } })
     const ok = sub === 'grade' ? rest[0] === 'ok' : rest.join(' ') === EXPECTED[id]
-    return json({ ok, expected: EXPECTED[id], step: ok ? 2 : 0, due: '', known: false, status: { ...STATUS, due: STATUS.due - 1 } })
+    return json({ ok, expected: EXPECTED[id], step: ok ? 2 : 0, due: '', known: false, ...(ok ? {} : { undo: { state: { [id]: null }, skipped: [] } }), status: { ...STATUS, due: STATUS.due - 1 } })
   })
   return calls
 }
@@ -57,6 +58,23 @@ describe('typed answers', () => {
       await ui.press({ key: 'next' })
       expect(await ui.find({ text: /Round done: 1 of 2 right/ })).toBeDefined()
     })
+})
+
+test('"my answer was right" turns a miss into a hit: kid for child', async ($, on) => {
+  const calls = fakeCli(on)
+  const ui = await mountOn($, 'terminal')
+  await ui.input({ key: 'answer', text: 'жилище' })
+  expect(await ui.find({ text: '✗ дом' })).toBeDefined()
+  expect(await ui.find({ text: /Your answer: жилище/ })).toBeDefined()
+  await ui.press({ key: 'accept' })
+  expect(await ui.find({ text: '✓ дом' })).toBeDefined()
+  expect(await ui.find({ key: 'accept' })).toBeUndefined()
+  expect(calls).toContainEqual(['accept', 'house', 'review', 'forward', JSON.stringify({ state: { house: null }, skipped: [] })])
+  await ui.press({ key: 'next' })
+  await ui.press({ key: 'dontknow' })
+  expect(await ui.find({ key: 'accept' })).toBeUndefined() // nothing typed, nothing to overrule
+  await ui.press({ key: 'next' })
+  expect(await ui.find({ text: /Round done: 1 of 2 right/ })).toBeDefined()
 })
 
 test('mobile: no text field, the answer is shown and self-graded', async ($, on) => {

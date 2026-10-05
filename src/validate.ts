@@ -2,6 +2,7 @@
 // `langcouch validate` (plugin users checking a language they added locally).
 import { readFileSync } from "node:fs";
 import type { Concept, WordMapping } from "./types.ts";
+import { normAnswer } from "./recall.ts";
 
 const POS = new Set(["noun", "verb", "adj", "adv", "num"]);
 
@@ -25,6 +26,34 @@ export function validateConcepts(conceptsPath: string): { concepts: Map<string, 
   for (const key of keys) {
     const without = list.filter((c) => !c.gloss?.[key]);
     if (without.length) errors.push(`gloss.${key} missing on ${without.length} concepts: ${without.slice(0, 10).map((c) => c.id).join(", ")}${without.length > 10 ? ", …" : ""}`);
+  }
+  // alt answers are graded as right, so one that reads as another concept's gloss would pass the wrong word
+  const glossOwners = new Map<string, Set<string>>();
+  for (const c of list)
+    for (const [k, g] of Object.entries(c.gloss ?? {}))
+      for (const v of g.split(/[,;/()]/).map(normAnswer).filter(Boolean)) {
+        const key = `${k}:${v}`;
+        glossOwners.set(key, (glossOwners.get(key) ?? new Set()).add(c.id));
+      }
+  for (const c of list) {
+    if (c.alt === undefined) continue;
+    if (typeof c.alt !== "object" || Array.isArray(c.alt)) {
+      errors.push(`${c.id}: alt must be an object of lists`);
+      continue;
+    }
+    for (const [k, alts] of Object.entries(c.alt)) {
+      if (!keys.has(k)) errors.push(`${c.id}: alt.${k} is not a gloss language`);
+      if (!Array.isArray(alts) || !alts.length || alts.some((a) => typeof a !== "string" || !normAnswer(a))) {
+        errors.push(`${c.id}: alt.${k} must be a non-empty list of answers`);
+        continue;
+      }
+      for (const a of alts) {
+        const owners = [...(glossOwners.get(`${k}:${normAnswer(a)}`) ?? [])];
+        if (owners.includes(c.id)) errors.push(`${c.id}: alt.${k} "${a}" repeats its own gloss`);
+        const others = owners.filter((o) => o !== c.id);
+        if (others.length) errors.push(`${c.id}: alt.${k} "${a}" is the gloss of ${others.join(", ")}`);
+      }
+    }
   }
   return { concepts, errors };
 }

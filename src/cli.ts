@@ -17,7 +17,8 @@ import { buildInstruction } from "./instruction.ts";
 import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { placementQueue, answerPlacement, skippedFor, withSkipped, placementStarted, detectTooEasy, OFFER_TOO_EASY, offerAtStart } from "./placement.ts";
-import { answerCard, cardQueue, cardStatus, revealCard } from "./cards.ts";
+import { acceptCard, answerCard, cardQueue, cardStatus, revealCard } from "./cards.ts";
+import type { CardUndo } from "./cards.ts";
 import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
 import type { Word, WordState } from "./types.ts";
 import { pickSpinnerWords, tipFor, applySpinnerTips, removeSpinnerTips, countOurTips, readSettings, writeSettingsIfChanged, claudeSettingsPath } from "./spinner.ts";
@@ -503,7 +504,27 @@ try {
         out({ ...result, status: cardStatus(words, state, loadConfig(), now) });
         break;
       }
-      console.error("usage: langcouch cards status | next [n] | answer <id> <review|placement> <forward|reverse> [answer...] | reveal <id> <dir> | grade <id> <kind> <dir> <ok|fail>");
+      if (sub === "accept") {
+        // "my answer was right": take back a miss (the `undo` that answer printed) and record it as right
+        const [id, kind, dir, undoJson] = args.slice(1);
+        let undo: CardUndo | undefined;
+        try {
+          undo = undoJson ? (JSON.parse(undoJson) as CardUndo) : undefined;
+        } catch {
+          undo = undefined;
+        }
+        if (!id || (kind !== "review" && kind !== "placement") || (dir !== "forward" && dir !== "reverse") || !undo || typeof undo.state !== "object" || !Array.isArray(undo.skipped)) {
+          console.error("usage: langcouch cards accept <id> <review|placement> <forward|reverse> <undo-json>   (undo from the answer's output)");
+          process.exit(1);
+        }
+        const skipped = skippedFor(config, lang);
+        const result = acceptCard(words, state, config, skipped, { id, kind, dir }, undo, now);
+        saveState(lang, state);
+        if (kind === "placement") saveConfig(withSkipped(loadConfig(), lang, skipped));
+        out({ ...result, status: cardStatus(words, state, loadConfig(), now) });
+        break;
+      }
+      console.error("usage: langcouch cards status | next [n] | answer <id> <review|placement> <forward|reverse> [answer...] | reveal <id> <dir> | grade <id> <kind> <dir> <ok|fail> | accept <id> <kind> <dir> <undo-json>");
       process.exit(1);
     }
     case "placement": {
@@ -814,7 +835,7 @@ try {
           "  quiz [n]                  absorption check (default 5 words)",
           "  placement [n]             check which listed words you already know; they skip the new-word stage",
           "  placement next [n] / answer <word>=<translation>...   the same, one batch at a time (for agents)",
-          "  cards status | next [n] | answer <id> <kind> <dir> [answer] | reveal | grade   flashcards as JSON (for the cards mod)",
+          "  cards status | next [n] | answer <id> <kind> <dir> [answer] | reveal | grade | accept   flashcards as JSON (for the cards mod)",
           "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
           "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
