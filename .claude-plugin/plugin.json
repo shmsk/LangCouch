@@ -1,7 +1,7 @@
 {
   "name": "lazy-polyglot",
   "displayName": "Lazy Polyglot",
-  "description": "Get (almost) accidentally fluent 🙂 Learn a language passively while you work: words from your target language are woven into Claude Code replies",
+  "description": "Learn a language while you work. Claude weaves a few words from the language you're learning into its replies, and /cards reviews them as flashcards.",
   "version": "0.9.7",
   "author": {
     "name": "Kirill Shumskii",
@@ -9,5 +9,14 @@
   },
   "homepage": "https://github.com/shmsk/lazy-polyglot",
   "license": "MIT",
+  "keywords": [
+    "language-learning",
+    "vocabulary",
+    "immersion",
+    "diglot-weave",
+    "flashcards",
+    "spaced-repetition",
+    "education"
+  ],
   "types": "./mods/cards/types/index.d.ts"
 }
