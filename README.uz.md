@@ -13,6 +13,10 @@ LangCouch siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning javobl
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
+## 0.9.5 da nima yangi
+
+- **Yangi soʻzlar yonida talaffuz** fransuz, ingliz va portugal tillarida, siz oʻqiy oladigan harflarda: oʻzbekcha yozsangiz **maison** [mezon] (uy), ruscha yozsangiz [мезо́н], inglizcha yozsangiz [meh-ZAWN], yoki xohlasangiz IPA [mɛzɔ̃]. LangCouch qaysi biri qulayligini bir marta soʻraydi; `/langcouch:reading off|native|ipa` uni oʻzgartiradi. Batafsil: [Talaffuz](#talaffuz).
+
 ## 0.9.4 da nima yangi
 
 - **Kartochkalar har bir soʻzning tilini koʻrsatadi.** `/cards` soʻz va javob yoniga bayroq va til nomini qoʻyadi: 🇮🇹 casa Italiano, ✓ дом 🇷🇺 Русский. Ispancha va inglizcha «natural» endi bir xil koʻrinmaydi.
@@ -198,18 +202,18 @@ flowchart LR
 
 ## Qoʻllab-quvvatlanadigan tillar
 
-| Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari | Son qoidalari |
-|---|---|---|---|---|---|
-| Ingliz tili (AQSH) | `en` | 432 | — | 7 (rus tilida soʻzlashuvchilar uchun) | 5 |
-| Ingliz tili (Britaniya) | `en-GB` | 432, AQSH bilan bir xil, 9 tasidan tashqari (*colour*, *centre*, *film*…) | — | 7 (AQSHdan) | 5 (1 tasi oʻziniki: hundred dan keyin *and*) |
-| Nemis tili | `de` | 432 | — | 8 | 7 |
-| Fransuz tili | `fr` | 432 | — | 8 | 8 |
-| Italyan tili | `it` | 432 | — | 8 | 7 |
-| Ispan tili (Ispaniya) | `es` | 432 | 10 | 8 | 7 |
-| Ispan tili (Lotin Amerikasi) | `es-419` | 432, Ispaniya bilan bir xil, 9 tasidan tashqari (*carro*, *computadora*, *lindo*…) | 10 + 2 mintaqaviy (*ustedes*, bugungi ish uchun preterit) | 8 (Ispaniyadan) | 7 (Ispaniyadan) |
-| Portugal tili (Portugaliya) | `pt` | 432 | — | 8 | 6 |
-| Portugal tili (Braziliya) | `pt-BR` | 432, Portugaliya bilan bir xil, 12 tasidan tashqari (*trem*, *celular*, *dezesseis*…) | — | 8 (Portugaliyadan) | 6 (1 tasi oʻziniki: *dezesseis*) |
-| Turk tili | `tr` | 432 | — | 5 | 5 |
+| Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari | Son qoidalari | Talaffuz |
+|---|---|---|---|---|---|---|
+| Ingliz tili (AQSH) | `en` | 432 | — | 7 (rus tilida soʻzlashuvchilar uchun) | 5 | AQSH |
+| Ingliz tili (Britaniya) | `en-GB` | 432, AQSH bilan bir xil, 9 tasidan tashqari (*colour*, *centre*, *film*…) | — | 7 (AQSHdan) | 5 (1 tasi oʻziniki: hundred dan keyin *and*) | Britaniya (248 ta soʻz AQSHnikidan farq qiladi) |
+| Nemis tili | `de` | 432 | — | 8 | 7 | — |
+| Fransuz tili | `fr` | 432 | — | 8 | 8 | ✓ |
+| Italyan tili | `it` | 432 | — | 8 | 7 | — |
+| Ispan tili (Ispaniya) | `es` | 432 | 10 | 8 | 7 | — |
+| Ispan tili (Lotin Amerikasi) | `es-419` | 432, Ispaniya bilan bir xil, 9 tasidan tashqari (*carro*, *computadora*, *lindo*…) | 10 + 2 mintaqaviy (*ustedes*, bugungi ish uchun preterit) | 8 (Ispaniyadan) | 7 (Ispaniyadan) | — |
+| Portugal tili (Portugaliya) | `pt` | 432 | — | 8 | 6 | Portugaliya |
+| Portugal tili (Braziliya) | `pt-BR` | 432, Portugaliya bilan bir xil, 12 tasidan tashqari (*trem*, *celular*, *dezesseis*…) | — | 8 (Portugaliyadan) | 6 (1 tasi oʻziniki: *dezesseis*) | Braziliya (335 ta soʻz Portugaliyanikidan farq qiladi) |
+| Turk tili | `tr` | 432 | — | 5 | 5 | — |
 
 Kod tilni almashtirish uchun kerak, masalan `/langcouch:lang es-419` (yoki shunchaki `/langcouch:lang latam`).
 
@@ -220,6 +224,20 @@ Tilingizni qoʻshish — bitta JSON fayl bilan. Faqat oʻzingiz uchun: Claude Co
 Mintaqaviy variantlar ham xuddi shunday ishlaydi: `pt-BR.json` faqat Braziliya portugal tili `pt`dan farq qiladigan soʻzlarni sanab oʻtadi, qolgani esa asosiy fayldan olinadi. `/langcouch:add-language Brazilian Portuguese` buyrugʻi shunday variant yaratadi; `/langcouch:lang pt-br` esa unga oʻtkazadi.
 
 Variantga oʻtganda oʻrganish boshidan boshlanmaydi. Ikkalasida bir xil yoziladigan soʻzlarning progressi umumiy: Ispaniya ispan tilini oʻrganib, `es-419`ga oʻtsangiz, *casa* va boshqa soʻzlar oʻrganilgan boʻlib qoladi, faqat farq qiladigan 9 ta soʻzni oʻrganasiz. Ular birinchi keladi, Ispaniya soʻzi bilan yonma-yon: *carro = car, Spain: coche*. Grammatika ham shunday: avval mintaqaviy konstruksiyalar keladi (*vosotros trabajáis* emas, *ustedes trabajan*). Agar asosiy tildagi soʻz variant mintaqasida qoʻpol boʻlsa, qiyoslash bu haqda ogohlantiradi: *tomar = to take, Spain: coger (vulgar in much of Latin America)*.
+
+## Talaffuz
+
+Fransuz, ingliz va portugal tillari yozilishicha oʻqilmaydi, shuning uchun ulardagi yangi soʻzlar talaffuzi bilan keladi, siz allaqachon oʻqiy oladigan harflarda:
+
+| Nimani koʻrasiz | Sozlama |
+|---|---|
+| **maison** (uy) | `off` |
+| **maison** [mezon] (uy) | `native`, standart: oʻzbek harflarida, rus harflarida ([мезо́н]) yoki inglizcha yozuvda ([meh-ZAWN]), siz yozayotgan tilda |
+| **maison** [mɛzɔ̃] (uy) | `ipa`: Xalqaro fonetik alifbo |
+
+LangCouch har bir til uchun bir marta soʻraydi va bu uch variantni roʻyxatingizdagi soʻz bilan koʻrsatadi; keyin `/langcouch:reading off|native|ipa` tanlovni oʻzgartiradi. Talaffuz faqat yangi soʻzlarda boʻladi va tarjima bilan birga yoʻqoladi. Uni kartochkalar va spinner maslahatlari ham koʻrsatadi. Ispan, italyan, nemis va turk tillari yozilishiga yetarlicha yaqin, ularda talaffuz yoʻq.
+
+Talaffuzlar Wiktionary'dan IPA koʻrinishida olingan, har bir soʻzga bittadan: Amerika va Britaniya inglizchasi, Yevropa va Braziliya portugalchasining har biri oʻziniki. Harflar IPA'dan yasaladi va soʻzni ovoz chiqarib oʻqish uchun taxminiy; aniq shakl IPA. Tilga talaffuz qoʻshish bitta JSON fayl, qarang: [docs/AddLanguage.md](docs/AddLanguage.md).
 
 ## Soʻz yasash qoidalari
 
@@ -275,6 +293,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md).
 | `pause` / `resume` | toʻqishni oʻchirish/qayta yoqish tugmasi |
 | `export [fayl\|-] [--force]` | natija, sozlamalar va oʻz lugʻatlaringizni bitta faylga saqlash, odatda `~/langcouch-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
 | `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |
+| `reading <off\|native\|ipa\|status>` | yangi fransuzcha, inglizcha va portugalcha soʻzlarning talaffuzi: sizning harflaringizda (standart), IPA'da yoki umuman yoʻq |
 | `spinner <on\|off\|status>` | ixtiyoriy: oʻrganayotgan soʻzlaringiz Claude Code spinner maslahatlarida |
 | `cards-status <on\|off\|status>` | ixtiyoriy: takrorlashni kutayotgan kartochkalar soni Claude Code holat qatorida (`/cards` bir marta soʻraydi) |
 | `instruction` | toʻqish koʻrsatmasini chop etadi (duchor boʻlishlarni belgilamasdan) |

@@ -6,6 +6,17 @@ What changed in each version, written for people who use LangCouch. The format f
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.5] - 2026-10-06
+
+### Added
+- New French, English and Portuguese words come with their pronunciation, in letters you can
+  read: **maison** [мезо́н] (дом) if you write in Russian, [meh-ZAWN] in English, [mezon] in
+  Uzbek. Prefer IPA ([mɛzɔ̃]) or none at all? LangCouch asks once per language, with all three
+  shown on a word from your list, and `/langcouch:reading off|native|ipa` changes it any time.
+  American and British English, European and Brazilian Portuguese each have their own
+  pronunciation. Cards and spinner tips show it too.
+- `/langcouch:lang` shows the three choices when you switch to one of these languages.
+
 ## [0.9.4] - 2026-10-05
 
 ### Changed

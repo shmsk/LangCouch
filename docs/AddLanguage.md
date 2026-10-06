@@ -107,6 +107,23 @@ Numbers are taught as building blocks plus rules. The wordlist maps the 30 numer
 
 A rule is shown when a numeral is in the reply and some rule is still new (shown fewer than 3 times); it then takes the word-building rule's place.
 
+## Step 4d (optional) — `readings/<code>.json`
+
+Only for a language that is not read the way it is spelled (French, English, Portuguese are; Spanish, Italian, Turkish are not). New words then come with their pronunciation, rendered for each learner in their own letters or as IPA (`/langcouch:reading`). The file maps every concept id to its IPA:
+
+```json
+{
+ "house": "mɛ.zɔ̃",
+ "time": "tɑ̃"
+}
+```
+
+- The phonemic transcription from the language section of the word's English Wiktionary page, without the slashes: syllable dots and the stress mark `ˈ` stay (the English respelling capitalises the stressed syllable, the Russian one marks it).
+- The standard citation form: not a weak form, a dialect, a liaison form or a usage note. Where Wiktionary lists several standard accents, use the one your base code stands for (`en`: General American, `pt`: Portugal).
+- Cover every concept in your wordlist; `bun test` checks coverage and renders every entry for every native language, failing on any IPA symbol it cannot spell.
+- A regional variant gets its own file with only the words that sound different, plus every word it spells differently (`pt-BR`: Brazilian pronunciation; `en-GB`: Received Pronunciation).
+- For yourself, the file goes in `~/.langcouch/readings/<code>.json`, like the others.
+
 ## Step 5 — Validate
 
 All three must pass; paste their output into your PR description:
@@ -140,7 +157,7 @@ Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (
 
 ## Step 8 — PR checklist
 
-- [ ] Files touched are exactly: `wordlists/<code>.json` and optionally `grammar/<code>.json`, `patterns/<code>.json`, `falseFriends/<code>.json`
+- [ ] Files touched are exactly: `wordlists/<code>.json` and optionally `grammar/<code>.json`, `patterns/<code>.json`, `falseFriends/<code>.json`, `numbers/<code>.json`, `readings/<code>.json`
 - [ ] Output of all three Step 5 commands pasted
 - [ ] Audit summary: model used, findings applied/rejected
 - [ ] Live smoke test output pasted

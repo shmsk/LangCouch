@@ -38,6 +38,8 @@ export interface Word {
   baseTarget?: string;
   /** Regional variant only: a warning about baseTarget here ("vulgar in much of Latin America"). */
   baseNote?: string;
+  /** Pronunciation as IPA, from readings/<lang>.json; absent for languages that read as written. */
+  ipa?: string;
 }
 
 /**
@@ -88,6 +90,10 @@ export interface Config {
   placementSkipped?: Record<string, string[]>;
   /** Languages whose start-of-use placement offer has been made (it is made once). */
   placementOffered?: string[];
+  /** Pronunciation next to new words, per language: off, in the learner's own letters (native), or IPA. Unset = native where the language has readings. */
+  reading?: Record<string, "off" | "native" | "ipa">;
+  /** Languages whose pronunciation question has been asked (it is asked once). */
+  readingAsked?: string[];
 }
 
 /** Algorithm 3 since 0.6.0; a config without the field gets it. `langcouch mode 1` brings the old weave back. */

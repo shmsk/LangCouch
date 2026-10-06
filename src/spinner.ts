@@ -36,7 +36,7 @@ export function pickSpinnerWords(words: Word[], state: State, n = SPINNER_TIPS):
     .slice(0, n);
 }
 
-export const tipFor = (w: Word, native: string) => `${SPINNER_MARKER}${w.target} = ${glossFor(w, native)}`;
+export const tipFor = (w: Word, native: string, reading = "") => `${SPINNER_MARKER}${w.target}${reading ? ` [${reading}]` : ""} = ${glossFor(w, native)}`;
 
 /** Replace our tips with `tips`, keeping every foreign tip and key. Returns a new object. */
 export function applySpinnerTips(settings: Settings, tips: string[]): Settings {

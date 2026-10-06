@@ -166,6 +166,8 @@ const FALSE_FRIENDS_DIR = join(REPO_ROOT, "falseFriends");
 const USER_FALSE_FRIENDS_DIR = join(DATA_DIR, "falseFriends");
 const NUMBERS_DIR = join(REPO_ROOT, "numbers");
 const USER_NUMBERS_DIR = join(DATA_DIR, "numbers");
+const READINGS_DIR = join(REPO_ROOT, "readings");
+const USER_READINGS_DIR = join(DATA_DIR, "readings");
 export const CONCEPTS_PATH = join(REPO_ROOT, "concepts.json");
 const CHANGELOG_PATH = join(REPO_ROOT, "CHANGELOG.md");
 
@@ -259,9 +261,22 @@ export function loadWordMapping(lang: string): WordMapping {
   return Object.assign({}, ...layers) as WordMapping;
 }
 
+/** Pronunciations (concept id → IPA) for exactly this code; {} when there is no file. */
+function readingsFile(lang: string): Record<string, string> {
+  const path = resolveData(USER_READINGS_DIR, READINGS_DIR, lang);
+  return path ? readJson<Record<string, string>>(path, `readings ${lang}`) : {};
+}
+
+/** Pronunciations for a language; a variant's file overlays its base's, like the wordlist. */
+export function loadReadings(lang: string): Record<string, string> {
+  const base = baseLang(normalizeLang(lang));
+  return { ...(base ? readingsFile(base) : {}), ...readingsFile(lang) };
+}
+
 /** Concepts joined with their lemmas in the target language. */
 export function loadWordlist(lang: string): Word[] {
   const mapping = loadWordMapping(lang);
+  const readings = loadReadings(lang);
   const base = baseLang(normalizeLang(lang));
   const baseMapping = base ? loadWordMapping(base) : {};
   const code = normalizeLang(lang);
@@ -278,7 +293,8 @@ export function loadWordlist(lang: string): Word[] {
     const baseTarget = baseMapping[id];
     const differs = baseTarget !== undefined && baseTarget !== lemma;
     const baseNote = differs ? rude.get(baseTarget) : undefined;
-    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(c.alt ? { alt: c.alt } : {}), ...(differs ? { baseTarget } : {}), ...(baseNote ? { baseNote } : {}) });
+    const ipa = readings[id];
+    words.push({ id, target: lemma, pos: c.pos, tier: c.tier, gloss: c.gloss, ...(c.alt ? { alt: c.alt } : {}), ...(differs ? { baseTarget } : {}), ...(baseNote ? { baseNote } : {}), ...(ipa ? { ipa } : {}) });
   }
   return words;
 }

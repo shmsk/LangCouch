@@ -233,7 +233,7 @@ export const register: Register = on => {
         v.phase === 'result' ? { expected: v.last!.expected, ok: v.last!.ok, typed: v.typed } : v.phase === 'revealed' ? { expected: v.expected ?? '' } : undefined
       const face = (
         <Svg
-          source={cardSvg({ kind: card.kind, index: v.index, total: v.cards.length, lang: v.status.lang, promptLang: cardLangs(card, v.status.lang, v.status.native).prompt, prompt: card.prompt, ask: ask_, answer: back })}
+          source={cardSvg({ kind: card.kind, index: v.index, total: v.cards.length, lang: v.status.lang, promptLang: cardLangs(card, v.status.lang, v.status.native).prompt, prompt: card.prompt, reading: card.reading, ask: ask_, answer: back })}
           alt={[`${card.kind === 'placement' ? 'Placement' : 'Review'} ${v.index + 1} of ${v.cards.length}: ${card.prompt}. ${ask_}`, back && `${back.ok === undefined ? '' : back.ok ? 'Right: ' : 'Wrong: '}${back.expected}`].filter(Boolean).join(' ')}
         />
       )
@@ -315,10 +315,14 @@ export const register: Register = on => {
       <Box flexDirection="row" gap={1}>
         <Text>{promptTag.flag}</Text>
         <Text bold>{card.prompt}</Text>
+        {card.reading ? <Text dimColor>[{card.reading}]</Text> : null}
         <Text dimColor>{promptTag.name}</Text>
       </Box>
     ) : (
-      <Text bold>{card.prompt}</Text>
+      <Text bold>
+        {card.prompt}
+        {card.reading ? <Text dimColor> [{card.reading}]</Text> : null}
+      </Text>
     )
     // The answer with its language after it: ✓ дом 🇷🇺 Русский
     const answerTag = langs.answer ? langTag(langs.answer) : undefined

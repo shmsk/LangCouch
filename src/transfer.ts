@@ -18,7 +18,7 @@ export const BUNDLE_FORMAT = "langcouch-export";
 export const BUNDLE_VERSION = 1;
 
 /** The user's own data files next to progress; each folder holds <lang>.json files. */
-const USER_DIRS = ["wordlists", "grammar", "patterns", "falseFriends", "numbers"] as const;
+const USER_DIRS = ["wordlists", "grammar", "patterns", "falseFriends", "numbers", "readings"] as const;
 type UserDir = (typeof USER_DIRS)[number];
 
 export interface Bundle {
@@ -87,13 +87,16 @@ function validConfig(c: unknown): c is Config {
     (c.seenVersion === undefined || typeof c.seenVersion === "string") &&
     (c.nativeAsked === undefined || typeof c.nativeAsked === "boolean") &&
     (c.placementSkipped === undefined || (isObject(c.placementSkipped) && Object.values(c.placementSkipped).every(strings))) &&
-    (c.placementOffered === undefined || strings(c.placementOffered))
+    (c.placementOffered === undefined || strings(c.placementOffered)) &&
+    (c.cardsStatus === undefined || typeof c.cardsStatus === "boolean") &&
+    (c.reading === undefined || (isObject(c.reading) && Object.entries(c.reading).every(([lang, m]) => SAFE_LANG.test(lang) && (m === "off" || m === "native" || m === "ipa")))) &&
+    (c.readingAsked === undefined || strings(c.readingAsked))
   );
 }
 
 /** A user file must have the shape the loaders expect, or it would break the language it overrides. */
 function validUserFile(dir: UserDir, content: unknown, concepts: Set<string>): boolean {
-  if (dir === "wordlists") return isObject(content) && Object.entries(content).every(([id, lemma]) => concepts.has(id) && typeof lemma === "string" && lemma.length > 0);
+  if (dir === "wordlists" || dir === "readings") return isObject(content) && Object.entries(content).every(([id, value]) => concepts.has(id) && typeof value === "string" && value.length > 0);
   if (!Array.isArray(content) || !content.every(isObject)) return false;
   return dir === "falseFriends" || content.every((item) => typeof item.id === "string");
 }

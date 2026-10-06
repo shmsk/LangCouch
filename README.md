@@ -11,6 +11,10 @@ LangCouch weaves words from the language you're learning into your AI coding age
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
+## What's new in 0.9.5
+
+- **Pronunciation next to new words** in French, English and Portuguese, in letters you can read: **maison** [мезо́н] (дом) if you write in Russian, [meh-ZAWN] in English, [mezon] in Uzbek, or IPA [mɛzɔ̃] if you prefer. LangCouch asks once which you want; `/langcouch:reading off|native|ipa` changes it. See [Pronunciation](#pronunciation).
+
 ## What's new in 0.9.4
 
 - **Cards show the language of each word.** `/cards` puts a flag and the language's name next to the word and the answer: 🇮🇹 casa Italiano, ✓ дом 🇷🇺 Русский. "natural" in Spanish and in English no longer look the same.
@@ -196,18 +200,18 @@ flowchart LR
 
 ## Supported languages
 
-| Language | Code | Words | Grammar constructions | Word-building rules | Number rules |
-|---|---|---|---|---|---|
-| English (US) | `en` | 432 | — | 7 (for Russian speakers) | 5 |
-| English (UK) | `en-GB` | 432, same as US except 9 (*colour*, *centre*, *film*…) | — | 7 (from US) | 5 (1 own: *and* after hundred) |
-| German | `de` | 432 | — | 8 | 7 |
-| French | `fr` | 432 | — | 8 | 8 |
-| Italian | `it` | 432 | — | 8 | 7 |
-| Spanish (Spain) | `es` | 432 | 10 | 8 | 7 |
-| Spanish (Latin America) | `es-419` | 432, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) | 7 (from Spain) |
-| Portuguese (Portugal) | `pt` | 432 | — | 8 | 6 |
-| Portuguese (Brazil) | `pt-BR` | 432, same as Portugal except 12 (*trem*, *celular*, *dezesseis*…) | — | 8 (from Portugal) | 6 (1 own: *dezesseis*) |
-| Turkish | `tr` | 432 | — | 5 | 5 |
+| Language | Code | Words | Grammar constructions | Word-building rules | Number rules | Pronunciation |
+|---|---|---|---|---|---|---|
+| English (US) | `en` | 432 | — | 7 (for Russian speakers) | 5 | US |
+| English (UK) | `en-GB` | 432, same as US except 9 (*colour*, *centre*, *film*…) | — | 7 (from US) | 5 (1 own: *and* after hundred) | UK (248 words differ from US) |
+| German | `de` | 432 | — | 8 | 7 | — |
+| French | `fr` | 432 | — | 8 | 8 | ✓ |
+| Italian | `it` | 432 | — | 8 | 7 | — |
+| Spanish (Spain) | `es` | 432 | 10 | 8 | 7 | — |
+| Spanish (Latin America) | `es-419` | 432, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) | 7 (from Spain) | — |
+| Portuguese (Portugal) | `pt` | 432 | — | 8 | 6 | Portugal |
+| Portuguese (Brazil) | `pt-BR` | 432, same as Portugal except 12 (*trem*, *celular*, *dezesseis*…) | — | 8 (from Portugal) | 6 (1 own: *dezesseis*) | Brazil (335 words differ from Portugal) |
+| Turkish | `tr` | 432 | — | 5 | 5 | — |
 
 The code is what you pass to switch languages, e.g. `/langcouch:lang es-419` (or simply `/langcouch:lang latam`).
 
@@ -218,6 +222,20 @@ Adding your language is one JSON file. Just for yourself: run `/langcouch:add-la
 Regional variants work the same way: `pt-BR.json` lists only the words where Brazilian Portuguese differs from `pt`, and the rest comes from the base. `/langcouch:add-language Brazilian Portuguese` builds one; `/langcouch:lang pt-br` switches to it.
 
 Switching to a variant doesn't start you over. Every word spelled the same in both shares one progress pool, so if you learned Spain Spanish and move to `es-419`, you keep *casa* and all the rest and only learn the 9 words that differ. Those come first, next to the Spain word: *carro = car, Spain: coche*. Grammar works the same way: the regional constructions (*ustedes trabajan*, not *vosotros trabajáis*) come first. Where the base word is rude in the variant's region, the contrast says so: *tomar = to take, Spain: coger (vulgar in much of Latin America)*.
+
+## Pronunciation
+
+French, English and Portuguese are not read the way they are spelled, so their new words come with a pronunciation, in letters you already read:
+
+| What you see | Setting |
+|---|---|
+| **maison** (дом) | `off` |
+| **maison** [мезо́н] (дом) | `native`, the default: Russian letters, English respelling ([meh-ZAWN]) or Uzbek letters ([mezon]), in the language you write in |
+| **maison** [mɛzɔ̃] (дом) | `ipa`: the International Phonetic Alphabet |
+
+LangCouch asks once per language, showing these three with a word from your list; `/langcouch:reading off|native|ipa` changes it later. Only new words carry it, so it fades with the translation. Cards and spinner tips show it too. Spanish, Italian, German and Turkish are close enough to their spelling that they show none.
+
+The pronunciations come from Wiktionary as IPA, one per word: American and British English, European and Brazilian Portuguese each have their own. The letters are generated from the IPA and are an approximation for reading the word aloud; IPA is the exact form. Adding pronunciations to a language is one more JSON file, see [docs/AddLanguage.md](docs/AddLanguage.md).
 
 ## Word-building rules
 
@@ -273,6 +291,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `pause` / `resume` | kill switch for weaving |
 | `export [file\|-] [--force]` | save progress, settings and your own wordlists to one file, `~/langcouch-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
 | `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |
+| `reading <off\|native\|ipa\|status>` | pronunciation of new French, English and Portuguese words: in your letters (default), IPA, or none |
 | `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
 | `cards-status <on\|off\|status>` | opt-in: how many cards are due, in the Claude Code status line (`/cards` asks once) |
 | `instruction` | print the weave instruction (without marking exposures) |

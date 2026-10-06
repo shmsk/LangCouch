@@ -50,6 +50,8 @@ export type CardFace = {
   /** The language the prompt is in (the learner's on a reverse card): its flag and name in the corner. */
   promptLang?: string
   prompt: string
+  /** The prompt's pronunciation, shown under it (forward cards, when the learner has it on). */
+  reading?: string
   ask: string
   /** The answer side: after a graded answer (`ok` set) or a reveal (`ok` undefined). */
   answer?: { expected: string; ok?: boolean; typed?: string }
@@ -78,7 +80,11 @@ export function cardSvg(c: CardFace): string {
 
   const promptY = c.answer ? 100 : 118
   body += text(W / 2, promptY, 'ink', fitSize(c.prompt, inner, 40, 16), c.prompt, 'font-weight="700" text-anchor="middle"')
-  body += text(W / 2, promptY + 26, 'dim', 13, c.ask, 'text-anchor="middle"')
+  if (c.reading) {
+    // the pronunciation takes the line under the word; the ask moves down, or yields to the answer
+    body += text(W / 2, promptY + 24, 'dim', fitSize(`[${c.reading}]`, inner, 15, 10), `[${c.reading}]`, 'text-anchor="middle"')
+    if (!c.answer) body += text(W / 2, promptY + 44, 'dim', 13, c.ask, 'text-anchor="middle"')
+  } else body += text(W / 2, promptY + 26, 'dim', 13, c.ask, 'text-anchor="middle"')
 
   if (c.answer) {
     const { expected, ok, typed } = c.answer

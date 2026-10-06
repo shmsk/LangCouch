@@ -6,9 +6,9 @@
 const norm = (s: string) => s.normalize("NFC").toLowerCase();
 export const tokens = (s: string) => norm(s).split(/[^\p{L}]+/u).filter(Boolean);
 
-/** Every **bold** (gloss) pair in a reply, in the format the weave instruction asks for. */
+/** Every **bold** (gloss) pair in a reply, in the format the weave instruction asks for; a [pronunciation] between them is allowed. */
 export function wovenPairs(reply: string): { word: string; gloss: string }[] {
-  return [...reply.matchAll(/\*\*([^*\n]{1,40})\*\*\s*\(([^)\n]{1,60})\)/g)].map((m) => ({
+  return [...reply.matchAll(/\*\*([^*\n]{1,40})\*\*\s*(?:\[[^\]\n]{1,40}\]\s*)?\(([^)\n]{1,60})\)/g)].map((m) => ({
     word: m[1]!.trim(),
     gloss: m[2]!.trim(),
   }));

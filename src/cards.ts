@@ -3,6 +3,7 @@ import { glossFor, isAbsorbed } from "./types.ts";
 import { dueOf, isDue, stepOf } from "./ladder.ts";
 import { applyQuizResult, checkAnswer, dropLeading } from "./recall.ts";
 import { answerPlacement, placementQueue, skippedFor } from "./placement.ts";
+import { readingFor, readingOf } from "./reading.ts";
 
 /**
  * Flashcards: the review half of the ladder, driven by the learner instead of by replies.
@@ -20,6 +21,8 @@ export interface Card {
   dir: CardDir;
   /** What the learner sees: the target word (forward) or its gloss in their language (reverse). */
   prompt: string;
+  /** Forward cards: the word's pronunciation, when the learner has it on (readings/<lang>.json). */
+  reading?: string;
 }
 
 /** From this ladder step on, review cards alternate: odd steps ask native → target. */
@@ -41,14 +44,19 @@ export function dueCards(words: Word[], state: State, now: string): Word[] {
 
 export function cardQueue(words: Word[], state: State, config: Config, n: number, now: string): Card[] {
   const lang = config.lang;
+  const mode = readingOf(config, lang, words.some((w) => w.ipa));
+  const said = (w: Word) => {
+    const r = readingFor(w, mode, config.native, lang);
+    return r ? { reading: r } : {};
+  };
   const due = dueCards(words, state, now).map((w): Card => {
     const dir = cardDir(stepOf(state[w.id]));
-    return { id: w.id, kind: "review", dir, prompt: dir === "reverse" ? glossFor(w, config.native, lang) : w.target };
+    return { id: w.id, kind: "review", dir, prompt: dir === "reverse" ? glossFor(w, config.native, lang) : w.target, ...(dir === "forward" ? said(w) : {}) };
   });
   const taken = new Set(due.map((c) => words.find((w) => w.id === c.id)!.target));
   const placement = placementQueue(words, state, skippedFor(config, lang))
     .filter((w) => !taken.has(w.target))
-    .map((w): Card => ({ id: w.id, kind: "placement", dir: "forward", prompt: w.target }));
+    .map((w): Card => ({ id: w.id, kind: "placement", dir: "forward", prompt: w.target, ...said(w) }));
   return [...due, ...placement].slice(0, n);
 }
 

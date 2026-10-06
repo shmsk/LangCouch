@@ -14,6 +14,7 @@ import { pickWords, markExposed, unlockedWords, tierProgress, type Pick } from "
 import { migrate, pickLadder } from "./ladder.ts";
 import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "./served.ts";
 import { buildInstruction } from "./instruction.ts";
+import { readingOf, readingFor, askReadingLine, readingExamples, READING_MODES, type ReadingMode } from "./reading.ts";
 import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
 import { placementQueue, answerPlacement, skippedFor, withSkipped, placementStarted, detectTooEasy, OFFER_TOO_EASY, offerAtStart } from "./placement.ts";
@@ -89,8 +90,21 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
     ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : "",
     tooEasy ? OFFER_TOO_EASY : offerStart ? offerAtStart(langName(config.lang)) : "",
   ].filter(Boolean);
+  // pronunciation: in the learner's letters by default where the language has readings; asked once per
+  // language, and never in the same reply as another question
+  const hasReadings = words.some((w) => w.ipa);
+  const mode = readingOf(saved, config.lang, hasReadings);
+  const askReading = hasReadings && extra.length === 0 && !(saved.readingAsked ?? []).includes(config.lang) && eventName !== "SessionStart";
+  const sample = askReading ? (picks.find((p) => p.word.ipa)?.word ?? words.find((w) => w.ipa)) : undefined;
+  if (sample) {
+    extra.push(askReadingLine(config.lang, langName(config.lang), config.native, sample));
+    if (mark) {
+      const fresh = loadConfig();
+      saveConfig({ ...fresh, readingAsked: [...(fresh.readingAsked ?? []), config.lang] });
+    }
+  }
   const num = numberRule ? numberCue(numberRule, config.native) : null;
-  return buildInstruction(config, picks, grammar, cue, algorithm, known, extra.length ? extra.join(" ") : null, num);
+  return buildInstruction(config, picks, grammar, cue, algorithm, known, extra.length ? extra.join(" ") : null, num, (w) => readingFor(w, mode, config.native, config.lang));
 }
 
 /**
@@ -114,7 +128,9 @@ function settleReply(payload: HookPayload): void {
 function refreshSpinner(on: boolean): number {
   const config = loadConfig();
   const before = readSettings();
-  const tips = on ? pickSpinnerWords(loadWordlist(config.lang), loadState(config.lang)).map((w) => tipFor(w, config.native)) : [];
+  const words = on ? loadWordlist(config.lang) : [];
+  const mode = readingOf(config, config.lang, words.some((w) => w.ipa));
+  const tips = on ? pickSpinnerWords(words, loadState(config.lang)).map((w) => tipFor(w, config.native, readingFor(w, mode, config.native, config.lang))) : [];
   writeSettingsIfChanged(before, on ? applySpinnerTips(before, tips) : removeSpinnerTips(before), DATA_DIR);
   return tips.length;
 }
@@ -684,6 +700,34 @@ try {
       saveConfig({ ...config, lang: code });
       console.log(`Language: ${config.lang} → ${code} (progress is per-language, ${config.lang} is kept)`);
       if (!placementStarted(config, code)) console.log(`Already know some ${langName(code)}? \`langcouch placement\` (or /langcouch:placement in Claude Code) checks the list and marks the words you know.`);
+      const sample = loadWordlist(code).find((w) => w.ipa);
+      if (sample) {
+        console.log(`Pronunciation of new words: ${readingOf(config, code, true)} — change with \`langcouch reading off|native|ipa\` (/langcouch:reading):`);
+        console.log(readingExamples(code, config.native, sample).join("\n"));
+      }
+      break;
+    }
+    case "reading": {
+      const config = loadConfig();
+      const sub = args[0] ?? "status";
+      const sample = loadWordlist(config.lang).find((w) => w.ipa);
+      if (!sample) {
+        console.log(`${langName(config.lang)} reads as it is written: LangCouch shows no pronunciation for it.`);
+        break;
+      }
+      if (sub === "status") {
+        console.log(`Pronunciation of new ${langName(config.lang)} words: ${readingOf(config, config.lang, true)}`);
+        console.log(readingExamples(config.lang, config.native, sample).join("\n"));
+        break;
+      }
+      if (!READING_MODES.includes(sub as ReadingMode)) {
+        console.error("usage: langcouch reading <off|native|ipa|status>");
+        process.exit(1);
+      }
+      const asked = config.readingAsked ?? [];
+      saveConfig({ ...config, reading: { ...config.reading, [config.lang]: sub as ReadingMode }, readingAsked: asked.includes(config.lang) ? asked : [...asked, config.lang] });
+      const line = readingExamples(config.lang, config.native, sample).find((l) => l.trimStart().startsWith(sub))!;
+      console.log(`Pronunciation of new ${langName(config.lang)} words: ${readingOf(config, config.lang, true)} → ${sub}\n${line}`);
       break;
     }
     case "validate": {
@@ -853,6 +897,7 @@ try {
           "  cards status | next [n] | answer <id> <kind> <dir> [answer] | reveal | grade | accept   flashcards as JSON (for the cards mod)",
           "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
           "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
+          "  reading <off|native|ipa|status>   pronunciation of new words: your letters (default), IPA, or none (fr, en, pt)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
           "  cards-status <on|off|status>   due-card count in the Claude Code status line (opt-in)",
           "  instruction               print the weave instruction (without marking exposures)",

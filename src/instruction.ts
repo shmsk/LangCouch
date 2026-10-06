@@ -34,24 +34,32 @@ export function langName(code: string): string {
  *
  * A numeral among the picks (at most one) is woven next to its digit, 3 (**tre**), so the
  * fact stays readable. `num` is a number rule; it takes the word-building rule's slot.
+ *
+ * `reading` gives a word's pronunciation as the learner should see it ("" for none); words
+ * that carry their translation inline carry it too, **word** [reading] (translation).
  */
 export type WeaveAlgorithm = 1 | 2 | 3;
 
 export const INSTRUCTION_BUDGET = 2400;
 
-export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = [], ask: string | null = null, num: NumberCue | null = null): string {
+export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = [], ask: string | null = null, num: NumberCue | null = null, reading: (w: Word) => string = () => ""): string {
   const name = langName(config.lang);
   const base = config.lang.split("-")[0]!;
   const region = BASE_REGION[base] ?? langName(base);
   const contrast = (target: string | undefined, note: string | undefined) =>
     target ? `, ${region}: ${target}${note ? ` (${note})` : ""}` : "";
   const item = (p: Pick) => `${p.word.target} = ${glossFor(p.word, config.native, config.lang)}${contrast(p.word.baseTarget, p.word.baseNote)}`;
-  const vocab = picks.map(item).join("; ");
+  const spoken = (p: Pick) => {
+    const r = reading(p.word);
+    return r ? item(p).replace(` = `, ` [${r}] = `) : item(p);
+  };
+  const vocab = picks.map(spoken).join("; ");
+  const withReading = picks.some((p) => reading(p.word));
   const stage = grammarStage(config.level);
   const grammarContrast = grammar?.baseExample ? `; ${region}: ${grammar.baseExample}` : "";
 
   if (num) rule = null; // one rule line per reply
-  if (algorithm === 3) return ladderInstruction(config, picks, grammar, rule, known, item, ask, num);
+  if (algorithm === 3) return ladderInstruction(config, picks, grammar, rule, known, item, ask, num, spoken, reading);
 
   const fitOnly = algorithm === 2;
   const lines = [
@@ -63,7 +71,9 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
     ...(fitOnly
       ? [`Use a word only where your reply already needs that meaning; skip the rest. A few words, or none, is fine. Never write a sentence, metaphor or example just to host a word.`]
       : []),
-    `Format: **word** (translation) on first appearance in the reply, then just **word**.`,
+    withReading
+      ? `Format: **word** [pronunciation] (translation) on first appearance in the reply, copying the pronunciation as given, then just **word**.`
+      : `Format: **word** (translation) on first appearance in the reply, then just **word**.`,
     `Inflect the words to fit the context (plural, gender: casas, bonitas) — the lemma must stay recognizable.`,
   ];
 
@@ -101,7 +111,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
 }
 
 /** Algorithm 3: fit words, a capped nudge, and translations that fade with the ladder step. */
-function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null, rule: PatternCue | null, known: Word[], item: (p: Pick) => string, ask: string | null, num: NumberCue | null): string {
+function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null, rule: PatternCue | null, known: Word[], item: (p: Pick) => string, ask: string | null, num: NumberCue | null, spoken: (p: Pick) => string, reading: (w: Word) => string): string {
   const name = langName(config.lang);
   const base = config.lang.split("-")[0]!;
   const region = BASE_REGION[base] ?? langName(base);
@@ -117,7 +127,7 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   const head = [
     `<langcouch>`,
     `Language immersion (diglot weave): in your reply's prose, use up to ~${picks.length} ${name} words for common ones, ONLY from those below.`,
-    ...(fresh.length ? [`New, translation inline: ${fresh.map(item).join("; ")}`] : []),
+    ...(fresh.length ? [`New, translation inline: ${fresh.map(spoken).join("; ")}`] : []),
     ...(familiar.length ? [`Familiar, no translation in the text: ${familiar.map(item).join("; ")}`] : []),
   ];
   const knownAt = head.length; // the known line goes here, filled last to fit the budget
@@ -125,9 +135,11 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
     ...head,
     `Use a word only where your reply already needs that meaning; skip the rest. A few words, or none, is fine. Never write a sentence, metaphor or example just to host a word${nudge.length ? " (the nudge aside)" : ""}.`,
     ...(nudge.length
-      ? [`Nudge, the one exception: work in ${nudge.map(item).join("; ")} even if unneeded, as a short aside or metaphor in your own words or one closing line after the answer; never in code, facts, numbers or names.`]
+      ? [`Nudge, the one exception: work in ${nudge.map(spoken).join("; ")} even if unneeded, as a short aside or metaphor in your own words or one closing line after the answer; never in code, facts, numbers or names.`]
       : []),
-    `Format: bold every woven word. New and nudge words: **word** (translation) the first time, then **word**; familiar and known: just **word**.`,
+    [...fresh, ...nudge].some((p) => reading(p.word))
+      ? `Format: bold every woven word. New and nudge words: **word** [pronunciation] (translation) the first time, pronunciation copied as given, then **word**; familiar and known: just **word**.`
+      : `Format: bold every woven word. New and nudge words: **word** (translation) the first time, then **word**; familiar and known: just **word**.`,
     ...(familiar.length ? [`If you used familiar words, close with one line of only those used: ${familiar[0] ? item(familiar[0]) : ""} · …; none used, no line.`] : []),
     `Inflect words to fit (casas, bonitas), keeping the lemma recognizable.`,
   ];

@@ -2,7 +2,7 @@ export type CardDir = 'forward' | 'reverse'
 export type CardKind = 'review' | 'placement'
 
 /** One card as `langcouch cards next` returns it. */
-export type Card = { id: string; kind: CardKind; dir: CardDir; prompt: string }
+export type Card = { id: string; kind: CardKind; dir: CardDir; prompt: string; reading?: string }
 
 /** `langcouch cards status`, also carried by `next` and every answer. */
 export type CardStatus = {
