@@ -1,6 +1,6 @@
 {
   "name": "lazy-polyglot",
-  "description": "Lazy Polyglot: get (almost) accidentally fluent. Passive language immersion for AI CLIs",
+  "description": "Lazy Polyglot: get (almost) accidentally fluent. Learn a language from the AI replies you already read every day",
   "renames": {
     "langcouch": "lazy-polyglot"
   },

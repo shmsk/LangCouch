@@ -4,9 +4,9 @@ English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
 
 **Get (almost) accidentally fluent 🙂**
 
-Learn a language while you work, without leaving your terminal.
+Learn a language from the AI replies you already read every day.
 
-Lazy Polyglot weaves words from the language you're learning into your AI coding agent's replies (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
+Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "why is the deploy failing?"
 > Agent: "Port 8080 is still held by a **viejo** (old) process from your **primero** (first) run this morning. Kill it with `lsof -ti :8080 | xargs kill` and the deploy will go through **ahora** (now)."
