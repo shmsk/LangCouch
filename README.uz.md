@@ -297,6 +297,14 @@ Hook lokal tarzda ishlaydi. U soʻrovingizni faqat allaqachon koʻrgan soʻzlari
 
 Javob tugagach, hook uni ham oʻqiydi (xost oʻzi uzatadi yoki u Claude Codeʼning lokal transkriptida bor) — faqat javobda haqiqatan ishlatilgan soʻzlarni hisoblash uchun. Shu paytgacha joriy navbat uchun taklif qilingan soʻzlar `~/.lazy-polyglot/served.json` faylida turadi. Javobning oʻzi saqlanmaydi va hech narsa kompyuteringizdan chiqmaydi. `lazy-polyglot mode 1` yoki `mode 2` buni oʻchiradi.
 
+### Kompyuteringizda nima ishga tushadi
+
+- **Hooklar** (Claude Code `UserPromptSubmit`, `SessionStart`, `Stop`): har biri `scripts/hook.sh` ni ishga tushiradi, u esa `src/cli.ts hook` ni `bun` (yoki Node 22.6+) bilan ishga tushiradi. Soʻrovda kontekstga soʻzlar haqidagi koʻrsatmani qoʻshadi, javob tugagach javobda ishlatilgan soʻzlarni hisoblaydi. Faqat `~/.lazy-polyglot/` ni oʻqiydi va unga yozadi.
+- **`/cards` modi** bitta dasturni ishga tushiradi: `/bin/sh <plugin>/scripts/cli.sh cards …`, ya'ni oʻsha Lazy Polyglot CLI, kartochkalarni tanlash, tekshirish va saqlash uchun. Bu skriptni topish uchun `LAZY_POLYGLOT_CLI`, `LANGCOUCH_CLI`, `HOME` oʻzgaruvchilarini va `~/.claude/plugins/installed_plugins.json` faylini oʻqiydi. Hech qayerga hech narsa yubormaydi.
+- **Claude Code sozlamalari:** `~/.claude/settings.json` ga faqat `/lazy-polyglot:spinner on` yozadi (soʻzlaringiz spinner maslahatlari sifatida), `off` esa aynan shu qatorlarni oʻchiradi.
+- **`/lazy-polyglot:add-language`** faqat `~/.lazy-polyglot/` ichiga yoza oladi.
+- **Plagin ishlaganda ishlatilmaydi:** `evals/` (modellar sifatini oʻlchash; men ularni qoʻlda ishga tushirganimda OpenRouter kalitini macOS Keychain yoki `OPENROUTER_API_KEY` dan oladi), `bunfig.toml` (test sozlamalari, paketlar reyestri yoʻq), `package.json` va `bun.lock` (faqat test va tip tekshiruvi vositalari, sizga hech narsa oʻrnatilmaydi).
+
 ## Oʻchirib tashlash
 
 - **Claude Code plagini:** agar spinnerni yoqqan boʻlsangiz, **avval** `/lazy-polyglot:spinner off` ni bajaring (Claude Code da oʻchirish hooki yoʻq, shuning uchun plagin oʻzidan keyin tozalay olmaydi). Keyin `/plugin uninstall lazy-polyglot@lazy-polyglot` va sessiyani qayta ishga tushiring. Spinner yoqilgan holda allaqachon oʻchirib yubordingizmi? `~/.claude/settings.json` dagi `spinnerTipsOverride.tips` dan `Lazy Polyglot · ` bilan boshlanadigan qatorlarni oʻchiring.

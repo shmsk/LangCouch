@@ -294,6 +294,14 @@ The hook runs locally. It reads your prompt only to scan it for words you've alr
 
 Once a reply is finished, the hook also reads it (the host hands it over, or Claude Code's local transcript has it) to count only the words the reply actually used. The words offered for the current turn wait in `~/.lazy-polyglot/served.json` until then. The reply is not stored, and nothing leaves your machine. `lazy-polyglot mode 1` or `mode 2` turns this off.
 
+### What runs on your machine
+
+- **Hooks** (Claude Code `UserPromptSubmit`, `SessionStart`, `Stop`): each runs `scripts/hook.sh`, which starts `bun` (or Node 22.6+) on `src/cli.ts hook`. On a prompt it adds the word instruction to the context; when a reply ends it counts the words the reply used. It reads and writes only `~/.lazy-polyglot/`.
+- **The `/cards` mod** runs one program: `/bin/sh <plugin>/scripts/cli.sh cards …`, the same Lazy Polyglot CLI, to pick, grade and save cards. To find that script it reads the env vars `LAZY_POLYGLOT_CLI`, `LANGCOUCH_CLI` and `HOME`, and `~/.claude/plugins/installed_plugins.json`. It sends nothing anywhere.
+- **Claude Code settings:** only `/lazy-polyglot:spinner on` writes to `~/.claude/settings.json` (your words as spinner tips), and `off` removes exactly those lines.
+- **`/lazy-polyglot:add-language`** may write only under `~/.lazy-polyglot/`.
+- **Not part of the plugin at runtime:** `evals/` (my model-quality evals; they read an OpenRouter key from the macOS Keychain or `OPENROUTER_API_KEY` when I run them by hand), `bunfig.toml` (test settings, no package registry), `package.json` and `bun.lock` (test and type-check tools only, nothing is installed for you).
+
 ## Uninstall
 
 - **Claude Code plugin:** if you turned the spinner on, run `/lazy-polyglot:spinner off` **first** (Claude Code has no uninstall hook, so the plugin can't clean up after itself). Then `/plugin uninstall lazy-polyglot@lazy-polyglot` and restart the session. Already uninstalled with the spinner on? Delete the lines starting with `Lazy Polyglot · ` from `spinnerTipsOverride.tips` in `~/.claude/settings.json`.

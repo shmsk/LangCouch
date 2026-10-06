@@ -297,6 +297,14 @@ lazy-polyglot import ~/Downloads/lazy-polyglot-export-2026-10-01.json   # на �
 
 Когда ответ готов, хук ещё и читает его (хост передаёт его сам, либо он есть в локальном транскрипте Claude Code), чтобы засчитать только те слова, которые ответ действительно использовал. Слова, предложенные на текущий ход, до этого лежат в `~/.lazy-polyglot/served.json`. Сам ответ не сохраняется, и ничего не покидает ваш компьютер. `lazy-polyglot mode 1` или `mode 2` это отключает.
 
+### Что запускается на вашем компьютере
+
+- **Хуки** (Claude Code `UserPromptSubmit`, `SessionStart`, `Stop`): каждый запускает `scripts/hook.sh`, а тот запускает `bun` (или Node 22.6+) на `src/cli.ts hook`. На промпт хук добавляет в контекст инструкцию со словами, после ответа считает, какие слова ответ использовал. Читает и пишет только `~/.lazy-polyglot/`.
+- **Мод `/cards`** запускает одну программу: `/bin/sh <plugin>/scripts/cli.sh cards …`, тот же CLI Lazy Polyglot, чтобы выбрать, проверить и сохранить карточки. Чтобы найти этот скрипт, он читает переменные `LAZY_POLYGLOT_CLI`, `LANGCOUCH_CLI`, `HOME` и файл `~/.claude/plugins/installed_plugins.json`. Никуда ничего не отправляет.
+- **Настройки Claude Code:** в `~/.claude/settings.json` пишет только `/lazy-polyglot:spinner on` (ваши слова как подсказки спиннера), а `off` удаляет ровно эти строки.
+- **`/lazy-polyglot:add-language`** может писать только в `~/.lazy-polyglot/`.
+- **Не работает в составе плагина:** `evals/` (мои замеры качества на моделях; ключ OpenRouter берут из Keychain macOS или `OPENROUTER_API_KEY`, только когда я запускаю их вручную), `bunfig.toml` (настройки тестов, без реестра пакетов), `package.json` и `bun.lock` (только инструменты тестов и проверки типов, вам ничего не устанавливается).
+
 ## Удаление
 
 - **Плагин Claude Code:** если вы включали спиннер, **сначала** выполните `/lazy-polyglot:spinner off` (у Claude Code нет хука удаления, так что плагин не может прибраться за собой сам). Затем `/plugin uninstall lazy-polyglot@lazy-polyglot` и перезапустите сессию. Уже удалили с включённым спиннером? Удалите строки, начинающиеся с `Lazy Polyglot · `, из `spinnerTipsOverride.tips` в `~/.claude/settings.json`.

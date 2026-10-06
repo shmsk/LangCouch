@@ -1,7 +1,7 @@
 ---
 description: Add a new Lazy Polyglot language for yourself (survives plugin updates)
 argument-hint: <language name or ISO code>
-allowed-tools: Read, Write, Edit, Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
+allowed-tools: Read, Write(~/.lazy-polyglot/**), Edit(~/.lazy-polyglot/**), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---
 
 Add the language "$ARGUMENTS" to Lazy Polyglot for this user.

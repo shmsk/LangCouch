@@ -23,9 +23,10 @@ async function findCli($: Engine): Promise<string> {
       return false
     }
   }
+  const root = $.plugin.root
   const override = (await $.env.get('LAZY_POLYGLOT_CLI')) || (await $.env.get('LANGCOUCH_CLI'))
   if (override) return override
-  for (const local of [`${$.plugin.root}/scripts/cli.sh`, `${$.plugin.root}/../../scripts/cli.sh`])
+  for (const local of [`${root}/scripts/cli.sh`, `${root}/../../scripts/cli.sh`])
     if (await exists(local)) return local
   const home = await $.env.get('HOME')
   if (home) {
@@ -173,9 +174,9 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const els = $.ui.resolve(e)
     const { Box, Text, Button } = els
-    const Input = e.surface === 'mobile' ? undefined : $.ui.resolve(e).Input
+    const Input = e.surface === 'mobile' ? undefined : els.Input
     // desktop, VS Code and mobile draw SVG: there the card looks like a flashcard app
-    const Svg = e.surface === 'terminal' ? undefined : $.ui.resolve(e).Svg
+    const Svg = e.surface === 'terminal' ? undefined : els.Svg
     const v = await read($, view)
     const close = () => void $.ui.close({ id: PANE })
 
