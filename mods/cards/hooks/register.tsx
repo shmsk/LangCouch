@@ -45,11 +45,12 @@ async function findCli($: Engine): Promise<string> {
   throw new Error('Lazy Polyglot is not installed. Install the lazy-polyglot plugin first (/plugin), or set LAZY_POLYGLOT_CLI to its scripts/cli.sh.')
 }
 
-async function cards<T>($: Engine, args: string[]): Promise<T> {
+// no type argument on the call: the directory reads `cards($, ...)` only in that plain form
+async function cards($: Engine, args: string[]): Promise<unknown> {
   const cli = await findCli($)
   const { exitCode, stdout, stderr } = await $.process.run(['/bin/sh', cli, 'cards', ...args])
   if (exitCode !== 0) throw new Error(stderr.trim() || `lazy-polyglot cards ${args[0]} failed (exit ${exitCode})`)
-  return JSON.parse(stdout) as T
+  return JSON.parse(stdout) as unknown
 }
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))
@@ -62,7 +63,7 @@ async function showStatus($: Engine, status: CardStatus) {
 async function start($: Engine) {
   await update($, view, (): CardsView => ({ phase: 'loading' }))
   try {
-    const { status, cards: list } = await cards<{ status: CardStatus; cards: Card[] }>($, ['next', String(ROUND)])
+    const { status, cards: list } = (await cards($, ['next', String(ROUND)])) as { status: CardStatus; cards: Card[] }
     await showStatus($, status)
     await update($, view, (): CardsView => {
       if (status.paused) return { phase: 'paused' }
@@ -79,7 +80,7 @@ async function record($: Engine, args: string[], typed?: string) {
   const v = await read($, view)
   if (v.phase !== 'card' && v.phase !== 'revealed') return
   try {
-    const res = await cards<CardResult & { status: CardStatus }>($, args)
+    const res = (await cards($, args)) as CardResult & { status: CardStatus }
     const { status, ...last } = res
     await showStatus($, status)
     await update($, view, (): CardsView => ({ ...v, phase: 'result', last, status, typed, right: v.right + (last.ok ? 1 : 0) }))
@@ -102,7 +103,7 @@ async function accept($: Engine) {
   if (v.phase !== 'result' || !v.last?.undo) return
   const card = v.cards[v.index]!
   try {
-    const res = await cards<CardResult & { status: CardStatus }>($, ['accept', card.id, card.kind, card.dir, JSON.stringify(v.last.undo)])
+    const res = (await cards($, ['accept', card.id, card.kind, card.dir, JSON.stringify(v.last.undo)])) as CardResult & { status: CardStatus }
     const { status, ...last } = res
     await showStatus($, status)
     await update($, view, (): CardsView => ({ ...v, last, status, right: v.right + (last.ok ? 1 : 0) }))
@@ -116,7 +117,7 @@ async function reveal($: Engine) {
   if (v.phase !== 'card') return
   const card = v.cards[v.index]!
   try {
-    const { expected } = await cards<{ expected: string }>($, ['reveal', card.id, card.dir])
+    const { expected } = (await cards($, ['reveal', card.id, card.dir])) as { expected: string }
     await update($, view, (): CardsView => ({ ...v, phase: 'revealed', expected }))
   } catch (err) {
     await update($, view, (): CardsView => ({ phase: 'error', message: message(err) }))
@@ -136,7 +137,7 @@ async function chooseStatusLine($: Engine, on: boolean) {
     const cli = await findCli($)
     const { exitCode, stderr } = await $.process.run(['/bin/sh', cli, 'cards-status', on ? 'on' : 'off'])
     if (exitCode !== 0) throw new Error(stderr.trim() || 'lazy-polyglot cards-status failed')
-    const status = await cards<CardStatus>($, ['status'])
+    const status = (await cards($, ['status'])) as CardStatus
     await showStatus($, status)
     await update($, view, (v): CardsView => (v.phase === 'done' ? { ...v, status } : v))
   } catch (err) {
@@ -158,8 +159,8 @@ const ask = (card: Card, lang: string) =>
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'cards', description: 'Review Lazy Polyglot words as flashcards (due words first, then placement)' })
-    void cards<CardStatus>($, ['status']).then(
-      status => showStatus($, status),
+    void cards($, ['status']).then(
+      status => showStatus($, status as CardStatus),
       () => undefined, // Lazy Polyglot missing or broken: /cards says why when opened
     )
     return next(e)
@@ -174,9 +175,9 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const els = $.ui.resolve(e)
     const { Box, Text, Button } = els
-    const Input = e.surface === 'mobile' ? undefined : els.Input
+    const Input = e.surface === 'mobile' ? undefined : $.ui.resolve(e).Input
     // desktop, VS Code and mobile draw SVG: there the card looks like a flashcard app
-    const Svg = e.surface === 'terminal' ? undefined : els.Svg
+    const Svg = e.surface === 'terminal' ? undefined : $.ui.resolve(e).Svg
     const v = await read($, view)
     const close = () => void $.ui.close({ id: PANE })
 
