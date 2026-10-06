@@ -54,12 +54,12 @@ describe("placement core", () => {
 
 describe("placement CLI", () => {
   const fresh = () => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-placement-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-placement-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify({ lang: "it", native: "ru", level: 3 }));
     return dir;
   };
   const run = (dir: string, args: string[], input = "") =>
-    spawnSync("bun", [CLI, ...args], { env: { ...process.env, LANGCOUCH_DIR: dir }, input, encoding: "utf8" });
+    spawnSync("bun", [CLI, ...args], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, input, encoding: "utf8" });
   const state = (dir: string): State => JSON.parse(readFileSync(join(dir, "state.it.json"), "utf8"));
   const config = (dir: string) => JSON.parse(readFileSync(join(dir, "config.json"), "utf8"));
 
@@ -92,8 +92,8 @@ describe("placement CLI", () => {
   test("hook offers the test when the user says the words are too easy, and once at the start", () => {
     const dir = fresh();
     const hook = (prompt: string) => run(dir, ["hook"], JSON.stringify({ prompt, session_id: `s-${prompt}`, hook_event_name: "UserPromptSubmit" })).stdout;
-    expect(hook("first message")).toContain("/langcouch:placement");
-    expect(hook("second message")).not.toContain("/langcouch:placement");
+    expect(hook("first message")).toContain("/lazy-polyglot:placement");
+    expect(hook("second message")).not.toContain("/lazy-polyglot:placement");
     expect(hook("эти слова я уже знаю")).toContain("too easy");
   });
 });

@@ -4,7 +4,7 @@ import type { On, RenderSurface } from 'claude-code'
 import { cardSvg, esc, fitSize } from '../hooks/svg'
 import { langTag } from '../hooks/lang'
 
-// A stand-in for `langcouch cards ...`: two cards, a forward review and a reverse one.
+// A stand-in for `lazy-polyglot cards ...`: two cards, a forward review and a reverse one.
 const BASE = { lang: 'it', paused: false, due: 2, known: 10, learning: 3, placementLeft: 40, total: 432 }
 const CARDS = [
   { id: 'house', kind: 'review', dir: 'forward', prompt: 'casa' },
@@ -15,7 +15,7 @@ const EXPECTED: Record<string, string> = { house: 'дом', time: 'tempo' }
 function fakeCli(on: On, { paused = false, statusLine = null as boolean | null, native = 'ru' as string | null } = {}) {
   const calls: string[][] = []
   surfaceStubs(on)
-  mock.env(on, { LANGCOUCH_CLI: '/fake/cli.sh' })
+  mock.env(on, { LAZY_POLYGLOT_CLI: '/fake/cli.sh' })
   on('process.run', async (_$, e) => {
     if (e.argv[2] === 'cards-status') {
       calls.push(e.argv.slice(2))
@@ -49,10 +49,10 @@ function surfaceStubs(on: On) {
 }
 const shownDue = () => statusLines.some((e) => JSON.stringify(e).includes('🃏'))
 
-const PROPS = { title: 'LangCouch cards', isFocused: true, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 20 }, view: {} } as const
+const PROPS = { title: 'Lazy Polyglot cards', isFocused: true, bodyColumns: 60, placement: 'inline', scroll: { offset: 0, bodyRows: 20 }, view: {} } as const
 const mountOn = async <S extends RenderSurface>($: Engine, surface: S) => {
   await $.command.run({ command: 'cards', args: '', origin: { kind: 'composer' }, presentation: { isFullscreen: false, columns: 120 } })
-  return $.ui.mount({ plugin: 'langcouch', surface, component: 'Pane', requestId: 'langcouch-cards', props: PROPS })
+  return $.ui.mount({ plugin: 'lazy-polyglot', surface, component: 'Pane', requestId: 'lazy-polyglot-cards', props: PROPS })
 }
 
 describe('typed answers', () => {
@@ -191,7 +191,7 @@ test('the SVG escapes words and shrinks long ones', () => {
   expect(fitSize('x'.repeat(200), 280, 40, 16)).toBe(16)
 })
 
-test('paused LangCouch shows the pause, not cards', async ($, on) => {
+test('paused Lazy Polyglot shows the pause, not cards', async ($, on) => {
   fakeCli(on, { paused: true })
   const ui = await mountOn($, 'terminal')
   expect(await ui.find({ text: /paused/ })).toBeDefined()
@@ -200,11 +200,24 @@ test('paused LangCouch shows the pause, not cards', async ($, on) => {
 
 test('a failing CLI is an error with a retry, not a blank pane', async ($, on) => {
   surfaceStubs(on)
-  mock.env(on, { LANGCOUCH_CLI: '/fake/cli.sh' })
+  mock.env(on, { LAZY_POLYGLOT_CLI: '/fake/cli.sh' })
   on('process.run', async () => ({ value: { exitCode: 1, stdout: '', stderr: 'boom', isStdoutTruncated: false, isStderrTruncated: false } }))
   const ui = await mountOn($, 'terminal')
   expect(await ui.find({ text: /could not load: boom/ })).toBeDefined()
   expect(await ui.find({ key: 'retry' })).toBeDefined()
+})
+
+test('the old LANGCOUCH_CLI name still points at the CLI', async ($, on) => {
+  surfaceStubs(on)
+  mock.env(on, { LANGCOUCH_CLI: '/old/cli.sh' })
+  const clis: string[] = []
+  on('process.run', async (_$, e) => {
+    clis.push(e.argv[1])
+    return { value: { exitCode: 1, stdout: '', stderr: 'boom', isStdoutTruncated: false, isStderrTruncated: false } }
+  })
+  const ui = await mountOn($, 'terminal')
+  expect(await ui.find({ text: /could not load: boom/ })).toBeDefined()
+  expect(clis).toContain('/old/cli.sh')
 })
 
 describe('each word shows its language: flag and name', () => {

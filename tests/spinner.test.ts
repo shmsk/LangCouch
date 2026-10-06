@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   SPINNER_MARKER,
+  claudeSettingsPath,
   applySpinnerTips,
   countOurTips,
   pickSpinnerWords,
@@ -74,7 +75,7 @@ describe("pickSpinnerWords", () => {
 });
 
 describe("settings file I/O", () => {
-  const dir = () => mkdtempSync(join(tmpdir(), "langcouch-spinner-"));
+  const dir = () => mkdtempSync(join(tmpdir(), "lazy-polyglot-spinner-"));
 
   test("malformed JSON throws — the caller writes nothing", () => {
     const d = dir();
@@ -107,6 +108,44 @@ describe("settings file I/O", () => {
     const on = readSettings(path);
     writeSettingsIfChanged(on, removeSpinnerTips(on), d, path);
     expect(readFileSync(path, "utf8")).toBe(original);
-    expect(existsSync(`${path}.langcouch.tmp`)).toBe(false);
+    expect(existsSync(`${path}.lazy-polyglot.tmp`)).toBe(false);
+  });
+});
+
+describe("tips written before the rename", () => {
+  const legacy = ["LangCouch · frío = cold", "LangCouch · caro = expensive"];
+
+  test("are counted, and the first write replaces them with new ones, foreign tips kept", () => {
+    const before = { spinnerTipsOverride: { tips: ["mine", ...legacy] } };
+    expect(countOurTips(before)).toBe(2);
+    const after = applySpinnerTips(before, TIPS);
+    expect(after.spinnerTipsOverride).toEqual({ tips: ["mine", ...TIPS] });
+    expect(countOurTips(after)).toBe(2);
+  });
+
+  test("turning the spinner off leaves no old tip, and drops a key that only held them", () => {
+    expect(removeSpinnerTips({ theme: "dark", spinnerTipsOverride: { tips: legacy } })).toEqual({ theme: "dark" });
+  });
+});
+
+describe("settings path override", () => {
+  const keep = { new: process.env.LAZY_POLYGLOT_CLAUDE_SETTINGS, old: process.env.LANGCOUCH_CLAUDE_SETTINGS };
+  const restore = () => {
+    for (const [name, v] of [["LAZY_POLYGLOT_CLAUDE_SETTINGS", keep.new], ["LANGCOUCH_CLAUDE_SETTINGS", keep.old]] as const) {
+      if (v === undefined) delete process.env[name];
+      else process.env[name] = v;
+    }
+  };
+
+  test("the old LANGCOUCH_CLAUDE_SETTINGS name still works, the new one wins", () => {
+    try {
+      delete process.env.LAZY_POLYGLOT_CLAUDE_SETTINGS;
+      process.env.LANGCOUCH_CLAUDE_SETTINGS = "/old/settings.json";
+      expect(claudeSettingsPath()).toBe("/old/settings.json");
+      process.env.LAZY_POLYGLOT_CLAUDE_SETTINGS = "/new/settings.json";
+      expect(claudeSettingsPath()).toBe("/new/settings.json");
+    } finally {
+      restore();
+    }
   });
 });

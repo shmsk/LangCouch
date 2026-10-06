@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DUPLICATE_WINDOW_MS, invocationKey, isDuplicateInvocation } from "../src/guard.ts";
 
-const freshDir = () => mkdtempSync(join(tmpdir(), "langcouch-guard-"));
+const freshDir = () => mkdtempSync(join(tmpdir(), "lazy-polyglot-guard-"));
 
 describe("double-registration guard", () => {
   test("same key twice within the window → duplicate", () => {

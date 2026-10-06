@@ -1,5 +1,5 @@
 ---
-description: Pause LangCouch weaving (kill switch)
+description: Pause Lazy Polyglot weaving (kill switch)
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---
 

@@ -1,17 +1,17 @@
 {
-  "name": "langcouch",
-  "version": "0.9.5",
-  "description": "Learn a language passively while you work in AI CLIs — diglot weave for the terminal",
+  "name": "lazy-polyglot",
+  "version": "0.9.7",
+  "description": "Get (almost) accidentally fluent. Learn a language passively while you work in AI CLIs: diglot weave for the terminal",
   "type": "module",
   "bin": {
-    "langcouch": "src/cli.ts"
+    "lazy-polyglot": "src/cli.ts"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/shmsk/LangCouch.git"
+    "url": "https://github.com/shmsk/lazy-polyglot.git"
   },
-  "homepage": "https://github.com/shmsk/LangCouch#readme",
-  "bugs": "https://github.com/shmsk/LangCouch/issues",
+  "homepage": "https://github.com/shmsk/lazy-polyglot#readme",
+  "bugs": "https://github.com/shmsk/lazy-polyglot/issues",
   "keywords": [
     "language-learning",
     "claude-code",

@@ -29,14 +29,14 @@ out = {"hooks": sorted(ctx.hooks), "commands": sorted(ctx.commands)}
 out["pre_llm_call"] = ctx.hooks["pre_llm_call"](session_id="s1", user_message="hola", conversation_history=[], is_first_turn=True, model="m", platform="cli")
 out["post_llm_call"] = ctx.hooks["post_llm_call"](session_id="s1", user_message="hola", assistant_response="Una **casa** (house).", conversation_history=[], model="m", platform="cli")
 out["post_empty"] = ctx.hooks["post_llm_call"](session_id="s1", assistant_response="")
-out["cmd"] = ctx.commands["langcouch"](sys.argv[2])
+out["cmd"] = ctx.commands["lazy-polyglot"](sys.argv[2])
 print(json.dumps(out))
 `;
 
 let scratch: string;
 
 beforeAll(() => {
-  scratch = mkdtempSync(join(tmpdir(), "langcouch-hermes-plugin-"));
+  scratch = mkdtempSync(join(tmpdir(), "lazy-polyglot-hermes-plugin-"));
   writeFileSync(join(scratch, "harness.py"), HARNESS);
 });
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
@@ -65,7 +65,7 @@ if (args[0] === "hook") {
     console.log("{}");
     process.exit(0);
   }
-  console.log("<langcouch>" + input.hook_event_name + "|" + input.session_id + "|" + input.prompt + "</langcouch>");
+  console.log("<lazy-polyglot>" + input.hook_event_name + "|" + input.session_id + "|" + input.prompt + "</lazy-polyglot>");
 } else if (args[0] === "lang" && args[1] === "xx") {
   console.error("unknown language: xx"); process.exit(1);
 } else {
@@ -74,15 +74,15 @@ if (args[0] === "hook") {
 `;
 
 describe.skipIf(!hasPython)("hermes plugin (python3 + fake CLI)", () => {
-  test("registers pre_llm_call, post_llm_call and /langcouch", () => {
+  test("registers pre_llm_call, post_llm_call and /lazy-polyglot", () => {
     const out = run(setup("reg", ECHO_CLI), "status");
     expect(out.hooks).toEqual(["post_llm_call", "pre_llm_call"]);
-    expect(out.commands).toEqual(["langcouch"]);
+    expect(out.commands).toEqual(["lazy-polyglot"]);
   });
 
   test("pre_llm_call pipes the turn to `hook` and returns the block as context", () => {
     const out = run(setup("ok", ECHO_CLI), "status");
-    expect(out.pre_llm_call).toEqual({ context: "<langcouch>UserPromptSubmit|s1|hola</langcouch>" });
+    expect(out.pre_llm_call).toEqual({ context: "<lazy-polyglot>UserPromptSubmit|s1|hola</lazy-polyglot>" });
   });
 
   test("post_llm_call hands the final answer to `hook` as a Stop event, once; an empty answer sends nothing", () => {
@@ -110,21 +110,21 @@ describe.skipIf(!hasPython)("hermes plugin (python3 + fake CLI)", () => {
     expect(out.pre_llm_call).toBeNull();
   }, 30000);
 
-  test("/langcouch routes arguments to the CLI", () => {
+  test("/lazy-polyglot routes arguments to the CLI", () => {
     const out = run(setup("cmd", ECHO_CLI), "level up");
     expect(out.cmd).toBe("ran: level up");
     expect(run(setup("transfer", ECHO_CLI), "import '~/My Files/b.json' --config").cmd).toBe("ran: import ~/My Files/b.json --config");
     expect(run(setup("transfer2", ECHO_CLI), "export").cmd).toBe("ran: export");
   });
 
-  test("/langcouch shows CLI errors from stderr", () => {
+  test("/lazy-polyglot shows CLI errors from stderr", () => {
     const out = run(setup("err", ECHO_CLI), "lang xx");
     expect(out.cmd).toBe("unknown language: xx");
   });
 
-  test("/langcouch refuses unsafe or unknown subcommands", () => {
+  test("/lazy-polyglot refuses unsafe or unknown subcommands", () => {
     const plugin = setup("usage", ECHO_CLI);
-    expect(run(plugin, "install claude").cmd).toStartWith("Usage: /langcouch");
-    expect(run(plugin, "").cmd).toStartWith("Usage: /langcouch");
+    expect(run(plugin, "install claude").cmd).toStartWith("Usage: /lazy-polyglot");
+    expect(run(plugin, "").cmd).toStartWith("Usage: /lazy-polyglot");
   });
 });

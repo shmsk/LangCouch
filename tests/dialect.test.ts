@@ -42,7 +42,7 @@ function writeVariant(code: string, data: Record<string, string>) {
 }
 
 function cli(...args: string[]) {
-  const r = spawnSync("bun", [CLI, ...args], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+  const r = spawnSync("bun", [CLI, ...args], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" });
   return { code: r.status, out: r.stdout + r.stderr };
 }
 

@@ -11,7 +11,7 @@ let origCwd: string;
 let origCodexHome: string | undefined;
 
 beforeEach(() => {
-  scratch = mkdtempSync(join(tmpdir(), "langcouch-codex-"));
+  scratch = mkdtempSync(join(tmpdir(), "lazy-polyglot-codex-"));
   origCwd = process.cwd();
   origCodexHome = process.env.CODEX_HOME;
   process.env.CODEX_HOME = join(scratch, "codex-home");
@@ -77,7 +77,7 @@ describe("installCodex", () => {
     writeAgentsSection(agents, "/x/src/cli.ts");
 
     const msg = installCodex("project");
-    expect(msg).toContain("Removed the old self-serve langcouch section");
+    expect(msg).toContain("Removed the old self-serve lazy-polyglot section");
     const left = readFileSync(agents, "utf8");
     expect(left).not.toContain(AGENTS_START);
     expect(left).toBe("# My project rules\n\nBe nice.\n");
@@ -97,6 +97,54 @@ describe("installClaude (shared JSON-hooks writer)", () => {
     const hooks = readHooks(join(scratch, ".claude", "settings.json"));
     expect(hooks.UserPromptSubmit[0].hooks[0].command).toMatch(/src\/cli\.ts hook$/);
     expect(hooks.SessionStart).toHaveLength(1);
+    expect(installClaude("project")).toContain("already installed");
+  });
+});
+
+/** A hooks file as the LangCouch-era installer wrote it, plus one foreign hook per event. */
+const legacyHooksFile = (extra: Record<string, unknown> = {}) => {
+  const foreign = { hooks: [{ type: "command", command: "echo mine" }] };
+  const old = { hooks: [{ type: "command", command: "bun /old/langcouch/src/cli.ts hook", ...extra }] };
+  return { hooks: { UserPromptSubmit: [foreign, old], SessionStart: [old], Stop: [old, foreign] }, other: 1 };
+};
+
+describe("upgrade from the LangCouch install", () => {
+  test("codex: old entries are replaced, foreign hooks and settings stay, nothing fires twice", () => {
+    const path = join(scratch, ".codex", "hooks.json");
+    mkdirSync(join(scratch, ".codex"));
+    writeFileSync(path, JSON.stringify(legacyHooksFile()));
+    writeFileSync(join(scratch, "AGENTS.md"), "# Mine\n\n<!-- langcouch:start -->\nold\n<!-- langcouch:end -->\n");
+
+    const msg = installCodex("project");
+    expect(msg).toContain("Replaced 3 old langcouch hook entries");
+    const file = JSON.parse(readFileSync(path, "utf8"));
+    expect(file.other).toBe(1);
+    for (const event of ["UserPromptSubmit", "SessionStart", "Stop"]) {
+      const commands = JSON.stringify(file.hooks[event]);
+      expect(commands).not.toContain("/old/langcouch");
+      expect(commands.split("cli.ts hook").length).toBe(2);
+    }
+    expect(file.hooks.UserPromptSubmit[0].hooks[0].command).toBe("echo mine");
+    expect(file.hooks.SessionStart).toHaveLength(1);
+    expect(readFileSync(join(scratch, "AGENTS.md"), "utf8")).toBe("# Mine\n");
+
+    const once = readFileSync(path, "utf8");
+    expect(installCodex("project")).toContain("already installed");
+    expect(readFileSync(path, "utf8")).toBe(once);
+  });
+
+  test("claude: same upgrade in .claude/settings.json", () => {
+    const path = join(scratch, ".claude", "settings.json");
+    mkdirSync(join(scratch, ".claude"));
+    writeFileSync(path, JSON.stringify(legacyHooksFile()));
+
+    expect(installClaude("project")).toContain("Replaced 3 old langcouch hook entries");
+    const file = JSON.parse(readFileSync(path, "utf8"));
+    expect(file.other).toBe(1);
+    for (const event of ["UserPromptSubmit", "SessionStart", "Stop"]) {
+      expect(JSON.stringify(file.hooks[event])).not.toContain("/old/langcouch");
+      expect(JSON.stringify(file.hooks[event]).split("cli.ts hook").length).toBe(2);
+    }
     expect(installClaude("project")).toContain("already installed");
   });
 });

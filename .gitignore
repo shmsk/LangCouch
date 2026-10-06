@@ -3,6 +3,7 @@ node_modules/
 *.log
 .DS_Store
 # local user state never belongs to the repo
+.lazy-polyglot/
 .langcouch/
 # internal working docs (kept local, not part of the public repo)
 ISA.md
@@ -17,3 +18,5 @@ Plans/
 # laid by Claude Code when a mod loads (engine types + generated tsconfig)
 mods/*/.claude-plugin/types/
 mods/*/tsconfig.json
+# launch-video build output from /brag (local only, ~2 GB)
+/brag-output/

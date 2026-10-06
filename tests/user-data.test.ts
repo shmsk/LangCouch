@@ -13,7 +13,7 @@ function reset() {
   rmSync(userGrammar, { recursive: true, force: true });
 }
 
-describe("user-added languages in ~/.langcouch", () => {
+describe("user-added languages in ~/.lazy-polyglot", () => {
   test("without a user dir, only bundled languages are listed", () => {
     reset();
     expect(availableLangs()).toEqual([...bundled].sort());

@@ -1,5 +1,5 @@
 ---
-description: Show LangCouch level and per-language progress
+description: Show Lazy Polyglot level and per-language progress
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---
 

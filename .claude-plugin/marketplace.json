@@ -1,16 +1,19 @@
 {
-  "name": "langcouch",
-  "description": "LangCouch — passive language immersion for AI CLIs",
+  "name": "lazy-polyglot",
+  "description": "Lazy Polyglot: get (almost) accidentally fluent. Passive language immersion for AI CLIs",
+  "renames": {
+    "langcouch": "lazy-polyglot"
+  },
   "owner": {
     "name": "Kirill Shumskii",
     "url": "https://github.com/shmsk"
   },
   "plugins": [
     {
-      "name": "langcouch",
+      "name": "lazy-polyglot",
       "source": "./",
       "description": "Passive language immersion (diglot weave) via UserPromptSubmit hook — replies weave in vocabulary from the language you're learning",
-      "version": "0.9.5",
+      "version": "0.9.7",
       "category": "productivity",
       "tags": [
         "language-learning",

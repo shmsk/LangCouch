@@ -5,14 +5,14 @@ title: "Add language: <code> — <name>"
 labels: add-language
 ---
 
-**Thanks for adding your language.** The fastest path is to point your AI coding agent at [docs/AddLanguage.md](https://github.com/shmsk/LangCouch/blob/master/docs/AddLanguage.md) with your language code — it does the work end-to-end and opens a PR. A human can follow the same doc too.
+**Thanks for adding your language.** The fastest path is to point your AI coding agent at [docs/AddLanguage.md](https://github.com/shmsk/lazy-polyglot/blob/main/docs/AddLanguage.md) with your language code — it does the work end-to-end and opens a PR. A human can follow the same doc too.
 
 Before opening the issue, please confirm:
 
 - [ ] ISO 639-1 code: <!-- e.g. `de`, `fr`, `ja` -->
 - [ ] Language name: <!-- e.g. German, French, Japanese -->
 - [ ] I want to do this myself / I want my AI agent to do it
-- [ ] I've read [docs/AddLanguage.md](https://github.com/shmsk/LangCouch/blob/master/docs/AddLanguage.md)
+- [ ] I've read [docs/AddLanguage.md](https://github.com/shmsk/lazy-polyglot/blob/main/docs/AddLanguage.md)
 
 ## Notes for reviewers
 

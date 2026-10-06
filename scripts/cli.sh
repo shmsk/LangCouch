@@ -1,5 +1,5 @@
 #!/bin/sh
-# LangCouch CLI wrapper for plugin slash commands: same runtime detection as hook.sh,
+# Lazy Polyglot CLI wrapper for plugin slash commands: same runtime detection as hook.sh,
 # but errors are SHOWN (users need to see them), and arguments pass through.
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLI="$ROOT/src/cli.ts"
@@ -22,5 +22,5 @@ if command -v node >/dev/null 2>&1; then
   fi
 fi
 
-echo "langcouch: neither bun nor Node >=22.6 found — install bun (https://bun.sh) to use LangCouch" >&2
+echo "lazy-polyglot: neither bun nor Node >=22.6 found — install bun (https://bun.sh) to use Lazy Polyglot" >&2
 exit 1

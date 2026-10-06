@@ -102,7 +102,7 @@ export interface CardUndo {
 export function answerCard(words: Word[], state: State, config: Config, skipped: string[], card: Pick<Card, "id" | "kind" | "dir">, answer: string, now: string): CardResult {
   const lang = config.lang;
   const word = words.find((w) => w.id === card.id);
-  if (!word) throw new Error(`langcouch: no word "${card.id}" in the ${lang} list`);
+  if (!word) throw new Error(`lazy-polyglot: no word "${card.id}" in the ${lang} list`);
   const gloss = glossFor(word, config.native, lang);
   // a miss changes only this concept's entry (review) or adds to the skip list (placement)
   const before = state[word.id] ? { ...state[word.id]! } : null;
@@ -147,7 +147,7 @@ export function acceptCard(words: Word[], state: State, config: Config, skipped:
 /** The right answer for a card, without recording anything: what a self-graded card shows before "knew it / didn't". */
 export function revealCard(words: Word[], config: Config, card: Pick<Card, "id" | "dir">): string {
   const word = words.find((w) => w.id === card.id);
-  if (!word) throw new Error(`langcouch: no word "${card.id}" in the ${config.lang} list`);
+  if (!word) throw new Error(`lazy-polyglot: no word "${card.id}" in the ${config.lang} list`);
   return card.dir === "reverse" ? word.target : glossFor(word, config.native, config.lang);
 }
 

@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "langcouch",
+      "name": "lazy-polyglot",
       "devDependencies": {
         "@opencode-ai/plugin": "^1.18.3",
         "@opencode-ai/sdk": "^1.18.3",

@@ -1,5 +1,5 @@
 ---
-description: Resume LangCouch weaving
+description: Resume Lazy Polyglot weaving
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---
 

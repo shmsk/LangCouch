@@ -1,5 +1,5 @@
 // Wordlist/concept validator, shared by tests/validate-wordlist.ts (repo/CI) and
-// `langcouch validate` (plugin users checking a language they added locally).
+// `lazy-polyglot validate` (plugin users checking a language they added locally).
 import { readFileSync } from "node:fs";
 import type { Concept, WordMapping } from "./types.ts";
 import { normAnswer } from "./recall.ts";

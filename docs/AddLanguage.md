@@ -1,20 +1,20 @@
-# Adding a language to LangCouch
+# Adding a language to Lazy Polyglot
 
 This document is written for an AI coding agent (Claude Code, Codex, etc.) — a human can follow it too. Following it end-to-end produces a complete, validated language, either just for yourself or as a PR for everyone.
 
 ## What you are building
 
-LangCouch weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file**. Three more are optional: grammar constructions, word-building rules and false friends. No code changes: the language name is derived from its ISO code.
+Lazy Polyglot weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file**. Three more are optional: grammar constructions, word-building rules and false friends. No code changes: the language name is derived from its ISO code.
 
 Inputs you need before starting:
 - the ISO 639-1 language code (`tr`, `de`, `fr`, …) — called `<code>` below
 
 ## Two ways to add a language
 
-- **For yourself** (Claude Code plugin users): run `/langcouch:add-language <language>`, or follow this doc and put the file at `~/.langcouch/wordlists/<code>.json` (optional files go next to it: `~/.langcouch/grammar/`, `~/.langcouch/patterns/`, `~/.langcouch/falseFriends/`, each as `<code>.json`). It lives next to your progress and survives plugin updates. No clone needed; validate with `langcouch validate <code> --full` (inside Claude Code: `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full`). Never write into the plugin folder (`~/.claude/plugins/cache/…`): it is replaced on every update.
+- **For yourself** (Claude Code plugin users): run `/lazy-polyglot:add-language <language>`, or follow this doc and put the file at `~/.lazy-polyglot/wordlists/<code>.json` (optional files go next to it: `~/.lazy-polyglot/grammar/`, `~/.lazy-polyglot/patterns/`, `~/.lazy-polyglot/falseFriends/`, each as `<code>.json`). It lives next to your progress and survives plugin updates. No clone needed; validate with `lazy-polyglot validate <code> --full` (inside Claude Code: `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full`). Never write into the plugin folder (`~/.claude/plugins/cache/…`): it is replaced on every update.
 - **For everyone** (a PR): work in a clone of this repo with [bun](https://bun.sh) (`bun install`), put the file at `wordlists/<code>.json`, and follow every step below including the PR checklist.
 
-A file in `~/.langcouch/wordlists/` overrides a bundled one with the same code, so you can also fix a word locally.
+A file in `~/.lazy-polyglot/wordlists/` overrides a bundled one with the same code, so you can also fix a word locally.
 
 ## Step 1 — Read the concept inventory
 
@@ -47,7 +47,7 @@ Translation rules (the validator enforces the mechanical ones):
 1. **Most common everyday word** for the concept, matching its `pos`. No rare, literary, or archaic words — pick what a beginner hears daily.
 2. **Lemma / citation form**: nouns in singular, verbs in the language's dictionary form (infinitive where that is the convention), adjectives in the base (masculine singular where applicable).
 3. **Single word strongly preferred**; hard maximum 3 space-separated tokens.
-4. **The natural word wins, even when two concepts share it.** If your language really uses one everyday word for two concepts (Spanish *mañana* = morning and tomorrow, Turkish *ay* = moon and month), use it for both; don't swap in a rare synonym to keep them apart. LangCouch handles it: a batch shows the word once, a recall credits both concepts, and the quiz accepts either meaning. At most 2 concepts may share a word (the validator enforces it), and it prints every shared word, so **list them in your PR** for the auditor to confirm each is real.
+4. **The natural word wins, even when two concepts share it.** If your language really uses one everyday word for two concepts (Spanish *mañana* = morning and tomorrow, Turkish *ay* = moon and month), use it for both; don't swap in a rare synonym to keep them apart. Lazy Polyglot handles it: a batch shows the word once, a recall credits both concepts, and the quiz accepts either meaning. At most 2 concepts may share a word (the validator enforces it), and it prints every shared word, so **list them in your PR** for the auditor to confirm each is real.
 5. **Keep noun and verb apart by citation form where the language has one.** English writes verbs as `to work`, `to love`, so the verb entry never reads like the noun; the weave inflects it in context anyway (*worked*, *she loves*). Where the language has no such form, rule 4 applies.
 6. **Content words only.** If the natural translation is a particle or function word, choose the nearest content-word synonym. When your language expresses a concept grammatically rather than lexically (no verb "to have", modality as a suffix, comparatives needing a particle), use the closest common periphrastic or derived form — that is expected, not a violation; note it in the PR.
 7. Native script, lowercase by the language's own convention (this matters for recall matching — e.g. Turkish dotted/dotless i). Where correct orthography and what users actually type diverge, **the typed form wins**.
@@ -109,7 +109,7 @@ A rule is shown when a numeral is in the reply and some rule is still new (shown
 
 ## Step 4d (optional) — `readings/<code>.json`
 
-Only for a language that is not read the way it is spelled (French, English, Portuguese are; Spanish, Italian, Turkish are not). New words then come with their pronunciation, rendered for each learner in their own letters or as IPA (`/langcouch:reading`). The file maps every concept id to its IPA:
+Only for a language that is not read the way it is spelled (French, English, Portuguese are; Spanish, Italian, Turkish are not). New words then come with their pronunciation, rendered for each learner in their own letters or as IPA (`/lazy-polyglot:reading`). The file maps every concept id to its IPA:
 
 ```json
 {
@@ -122,14 +122,14 @@ Only for a language that is not read the way it is spelled (French, English, Por
 - The standard citation form: not a weak form, a dialect, a liaison form or a usage note. Where Wiktionary lists several standard accents, use the one your base code stands for (`en`: General American, `pt`: Portugal).
 - Cover every concept in your wordlist; `bun test` checks coverage and renders every entry for every native language, failing on any IPA symbol it cannot spell.
 - A regional variant gets its own file with only the words that sound different, plus every word it spells differently (`pt-BR`: Brazilian pronunciation; `en-GB`: Received Pronunciation).
-- For yourself, the file goes in `~/.langcouch/readings/<code>.json`, like the others.
+- For yourself, the file goes in `~/.lazy-polyglot/readings/<code>.json`, like the others.
 
 ## Step 5 — Validate
 
 All three must pass; paste their output into your PR description:
 
 ```bash
-bun tests/validate-wordlist.ts <code> --full   # every concept covered, shared words listed (for yourself: langcouch validate <code> --full)
+bun tests/validate-wordlist.ts <code> --full   # every concept covered, shared words listed (for yourself: lazy-polyglot validate <code> --full)
 bunx tsc --noEmit                              # typecheck
 bun test                                       # unit tests
 ```
@@ -147,13 +147,13 @@ Apply the fixes you agree with, re-run Step 5, and note in the PR which findings
 ## Step 7 — Live smoke test
 
 ```bash
-export LANGCOUCH_DIR=$(mktemp -d)
+export LAZY_POLYGLOT_DIR=$(mktemp -d)
 bun src/cli.ts init
 bun src/cli.ts lang <code>
 bun src/cli.ts instruction
 ```
 
-Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (The inflection example inside the block — "casas, bonitas" — is currently fixed Spanish wording regardless of language; that's expected.) Unset `LANGCOUCH_DIR` afterwards.
+Expect a `<lazy-polyglot>` block containing `word = gloss` pairs in your language. (The inflection example inside the block — "casas, bonitas" — is currently fixed Spanish wording regardless of language; that's expected.) Unset `LAZY_POLYGLOT_DIR` afterwards.
 
 ## Step 8 — PR checklist
 
@@ -168,12 +168,12 @@ Expect a `<langcouch>` block containing `word = gloss` pairs in your language. (
 Some learners want one regional standard specifically: Brazilian Portuguese says *trem* and *celular*, European Portuguese says *comboio* and *telemóvel*. A variant is **not** a full copy of the language. It is a small file holding only the words that differ from the base language; every other concept comes from the base.
 
 - **Code**: BCP 47, `<base>-<REGION>` (`pt-BR`, `es-MX`, `es-419`). Case doesn't matter on the command line (`lang pt-br` works); the file name uses the canonical form, `pt-BR.json`. The name comes from `Intl.DisplayNames` ("Brazilian Portuguese"), nothing to register.
-- **File**: `~/.langcouch/wordlists/pt-BR.json` for yourself, `wordlists/pt-BR.json` for a PR. The base (`pt`) must exist, bundled or local.
+- **File**: `~/.lazy-polyglot/wordlists/pt-BR.json` for yourself, `wordlists/pt-BR.json` for a PR. The base (`pt`) must exist, bundled or local.
 - **Content**: go through the base wordlist and add an entry only where the variant's everyday word differs. Rules 1–8 above apply to each entry. Don't copy a base word into the variant: the validator rejects entries identical to the base.
 - **Grammar**: optional `grammar/pt-BR.json`, an overlay on the base's grammar. An item with a base `id` replaces that item, a new `id` is added. Give a regional item `baseExample` (the base's way of saying it), and it is taught first with a contrast: *ustedes trabajan (Spain: vosotros trabajáis)*. See `grammar/es-419.json`.
 - **Word-building rules**: a variant uses its base's `patterns/` file; add `patterns/<code>.json` only for rules that differ.
 - **Rude words**: if a base word is rude in the variant's region, add it to the base's `falseFriends/<base>.json` with `"vulgarIn": ["<code>"]`. The contrast then warns about it (*Spain: coger (vulgar in much of Latin America)*), and the tests fail if the variant ever teaches it.
-- **Validate**: `langcouch validate pt-BR --full` (repo: `bun tests/validate-wordlist.ts pt-BR --full`). Duplicates and coverage are checked on the merged result, so a variant word that clashes with another base word is caught.
+- **Validate**: `lazy-polyglot validate pt-BR --full` (repo: `bun tests/validate-wordlist.ts pt-BR --full`). Duplicates and coverage are checked on the merged result, so a variant word that clashes with another base word is caught.
 - **Audit**: run Step 6 on the variant entries plus the base entries you considered and kept. The question for the auditor is "is this what a speaker of that region says every day?"
 - **Progress** is shared with the base for every word spelled the same, and for shared grammar and rules. Switching from `pt` to `pt-BR` keeps all of it; only the variant's own words and constructions start fresh, and they come first.
 

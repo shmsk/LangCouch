@@ -63,7 +63,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
 
   const fitOnly = algorithm === 2;
   const lines = [
-    `<langcouch>`,
+    `<lazy-polyglot>`,
     fitOnly
       ? `Passive language immersion (diglot weave). In the prose of your reply, replace up to ~${picks.length} common words with ${name} ones, using ONLY this list:`
       : `Passive language immersion (diglot weave). In the prose of your reply, naturally replace ~${picks.length} common words with ${name} ones, using ONLY this list:`,
@@ -104,7 +104,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
     `Never weave into text the user will copy or send (a post, email, message, summary, document, commit message): keep it free of ${name} words and weave only in your own words around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
-    `</langcouch>`,
+    `</lazy-polyglot>`,
   );
 
   return lines.join("\n");
@@ -125,7 +125,7 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   const grammarContrast = grammar?.baseExample ? `; ${region}: ${grammar.baseExample}` : "";
 
   const head = [
-    `<langcouch>`,
+    `<lazy-polyglot>`,
     `Language immersion (diglot weave): in your reply's prose, use up to ~${picks.length} ${name} words for common ones, ONLY from those below.`,
     ...(fresh.length ? [`New, translation inline: ${fresh.map(spoken).join("; ")}`] : []),
     ...(familiar.length ? [`Familiar, no translation in the text: ${familiar.map(item).join("; ")}`] : []),
@@ -164,7 +164,7 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
     `Anything the user will copy or send (post, email, message, summary, document, commit message) stays entirely free of ${name} words: weave only in your text around it.`,
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
-    `</langcouch>`,
+    `</lazy-polyglot>`,
   );
 
   // known words fill whatever the budget leaves, least recently seen first

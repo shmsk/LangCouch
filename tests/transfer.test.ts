@@ -7,11 +7,11 @@ import { mergeStates } from "../src/transfer.ts";
 import { stepOf } from "../src/ladder.ts";
 import type { State, WordState } from "../src/types.ts";
 
-// Two machines are two LANGCOUCH_DIRs; every step goes through the real CLI.
+// Two machines are two LAZY_POLYGLOT_DIRs; every step goes through the real CLI.
 const CLI = join(import.meta.dir, "..", "src", "cli.ts");
-const machine = () => mkdtempSync(join(tmpdir(), "langcouch-transfer-"));
+const machine = () => mkdtempSync(join(tmpdir(), "lazy-polyglot-transfer-"));
 const run = (dir: string, args: string[]) =>
-  spawnSync("bun", [CLI, ...args], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+  spawnSync("bun", [CLI, ...args], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" });
 const put = (dir: string, file: string, data: unknown) => {
   mkdirSync(join(dir, file, ".."), { recursive: true });
   writeFileSync(join(dir, file), JSON.stringify(data, null, 2));
@@ -146,7 +146,7 @@ describe("export / import", () => {
     const out = run(a, ["export", "-"]);
     expect(JSON.parse(out.stdout).format).toBe("langcouch-export");
     const home = machine();
-    const r = spawnSync("bun", [CLI, "export", "~/b.json"], { env: { ...process.env, LANGCOUCH_DIR: a, HOME: home }, encoding: "utf8" });
+    const r = spawnSync("bun", [CLI, "export", "~/b.json"], { env: { ...process.env, LAZY_POLYGLOT_DIR: a, HOME: home }, encoding: "utf8" });
     expect(r.status).toBe(0);
     expect(existsSync(join(home, "b.json"))).toBe(true);
   });

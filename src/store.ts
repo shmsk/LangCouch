@@ -7,13 +7,16 @@ import { grammarKey, type GrammarItem } from "./grammar.ts";
 import { patternKey, type Pattern } from "./patterns.ts";
 import { numberKey, type NumberRule } from "./numbers.ts";
 import { stepOf } from "./ladder.ts";
+import { DATA_DIR_NAME } from "./migrate.ts";
 
-export const DATA_DIR = process.env.LANGCOUCH_DIR ?? join(homedir(), ".langcouch");
+// LANGCOUCH_DIR is the old name of LAZY_POLYGLOT_DIR and keeps working.
+// The ~/.langcouch move runs in cli.ts, not here: importing helpers (the wordlist validator, evals) must never touch user data.
+export const DATA_DIR = process.env.LAZY_POLYGLOT_DIR ?? process.env.LANGCOUCH_DIR ?? join(homedir(), DATA_DIR_NAME);
 const CONFIG_PATH = () => join(DATA_DIR, "config.json");
 /** A language code never names a path: no separators, no "..". Legit codes (pt-BR, es-419) pass untouched. */
 const pathSafe = (lang: string) => !/[/\\]|\.\./.test(lang);
 const STATE_PATH = (lang: string) => {
-  if (!pathSafe(lang)) throw new Error(`langcouch: "${lang}" is not a language code`);
+  if (!pathSafe(lang)) throw new Error(`lazy-polyglot: "${lang}" is not a language code`);
   return join(DATA_DIR, `state.${lang}.json`);
 };
 
@@ -38,7 +41,7 @@ export function readJson<T>(path: string, what: string): T {
   try {
     return JSON.parse(raw) as T;
   } catch {
-    throw new Error(`langcouch: ${what} at ${path} is not valid JSON — fix or delete it and run \`langcouch init\``);
+    throw new Error(`lazy-polyglot: ${what} at ${path} is not valid JSON — fix or delete it and run \`lazy-polyglot init\``);
   }
 }
 
@@ -54,11 +57,11 @@ export function initConfig(overrides: Partial<Config> = {}): { config: Config; c
 
 export function loadConfig(): Config {
   if (!existsSync(CONFIG_PATH())) {
-    throw new Error(`langcouch: no config at ${CONFIG_PATH()} — run \`langcouch init\` first`);
+    throw new Error(`lazy-polyglot: no config at ${CONFIG_PATH()} — run \`lazy-polyglot init\` first`);
   }
   const cfg = readJson<Config>(CONFIG_PATH(), "config");
   if (typeof cfg.level !== "number" || cfg.level < 1 || cfg.level > 10) {
-    throw new Error(`langcouch: config level must be 1..10, got ${String(cfg.level)}`);
+    throw new Error(`lazy-polyglot: config level must be 1..10, got ${String(cfg.level)}`);
   }
   return cfg;
 }
@@ -244,13 +247,13 @@ export function wordlistPath(lang: string): string | null {
 export function wordlistLayers(lang: string): string[] {
   const own = wordlistPath(lang);
   if (!own) {
-    throw new Error(`langcouch: no wordlist for "${lang}" in ${USER_WORDLISTS_DIR} or ${WORDLISTS_DIR}`);
+    throw new Error(`lazy-polyglot: no wordlist for "${lang}" in ${USER_WORDLISTS_DIR} or ${WORDLISTS_DIR}`);
   }
   const base = baseLang(normalizeLang(lang));
   if (!base) return [own];
   const basePath = wordlistPath(base);
   if (!basePath) {
-    throw new Error(`langcouch: "${lang}" is a variant of "${base}", but there is no ${base} wordlist to build on`);
+    throw new Error(`lazy-polyglot: "${lang}" is a variant of "${base}", but there is no ${base} wordlist to build on`);
   }
   return [basePath, own];
 }
@@ -289,7 +292,7 @@ export function loadWordlist(lang: string): Word[] {
   const words: Word[] = [];
   for (const [id, lemma] of Object.entries(mapping)) {
     const c = concepts.get(id);
-    if (!c) throw new Error(`langcouch: wordlist ${lang} maps unknown concept "${id}" — run tests/validate-wordlist.ts`);
+    if (!c) throw new Error(`lazy-polyglot: wordlist ${lang} maps unknown concept "${id}" — run tests/validate-wordlist.ts`);
     const baseTarget = baseMapping[id];
     const differs = baseTarget !== undefined && baseTarget !== lemma;
     const baseNote = differs ? rude.get(baseTarget) : undefined;
@@ -380,7 +383,7 @@ function langsIn(dir: string): string[] {
     .map((f) => f.slice(0, -".json".length));
 }
 
-/** Language codes the user added in ~/.langcouch/wordlists/. */
+/** Language codes the user added in ~/.lazy-polyglot/wordlists/. */
 export function userLangs(): string[] {
   return langsIn(USER_WORDLISTS_DIR).sort();
 }

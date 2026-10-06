@@ -8,7 +8,7 @@ import {
 } from "./store.ts";
 
 /**
- * Moving progress between machines: `export` packs ~/.langcouch into one JSON file,
+ * Moving progress between machines: `export` packs ~/.lazy-polyglot into one JSON file,
  * `import` merges such a file into the local data. Merging takes the best of both sides
  * per word (the same fold variant files get), so it never lowers anything, and importing
  * the same file again, or sending it back, changes nothing.
@@ -104,13 +104,13 @@ function validUserFile(dir: UserDir, content: unknown, concepts: Set<string>): b
 /** Checks a parsed file is a bundle this version can read; throws with the first problem found. */
 export function parseBundle(raw: unknown): Bundle {
   const bad = (why: string): never => {
-    throw new Error(`langcouch: not a usable LangCouch export (${why}) — nothing was imported`);
+    throw new Error(`lazy-polyglot: not a usable Lazy Polyglot export (${why}) — nothing was imported`);
   };
   if (!isObject(raw) || raw.format !== BUNDLE_FORMAT) bad("wrong format field");
   const b = raw as Record<string, unknown>;
   if (!Number.isInteger(b.formatVersion) || (b.formatVersion as number) < 1) bad("no formatVersion");
   if ((b.formatVersion as number) > BUNDLE_VERSION) {
-    throw new Error(`langcouch: this export is format ${String(b.formatVersion)}, made by LangCouch ${String(b.pluginVersion)}; update LangCouch to import it — nothing was imported`);
+    throw new Error(`lazy-polyglot: this export is format ${String(b.formatVersion)}, made by Lazy Polyglot ${String(b.pluginVersion)}; update Lazy Polyglot to import it — nothing was imported`);
   }
   if (b.config !== null && b.config !== undefined && !validConfig(b.config)) bad("broken config");
   if (!isObject(b.states)) bad("no states");
@@ -231,7 +231,7 @@ export function importBundle(bundle: Bundle, opts: { takeConfig?: boolean; now?:
   if (configTaken) {
     const lang = bundle.config!.lang;
     if (!availableLangs().includes(lang) && !has(bundle.user.wordlists, lang)) {
-      throw new Error(`langcouch: the export's settings use "${lang}", which this LangCouch does not have; update LangCouch, or import without --config — nothing was imported`);
+      throw new Error(`lazy-polyglot: the export's settings use "${lang}", which this Lazy Polyglot does not have; update Lazy Polyglot, or import without --config — nothing was imported`);
     }
   }
 
@@ -302,6 +302,6 @@ export function formatExportSummary(b: Bundle, to: string, skipped: string[] = [
     `  progress: ${langs.length ? langs.join(", ") : "none yet"}`,
     ...(extra.length ? [`  your own files: ${extra.join(", ")}`] : []),
     ...(skipped.length ? [`  left out (name is not a language code): ${skipped.join(", ")}`] : []),
-    "  On the other machine: langcouch import <this file>",
+    "  On the other machine: lazy-polyglot import <this file>",
   ].join("\n");
 }

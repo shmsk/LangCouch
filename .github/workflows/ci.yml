@@ -33,7 +33,7 @@ jobs:
       - name: Hook runs under Node (plugin fallback path)
         run: |
           echo '{"session_id":"ci","hook_event_name":"UserPromptSubmit","prompt":"hi"}' | node src/cli.ts hook > out.txt
-          grep -q "<langcouch>" out.txt
+          grep -q "<lazy-polyglot>" out.txt
 
   windows:
     runs-on: windows-latest
@@ -41,7 +41,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - run: echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+      - run: echo "LAZY_POLYGLOT_DIR=$RUNNER_TEMP/lazy-polyglot" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v4
@@ -55,4 +55,4 @@ jobs:
       - name: Hook runs through the shell wrapper
         run: |
           echo '{"session_id":"ci","hook_event_name":"UserPromptSubmit","prompt":"hi"}' | sh scripts/hook.sh > out.txt
-          grep -q "<langcouch>" out.txt
+          grep -q "<lazy-polyglot>" out.txt

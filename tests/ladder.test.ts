@@ -133,7 +133,7 @@ describe("migration of pre-ladder records", () => {
 });
 
 describe("honest counting", () => {
-  const dir = () => mkdtempSync(join(tmpdir(), "langcouch-served-"));
+  const dir = () => mkdtempSync(join(tmpdir(), "lazy-polyglot-served-"));
 
   test("the reply's bold words count, glossed or not, inflected, never inside code", () => {
     const reply = "The **casas** (houses) look **grande**. Run `nombre` here.\n```\n**tiempo**\n```";
@@ -178,7 +178,7 @@ describe("honest counting", () => {
 });
 
 test("only the transcript's tail is read, starting at a whole line", () => {
-  const path = join(mkdtempSync(join(tmpdir(), "langcouch-tail-")), "t.jsonl");
+  const path = join(mkdtempSync(join(tmpdir(), "lazy-polyglot-tail-")), "t.jsonl");
   writeFileSync(path, "x".repeat(5000) + "\n" + JSON.stringify({ type: "user", message: { content: "p" } }) + "\n" + JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "end **casa**" }] } }));
   const tail = readTail(path, 200);
   expect(tail.startsWith("{")).toBe(true);
@@ -231,13 +231,13 @@ describe("algorithm 3 instruction", () => {
 describe("Stop hook, end to end", () => {
   const CLI = join(import.meta.dir, "..", "src", "cli.ts");
   const run = (dir: string, payload: object) =>
-    spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LANGCOUCH_DIR: dir }, input: JSON.stringify(payload), encoding: "utf8" });
+    spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, input: JSON.stringify(payload), encoding: "utf8" });
 
   test("records exactly the words the reply wove, prints {}, exits 0", () => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-stop-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-stop-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify({ lang: "es", native: "en", level: 2, algorithm: 3 }));
     const served = run(dir, { prompt: "hi", session_id: "s", hook_event_name: "UserPromptSubmit" });
-    expect(served.stdout).toContain("<langcouch>");
+    expect(served.stdout).toContain("<lazy-polyglot>");
     const offer = JSON.parse(readFileSync(join(dir, "served.json"), "utf8")).s.picks as Record<string, string>;
     const [first, ...rest] = Object.entries(offer);
     const [wovenId, wovenLemma] = first!;
@@ -252,7 +252,7 @@ describe("Stop hook, end to end", () => {
   });
 
   test("a broken transcript changes nothing and exits 0", () => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-stop-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-stop-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify({ lang: "es", native: "en", level: 2, algorithm: 3 }));
     run(dir, { prompt: "hi", session_id: "s", hook_event_name: "UserPromptSubmit" });
     const stop = run(dir, { session_id: "s", hook_event_name: "Stop", transcript_path: join(dir, "missing.jsonl") });

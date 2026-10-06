@@ -1,6 +1,6 @@
 # How models handle the weave
 
-LangCouch runs inside whatever agent you use, and every agent has its own model. This page says how well four models follow the weave: whether the answer stays good, and whether the Spanish words read naturally. It is based on the [weave eval](README.md) of 2026-09-30: 30 replies per model on five everyday tasks (a bug fix, a LinkedIn post, a meeting summary, a travel plan, a budget), at three learner levels, scored 1–5 by a blind judge and read by hand.
+Lazy Polyglot runs inside whatever agent you use, and every agent has its own model. This page says how well four models follow the weave: whether the answer stays good, and whether the Spanish words read naturally. It is based on the [weave eval](README.md) of 2026-09-30: 30 replies per model on five everyday tasks (a bug fix, a LinkedIn post, a meeting summary, a travel plan, a budget), at three learner levels, scored 1–5 by a blind judge and read by hand.
 
 Numbers below are for weave algorithm 3, the default since 0.6.0.
 
@@ -21,7 +21,7 @@ No model let Spanish leak into code, and text meant to be copied (the post, the 
 
 ## Model by model
 
-**Claude Opus: the one to use if you can.** The answers are as good as without LangCouch. It weaves few words, but they fit: "keeps every **carretera** (road) through the function on solid ground" as one closing line. Its faults are rare and small, like an ungrammatical "which **estar** hiding the problem", or skipping every word in a reply where one would have fit.
+**Claude Opus: the one to use if you can.** The answers are as good as without Lazy Polyglot. It weaves few words, but they fit: "keeps every **carretera** (road) through the function on solid ground" as one closing line. Its faults are rare and small, like an ungrammatical "which **estar** hiding the problem", or skipping every word in a reply where one would have fit.
 
 **DeepSeek: good at the start, messy later.** For a beginner it weaves almost as well as Opus (3.8 against 4.5). Once the learner knows many words, it starts stuffing them in: "It's **posible** to **crear** calm from chaos, **aprender** from beta feedback, **reconocer** what to **repetir**, and **olvidar** the rest." It also drops Spanish verbs into English sentences ("**Contar** every dollar"). The answers themselves stay solid.
 
@@ -33,6 +33,6 @@ No model let Spanish leak into code, and text meant to be copied (the post, the 
 
 - On Claude Code with a Claude model, expect clean replies with a few well-placed words.
 - With DeepSeek or GLM, expect more forced phrases as your level grows. With Qwen, the weave is the smaller problem; watch the answers themselves.
-- Whatever the model, `/langcouch:pause` gives you a clean session at once.
+- Whatever the model, `/lazy-polyglot:pause` gives you a clean session at once.
 
 The judge is one model's opinion. Full tables, per-level numbers and the replies behind them: [results/algo-3.md](results/algo-3.md).

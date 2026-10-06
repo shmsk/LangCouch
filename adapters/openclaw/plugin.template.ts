@@ -1,21 +1,21 @@
 import { spawnSync } from "node:child_process";
 
-/* langcouch */
+/* lazy-polyglot */
 
 /**
- * LangCouch adapter for OpenClaw (native plugin).
+ * Lazy Polyglot adapter for OpenClaw (native plugin).
  *
- * `langcouch install openclaw` stamps this file as index.ts into a plugin
+ * `lazy-polyglot install openclaw` stamps this file as index.ts into a plugin
  * directory next to openclaw.plugin.json + package.json; the user links it
  * with `openclaw plugins install --link`.
  *
- * - before_prompt_build: shells out to `langcouch hook` with the current user
- *   message and returns the <langcouch> block as prependContext, the same
+ * - before_prompt_build: shells out to `lazy-polyglot hook` with the current user
+ *   message and returns the <lazy-polyglot> block as prependContext, the same
  *   position as the Claude Code UserPromptSubmit hook and the opencode plugin.
  * - agent_end: when a run finishes successfully, sends the last assistant
- *   message to `langcouch hook` as a Stop payload so the CLI counts which
+ *   message to `lazy-polyglot hook` as a Stop payload so the CLI counts which
  *   served words the reply really used. Once per runId when present.
- * - /langcouch <args>: routes to the CLI and replies without calling the LLM.
+ * - /lazy-polyglot <args>: routes to the CLI and replies without calling the LLM.
  *
  * Turn-scoped dedup: OpenClaw re-runs before_prompt_build on retries and
  * rebuilds of one admitted request. currentUserMessageId is stable across
@@ -31,7 +31,7 @@ import { spawnSync } from "node:child_process";
  * shape definePluginEntry() accepts, so nothing has to resolve at load time.
  */
 
-const CLI_PATH = "__LANGCOUCH_CLI_PATH__"; // replaced at install time
+const CLI_PATH = "__LAZY_POLYGLOT_CLI_PATH__"; // replaced at install time
 
 export type SpawnFn = (
   cmd: string,
@@ -104,9 +104,9 @@ const COMMANDS = ["lang", "level", "mode", "pause", "resume", "status", "validat
 
 export function runCommand(rawArgs: string, spawn: SpawnFn = defaultSpawn): string {
   const args = rawArgs.trim().split(/\s+/).filter(Boolean);
-  if (!args[0] || !COMMANDS.includes(args[0])) return `Usage: /langcouch <${COMMANDS.join("|")}> [args]`;
+  if (!args[0] || !COMMANDS.includes(args[0])) return `Usage: /lazy-polyglot <${COMMANDS.join("|")}> [args]`;
   const r = runCli(args, "", spawn);
-  if (!r) return "LangCouch: the CLI did not run. It needs bun or Node.js >= 22.6.";
+  if (!r) return "Lazy Polyglot: the CLI did not run. It needs bun or Node.js >= 22.6.";
   // errors (bad language code, wrong level) come back on stderr
   return r.stdout.trim() || r.stderr.trim() || "ok";
 }
@@ -135,8 +135,8 @@ export type PluginApi = {
 /** Build the plugin entry with an optional spawn function (tests inject a fake). */
 export function buildPlugin(spawn: SpawnFn = defaultSpawn) {
   return {
-    id: "langcouch",
-    name: "LangCouch",
+    id: "lazy-polyglot",
+    name: "Lazy Polyglot",
     description: "Learn a language while you work (diglot weave in agent replies)",
     register(api: PluginApi) {
       // session → last woven request id
@@ -180,14 +180,14 @@ export function buildPlugin(spawn: SpawnFn = defaultSpawn) {
       });
 
       api.registerCommand({
-        name: "langcouch",
-        description: "LangCouch: lang, level, pause, resume, status, export, import",
+        name: "lazy-polyglot",
+        description: "Lazy Polyglot: lang, level, pause, resume, status, export, import",
         acceptsArgs: true,
         handler: (ctx) => {
           try {
             return { text: runCommand(ctx?.args ?? "", spawn) };
           } catch {
-            return { text: "LangCouch: command failed." };
+            return { text: "Lazy Polyglot: command failed." };
           }
         },
       });

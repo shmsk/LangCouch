@@ -8,11 +8,11 @@ function cliPath(): string {
   return join(dirname(fileURLToPath(import.meta.url)), "..", "..", "src", "cli.ts");
 }
 
-/** Best-effort check: is the langcouch plugin already installed in Claude Code? */
+/** Best-effort check: is the plugin (under its current or its pre-rename "langcouch" name) already installed in Claude Code? */
 function pluginAlreadyInstalled(): boolean {
   try {
     const raw = readFileSync(join(homedir(), ".claude", "plugins", "installed_plugins.json"), "utf8");
-    return raw.includes('"langcouch@');
+    return raw.includes('"lazy-polyglot@') || raw.includes('"langcouch@');
   } catch {
     return false;
   }
@@ -22,7 +22,8 @@ function pluginAlreadyInstalled(): boolean {
  * Register the UserPromptSubmit hook in Claude Code settings.
  * scope=project → ./.claude/settings.json (safe default for trying things out)
  * scope=user    → ~/.claude/settings.json (every session everywhere)
- * Idempotent: an existing langcouch entry is left as is.
+ * Idempotent: an existing lazy-polyglot entry is left as is. A hook entry from the
+ * pre-rename "langcouch" install is replaced, so it can't fire twice.
  */
 export function installClaude(scope: "project" | "user"): string {
   const settingsPath =
@@ -31,11 +32,12 @@ export function installClaude(scope: "project" | "user"): string {
       : join(process.cwd(), ".claude", "settings.json");
 
   const pluginWarning = pluginAlreadyInstalled()
-    ? "\nNote: the langcouch Claude Code plugin is already installed — it provides this hook by itself. A duplicate-delivery guard prevents double counting, but you likely don't need this manual install."
+    ? "\nNote: the lazy-polyglot Claude Code plugin is already installed — it provides this hook by itself. A duplicate-delivery guard prevents double counting, but you likely don't need this manual install."
     : "";
 
-  const added = addHooks(settingsPath, `bun ${cliPath()} hook`);
+  const { changed, replaced } = addHooks(settingsPath, `bun ${cliPath()} hook`);
 
-  if (added.length === 0) return `langcouch hook already installed in ${settingsPath} — leaving it alone${pluginWarning}`;
-  return `Hook installed (${added.join(" + ")}): ${settingsPath}\nRestart your Claude Code session ${scope === "project" ? "in this project" : "anywhere"} — replies will start weaving words.${pluginWarning}`;
+  if (changed.length === 0) return `lazy-polyglot hook already installed in ${settingsPath} — leaving it alone${pluginWarning}`;
+  const upgraded = replaced ? `\nReplaced ${replaced} old langcouch hook ${replaced === 1 ? "entry" : "entries"}.` : "";
+  return `Hook installed (${changed.join(" + ")}): ${settingsPath}${upgraded}\nRestart your Claude Code session ${scope === "project" ? "in this project" : "anywhere"} — replies will start weaving words.${pluginWarning}`;
 }

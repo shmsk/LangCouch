@@ -133,7 +133,7 @@ describe("my answer was right", () => {
 });
 
 describe("cards CLI", () => {
-  const run = (dir: string, ...args: string[]) => spawnSync("bun", [CLI, "cards", ...args], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+  const run = (dir: string, ...args: string[]) => spawnSync("bun", [CLI, "cards", ...args], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" });
   const fresh = (config: object) => {
     const dir = mkdtempSync(join(tmpdir(), "lc-cards-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify(config));
@@ -187,7 +187,7 @@ describe("cards CLI", () => {
   test("cards-status: off until chosen, then on/off sticks and shows in cards status", () => {
     const dir = fresh({ lang: "it", native: "ru", level: 2 });
     expect(JSON.parse(run(dir, "status").stdout).statusLine).toBeNull();
-    const cs = (...a: string[]) => spawnSync("bun", [CLI, "cards-status", ...a], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+    const cs = (...a: string[]) => spawnSync("bun", [CLI, "cards-status", ...a], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" });
     expect(cs().stdout).toContain("never chosen");
     expect(cs("on").status).toBe(0);
     expect(JSON.parse(run(dir, "status").stdout).statusLine).toBe(true);

@@ -1,5 +1,5 @@
 ---
-description: Save LangCouch progress to one file, to carry to another machine
+description: Save Lazy Polyglot progress to one file, to carry to another machine
 argument-hint: [file]
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { buildPlugin, runCommand, type SpawnFn, type PluginApi, type PromptBuildEvent, type AgentContext, type AgentEndEvent } from "../adapters/openclaw/plugin.template.ts";
 
-const BLOCK = "<langcouch>\ncasa = house\n</langcouch>";
+const BLOCK = "<lazy-polyglot>\ncasa = house\n</lazy-polyglot>";
 
 function makeFakeSpawn(mode: "ok" | "empty" | "fail" | "throw") {
   const calls: { cmd: string; args: string[] }[] = [];
@@ -81,7 +81,7 @@ describe("openclaw plugin — before_prompt_build", () => {
   });
 });
 
-describe("openclaw plugin — /langcouch", () => {
+describe("openclaw plugin — /lazy-polyglot", () => {
   test("routes arguments and returns CLI output", () => {
     const { command } = load(makeFakeSpawn("ok").spawn);
     expect(command({ args: "level up" }).text).toBe("ran: level up");
@@ -95,8 +95,8 @@ describe("openclaw plugin — /langcouch", () => {
 
   test("refuses unknown subcommands and survives a throwing spawn", () => {
     const { command } = load(makeFakeSpawn("throw").spawn);
-    expect(command({ args: "install claude" }).text).toStartWith("Usage: /langcouch");
-    expect(command({ args: "status" }).text).toBe("LangCouch: command failed.");
+    expect(command({ args: "install claude" }).text).toStartWith("Usage: /lazy-polyglot");
+    expect(command({ args: "status" }).text).toBe("Lazy Polyglot: command failed.");
   });
 });
 

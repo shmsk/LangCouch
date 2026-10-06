@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 
 // Data written by released versions must keep working after an update. Each folder in
-// tests/fixtures/<version>/ is a ~/.langcouch as that version left it. Add one when a
+// tests/fixtures/<version>/ is a ~/.lazy-polyglot as that version left it. Add one when a
 // release changes what goes on disk; never edit an old one.
 const CLI = join(import.meta.dir, "..", "src", "cli.ts");
 const FIXTURES = join(import.meta.dir, "fixtures");
@@ -13,12 +13,12 @@ type State = Record<string, { exposures: number; recalls?: number }>;
 
 describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
   function copy() {
-    const dir = mkdtempSync(join(tmpdir(), `langcouch-upgrade-${version}-`));
+    const dir = mkdtempSync(join(tmpdir(), `lazy-polyglot-upgrade-${version}-`));
     cpSync(join(FIXTURES, version), dir, { recursive: true });
     return dir;
   }
   const run = (dir: string, args: string[], input = "") =>
-    spawnSync("bun", [CLI, ...args], { env: { ...process.env, LANGCOUCH_DIR: dir }, input, encoding: "utf8" });
+    spawnSync("bun", [CLI, ...args], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, input, encoding: "utf8" });
   const states = (dir: string) =>
     Object.fromEntries(readdirSync(dir).filter((f) => f.startsWith("state.")).map((f) => [f, JSON.parse(readFileSync(join(dir, f), "utf8")) as State]));
   // best known progress per key across all state files: nothing may go below it
@@ -39,7 +39,7 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
     expect(status.stdout).toContain("Core (tier 1)");
     const hook = run(dir, ["hook"], JSON.stringify({ prompt: "upgrade check" }));
     expect(hook.status).toBe(0);
-    expect(hook.stdout).toContain("<langcouch>");
+    expect(hook.stdout).toContain("<lazy-polyglot>");
   });
 
   test("switching to algorithm 3 keeps every absorbed word absorbed", () => {
@@ -50,7 +50,7 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
     const before = absorbed();
     const bestBefore = best(states(dir));
     const hook = run(dir, ["hook"], JSON.stringify({ prompt: "upgrade check", session_id: "u", hook_event_name: "UserPromptSubmit" }));
-    expect(hook.stdout).toContain("<langcouch>");
+    expect(hook.stdout).toContain("<lazy-polyglot>");
     expect(run(dir, ["hook"], JSON.stringify({ session_id: "u", hook_event_name: "Stop", last_assistant_message: "no weave" })).status).toBe(0);
     expect(absorbed()).toBeGreaterThanOrEqual(before);
     const after = best(states(dir));
@@ -59,7 +59,7 @@ describe.each(readdirSync(FIXTURES))("data from %s", (version) => {
 
   test("exports and imports onto a fresh machine without loss", () => {
     const dir = copy();
-    const fresh = mkdtempSync(join(tmpdir(), `langcouch-upgrade-${version}-to-`));
+    const fresh = mkdtempSync(join(tmpdir(), `lazy-polyglot-upgrade-${version}-to-`));
     const bundle = join(fresh, "..", `${fresh.split("/").pop()}.json`);
     expect(run(dir, ["export", bundle]).status).toBe(0);
     expect(run(fresh, ["import", bundle]).status).toBe(0);
@@ -101,9 +101,9 @@ const EXPORTS = join(import.meta.dir, "export-fixtures");
 
 describe.each(readdirSync(EXPORTS))("export file %s", (file) => {
   test("imports on top of existing progress and keeps both", () => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-upgrade-export-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-upgrade-export-"));
     writeFileSync(join(dir, "state.es.json"), JSON.stringify({ "zz-local-only": { exposures: 2, lastSeen: "2026-10-01T00:00:00.000Z" } }));
-    const r = spawnSync("bun", [CLI, "import", join(EXPORTS, file)], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+    const r = spawnSync("bun", [CLI, "import", join(EXPORTS, file)], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" });
     expect(r.status).toBe(0);
     const bundle = JSON.parse(readFileSync(join(EXPORTS, file), "utf8")) as { states: Record<string, State> };
     const es = JSON.parse(readFileSync(join(dir, "state.es.json"), "utf8")) as State;

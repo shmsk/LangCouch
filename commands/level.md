@@ -1,5 +1,5 @@
 ---
-description: Set LangCouch weaving intensity (1-10, up, down)
+description: Set Lazy Polyglot weaving intensity (1-10, up, down)
 argument-hint: <1-10|up|down>
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---

@@ -1,5 +1,5 @@
 #!/bin/sh
-# LangCouch plugin hook wrapper: bun preferred, Node >=22.6 fallback, otherwise silent no-op.
+# Lazy Polyglot plugin hook wrapper: bun preferred, Node >=22.6 fallback, otherwise silent no-op.
 # Hook contract: NEVER break the host session — any failure means empty stdout, exit 0.
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CLI="$ROOT/src/cli.ts"
@@ -28,7 +28,7 @@ fi
 INPUT="$(cat 2>/dev/null)"
 case "$INPUT" in
   *'"hook_event_name":"SessionStart"'* | *'"hook_event_name": "SessionStart"'*)
-    echo "<langcouch>The LangCouch plugin is installed but inactive: it needs bun (https://bun.sh) or Node.js >= 22.6, and neither was found. Tell the user this once, briefly, and that they should restart the session after installing one.</langcouch>"
+    echo "<lazy-polyglot>The Lazy Polyglot plugin is installed but inactive: it needs bun (https://bun.sh) or Node.js >= 22.6, and neither was found. Tell the user this once, briefly, and that they should restart the session after installing one.</lazy-polyglot>"
     ;;
 esac
 exit 0

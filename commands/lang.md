@@ -1,5 +1,5 @@
 ---
-description: Switch LangCouch target language or list available ones
+description: Switch Lazy Polyglot target language or list available ones
 argument-hint: [code]
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh *)
 ---

@@ -252,7 +252,7 @@ export function askReadingLine(lang: string, langLabel: string, native: string, 
   const nat = renderReading(word.ipa!, "native", native, lang);
   const ipa = renderReading(word.ipa!, "ipa", native, lang);
   const letters = LETTERS[native] ?? "your alphabet";
-  return `Once, in one short line after the answer, in the user's language, ask whether new ${langLabel} words should show their pronunciation, giving these three examples verbatim: none: ${word.target} (${gloss}) · ${letters}: ${word.target} [${nat}] (${gloss}) · IPA: ${word.target} [${ipa}] (${gloss}). \`/langcouch:reading off|native|ipa\` sets it (now: ${letters}).`;
+  return `Once, in one short line after the answer, in the user's language, ask whether new ${langLabel} words should show their pronunciation, giving these three examples verbatim: none: ${word.target} (${gloss}) · ${letters}: ${word.target} [${nat}] (${gloss}) · IPA: ${word.target} [${ipa}] (${gloss}). \`/lazy-polyglot:reading off|native|ipa\` sets it (now: ${letters}).`;
 }
 
 /** The three choices as CLI lines, with an example word; for `lang` and `reading status`. */

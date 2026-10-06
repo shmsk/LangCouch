@@ -1,11 +1,13 @@
 {
-  "name": "langcouch",
-  "description": "Learn a language passively while you work — diglot weave woven into Claude Code replies",
-  "version": "0.9.5",
+  "name": "lazy-polyglot",
+  "displayName": "Lazy Polyglot",
+  "description": "Get (almost) accidentally fluent 🙂 Learn a language passively while you work: words from your target language are woven into Claude Code replies",
+  "version": "0.9.7",
   "author": {
     "name": "Kirill Shumskii",
     "url": "https://github.com/shmsk"
   },
-  "homepage": "https://github.com/shmsk/LangCouch",
+  "homepage": "https://github.com/shmsk/lazy-polyglot",
+  "license": "MIT",
   "types": "./mods/cards/types/index.d.ts"
 }

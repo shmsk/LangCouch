@@ -172,11 +172,11 @@ describe("cards and spinner show the reading", () => {
 describe("the CLI", () => {
   const CLI = join(import.meta.dir, "..", "src", "cli.ts");
   const fresh = (config: object) => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-reading-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-reading-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify(config));
     return dir;
   };
-  const env = (dir: string) => ({ ...process.env, LANGCOUCH_DIR: dir });
+  const env = (dir: string) => ({ ...process.env, LAZY_POLYGLOT_DIR: dir });
   const hook = (dir: string, prompt: string, session: string) =>
     spawnSync("bun", [CLI, "hook"], { env: env(dir), input: JSON.stringify({ prompt, session_id: session, hook_event_name: "UserPromptSubmit" }), encoding: "utf8" }).stdout;
   const run = (dir: string, ...args: string[]) => spawnSync("bun", [CLI, ...args], { env: env(dir), encoding: "utf8" });
@@ -185,12 +185,12 @@ describe("the CLI", () => {
   test("asks once with three real examples, never alongside another question, never again", () => {
     const dir = fresh({ lang: "fr", native: "ru", level: 2, algorithm: 3 });
     const first = hook(dir, "Давай построим план на неделю", "s1");
-    expect(first).toContain("langcouch:placement"); // the placement offer comes first, alone
-    expect(first).not.toContain("langcouch:reading");
+    expect(first).toContain("lazy-polyglot:placement"); // the placement offer comes first, alone
+    expect(first).not.toContain("lazy-polyglot:reading");
     const second = hook(dir, "Давай построим план на месяц", "s2");
     expect(second).toMatch(/none: \S+ \([^)]+\) · Russian letters: \S+ \[[а-яё́]+\] \([^)]+\) · IPA: \S+ \[[^\]]+\] \([^)]+\)/u);
     expect(config(dir).readingAsked).toEqual(["fr"]);
-    expect(hook(dir, "Давай построим план на год", "s3")).not.toContain("langcouch:reading");
+    expect(hook(dir, "Давай построим план на год", "s3")).not.toContain("lazy-polyglot:reading");
   });
 
   test("the reading follows the language the user wrote in", () => {
@@ -202,7 +202,7 @@ describe("the CLI", () => {
   test("a language without readings never asks and shows none", () => {
     const dir = fresh({ lang: "es", native: "ru", level: 2, algorithm: 3, placementOffered: ["es"] });
     const out = hook(dir, "Давай построим план на неделю", "s1");
-    expect(out).not.toContain("langcouch:reading");
+    expect(out).not.toContain("lazy-polyglot:reading");
     expect(out).not.toContain("[pronunciation]");
     expect(run(dir, "reading").stdout).toContain("reads as it is written");
   });
@@ -231,9 +231,9 @@ describe("the CLI", () => {
     const dir = fresh({ lang: "fr", native: "ru", level: 2, reading: { fr: "ipa" }, readingAsked: ["fr"] });
     spawnSync("mkdir", ["-p", join(dir, "readings")]);
     writeFileSync(join(dir, "readings", "fr.json"), JSON.stringify({ house: "mɛ.zɔ̃" }));
-    const bundle = join(mkdtempSync(join(tmpdir(), "langcouch-reading-out-")), "export.json");
+    const bundle = join(mkdtempSync(join(tmpdir(), "lazy-polyglot-reading-out-")), "export.json");
     expect(run(dir, "export", bundle).status).toBe(0);
-    const to = mkdtempSync(join(tmpdir(), "langcouch-reading-to-"));
+    const to = mkdtempSync(join(tmpdir(), "lazy-polyglot-reading-to-"));
     expect(run(to, "import", bundle).status).toBe(0);
     expect(config(to)).toMatchObject({ reading: { fr: "ipa" }, readingAsked: ["fr"] });
     expect(JSON.parse(readFileSync(join(to, "readings", "fr.json"), "utf8"))).toEqual({ house: "mɛ.zɔ̃" });

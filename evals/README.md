@@ -1,6 +1,6 @@
 # Weave eval
 
-LangCouch is only as good as the model's handling of its `<langcouch>` instruction. This eval measures that across models, at three points of a learner's progress, on everyday tasks. It is a development tool: nothing here ships in the plugin.
+Lazy Polyglot is only as good as the model's handling of its `<lazy-polyglot>` instruction. This eval measures that across models, at three points of a learner's progress, on everyday tasks. It is a development tool: nothing here ships in the plugin.
 
 Results, one file per weave algorithm: [algorithm 1](results/algo-1.md), [algorithm 2](results/algo-2.md), [algorithm 3](results/algo-3.md). Comparison: [below](#algorithms-compared). In plain words, model by model: [MODELS.md](MODELS.md).
 
@@ -94,7 +94,7 @@ bun evals/progress.ts                            # watch the latest run from ano
 ```
 
 - A model id without a slash (`opus`) runs through your local `claude` CLI and your Claude subscription, one call at a time.
-- `provider/model` goes to OpenRouter, four calls at a time per model. The key is read from the macOS Keychain, else from `OPENROUTER_API_KEY`. To store it in the Keychain: `security add-generic-password -s langcouch-openrouter -a "$USER" -w`.
+- `provider/model` goes to OpenRouter, four calls at a time per model. The key is read from the macOS Keychain, else from `OPENROUTER_API_KEY`. To store it in the Keychain: `security add-generic-password -s lazy-polyglot-openrouter -a "$USER" -w`.
 - A call that fails is retried once.
 - Raw replies and judge verdicts go to `out/<run>/` (gitignored). The tables are regenerated into `results/algo-<n>.md`, and the hand-written Findings at the top survive a rerun.
 

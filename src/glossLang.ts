@@ -69,7 +69,7 @@ export function promptGlossLang(prompt: string, native: string): GlossChoice {
 
 /** Shown once, when the prompt's language couldn't be read and the user never picked one. */
 export function askNativeLine(nativeName: string): string {
-  return `Translations are in ${nativeName}: LangCouch couldn't tell this message's language. Once, in one short line after the answer, ask which language the user wants translations in (English, Russian or Uzbek); \`langcouch native <en|ru|uz>\` sets it.`;
+  return `Translations are in ${nativeName}: Lazy Polyglot couldn't tell this message's language. Once, in one short line after the answer, ask which language the user wants translations in (English, Russian or Uzbek); \`lazy-polyglot native <en|ru|uz>\` sets it.`;
 }
 
 export const GLOSS_LANGS = Object.keys(SCRIPT_OF);

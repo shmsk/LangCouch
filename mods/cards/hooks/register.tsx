@@ -5,15 +5,15 @@ import type { Card, CardResult, CardStatus, CardsView } from '../types'
 import { cardLangs, langTag } from './lang'
 import { cardSvg, doneSvg } from './svg'
 
-// The mod draws; the LangCouch CLI picks, grades and records every card
-// (`langcouch cards ...`, JSON out), so progress lives in one place: ~/.langcouch.
-const PANE = 'langcouch-cards'
+// The mod draws; the Lazy Polyglot CLI picks, grades and records every card
+// (`lazy-polyglot cards ...`, JSON out), so progress lives in one place: ~/.lazy-polyglot.
+const PANE = 'lazy-polyglot-cards'
 const ROUND = 10
-const view = atom({ plugin: 'langcouch', key: 'view' } as const, { phase: 'loading' } as CardsView)
+const view = atom({ plugin: 'lazy-polyglot', key: 'view' } as const, { phase: 'loading' } as CardsView)
 
 type Engine = EngineInterface
 
-/** Where the LangCouch CLI is: an override, the langcouch plugin this mod ships in, a checkout, or the installed plugin. */
+/** Where the Lazy Polyglot CLI is: an override, the lazy-polyglot plugin this mod ships in, a checkout, or the installed plugin. */
 async function findCli($: Engine): Promise<string> {
   const exists = async (path: string) => {
     try {
@@ -23,7 +23,7 @@ async function findCli($: Engine): Promise<string> {
       return false
     }
   }
-  const override = await $.env.get('LANGCOUCH_CLI')
+  const override = (await $.env.get('LAZY_POLYGLOT_CLI')) || (await $.env.get('LANGCOUCH_CLI'))
   if (override) return override
   for (const local of [`${$.plugin.root}/scripts/cli.sh`, `${$.plugin.root}/../../scripts/cli.sh`])
     if (await exists(local)) return local
@@ -34,20 +34,20 @@ async function findCli($: Engine): Promise<string> {
         plugins?: Record<string, { installPath?: string }[]>
       }
       for (const [name, entries] of Object.entries(installed.plugins ?? {}))
-        if (name.startsWith('langcouch@'))
+        if (name.startsWith('lazy-polyglot@') || name.startsWith('langcouch@'))
           for (const entry of entries)
             if (entry.installPath && (await exists(`${entry.installPath}/scripts/cli.sh`))) return `${entry.installPath}/scripts/cli.sh`
     } catch {
       // no plugin registry: fall through to the error below
     }
   }
-  throw new Error('LangCouch is not installed. Install the langcouch plugin first (/plugin), or set LANGCOUCH_CLI to its scripts/cli.sh.')
+  throw new Error('Lazy Polyglot is not installed. Install the lazy-polyglot plugin first (/plugin), or set LAZY_POLYGLOT_CLI to its scripts/cli.sh.')
 }
 
 async function cards<T>($: Engine, args: string[]): Promise<T> {
   const cli = await findCli($)
   const { exitCode, stdout, stderr } = await $.process.run(['/bin/sh', cli, 'cards', ...args])
-  if (exitCode !== 0) throw new Error(stderr.trim() || `langcouch cards ${args[0]} failed (exit ${exitCode})`)
+  if (exitCode !== 0) throw new Error(stderr.trim() || `lazy-polyglot cards ${args[0]} failed (exit ${exitCode})`)
   return JSON.parse(stdout) as T
 }
 
@@ -95,7 +95,7 @@ async function answer($: Engine, text: string) {
   await record($, ['answer', card.id, card.kind, card.dir, ...(typed ? [typed] : [])], typed || undefined)
 }
 
-/** "My answer was right": LangCouch takes the miss back and records the card as right (kid for child). */
+/** "My answer was right": Lazy Polyglot takes the miss back and records the card as right (kid for child). */
 async function accept($: Engine) {
   const v = await read($, view)
   if (v.phase !== 'result' || !v.last?.undo) return
@@ -134,7 +134,7 @@ async function chooseStatusLine($: Engine, on: boolean) {
   try {
     const cli = await findCli($)
     const { exitCode, stderr } = await $.process.run(['/bin/sh', cli, 'cards-status', on ? 'on' : 'off'])
-    if (exitCode !== 0) throw new Error(stderr.trim() || 'langcouch cards-status failed')
+    if (exitCode !== 0) throw new Error(stderr.trim() || 'lazy-polyglot cards-status failed')
     const status = await cards<CardStatus>($, ['status'])
     await showStatus($, status)
     await update($, view, (v): CardsView => (v.phase === 'done' ? { ...v, status } : v))
@@ -156,18 +156,18 @@ const ask = (card: Card, lang: string) =>
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'cards', description: 'Review LangCouch words as flashcards (due words first, then placement)' })
+    await $.command.register({ name: 'cards', description: 'Review Lazy Polyglot words as flashcards (due words first, then placement)' })
     void cards<CardStatus>($, ['status']).then(
       status => showStatus($, status),
-      () => undefined, // LangCouch missing or broken: /cards says why when opened
+      () => undefined, // Lazy Polyglot missing or broken: /cards says why when opened
     )
     return next(e)
   })
 
   on('command.run', { command: 'cards' }, async $ => {
-    await $.ui.open({ id: PANE, title: 'LangCouch cards', focus: true, closeOnEscape: true })
+    await $.ui.open({ id: PANE, title: 'Lazy Polyglot cards', focus: true, closeOnEscape: true })
     void start($)
-    return { text: 'LangCouch cards opened. Esc closes them.' }
+    return { text: 'Lazy Polyglot cards opened. Esc closes them.' }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
@@ -190,7 +190,7 @@ export const register: Register = on => {
     if (v.phase === 'paused')
       return (
         <Box flexDirection="column">
-          <Text>LangCouch is paused. /langcouch:resume turns it back on.</Text>
+          <Text>Lazy Polyglot is paused. /lazy-polyglot:resume turns it back on.</Text>
           <Button key="close" role="dismiss" autoFocus onPress={close}>Close</Button>
         </Box>
       )
@@ -204,7 +204,7 @@ export const register: Register = on => {
       )
     const statusQuestion = v.phase === 'done' && v.status.statusLine === null && (
       <Box flexDirection="column">
-        <Text>Show how many cards are due in the status line? You can change it later: /langcouch:cards-status</Text>
+        <Text>Show how many cards are due in the status line? You can change it later: /lazy-polyglot:cards-status</Text>
         <Box flexDirection="row" gap={1}>
           <Button key="statusYes" onPress={() => void chooseStatusLine($, true)}>Yes, show it</Button>
           <Button key="statusNo" onPress={() => void chooseStatusLine($, false)}>No</Button>
@@ -288,7 +288,7 @@ export const register: Register = on => {
           </Text>
           {v.status.statusLine === null && (
             <Box flexDirection="column">
-              <Text>Show how many cards are due in the status line? You can change it later: /langcouch:cards-status</Text>
+              <Text>Show how many cards are due in the status line? You can change it later: /lazy-polyglot:cards-status</Text>
               <Box flexDirection="row" gap={1}>
                 <Button key="statusYes" onPress={() => void chooseStatusLine($, true)}>Yes, show it</Button>
                 <Button key="statusNo" onPress={() => void chooseStatusLine($, false)}>No</Button>

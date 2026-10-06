@@ -1,28 +1,28 @@
 import { spawnSync } from "node:child_process";
 import type { Plugin, Hooks } from "@opencode-ai/plugin";
 
-/* langcouch */
+/* lazy-polyglot */
 
 /**
- * LangCouch adapter for opencode.
+ * Lazy Polyglot adapter for opencode.
  *
  * Primary path: this plugin is auto-discovered by opencode (any *.ts under
  * .opencode/plugin/ or ~/.config/opencode/plugin/). On every chat turn it
- * shells out to `langcouch hook`, feeds the latest user message as the prompt
- * payload, and prepends the emitted <langcouch>…</langcouch> block to that
+ * shells out to `lazy-polyglot hook`, feeds the latest user message as the prompt
+ * payload, and prepends the emitted <lazy-polyglot>…</lazy-polyglot> block to that
  * user message's text — same context-injection contract as the Claude Code
  * UserPromptSubmit hook.
  *
  * Turn-scoped dedup: opencode's `experimental.chat.messages.transform` fires
  * inside the agentic tool-call loop, not once per user submission. Without
- * dedup, a turn that loops through N tool steps would run `langcouch hook`
+ * dedup, a turn that loops through N tool steps would run `lazy-polyglot hook`
  * and mark exposures N times — corrupting the SRS counts the tool exists to
  * keep honest. We key on `info.id` (the user-message id) within a session and
  * only handle a given user turn once.
  *
  * After-reply: on the `session.idle` event the plugin fetches the session's
  * messages, takes the last assistant message's text and sends it to
- * `langcouch hook` as a Stop payload so the CLI counts which served words the
+ * `lazy-polyglot hook` as a Stop payload so the CLI counts which served words the
  * reply really used. Once per assistant message id per session.
  *
  * Sacred hook contract (matches src/cli.ts: the hook must never break the host
@@ -34,7 +34,7 @@ import type { Plugin, Hooks } from "@opencode-ai/plugin";
  * silent no-op if neither runtime is available.
  */
 
-const CLI_PATH = "__LANGCOUCH_CLI_PATH__"; // replaced at install time
+const CLI_PATH = "__LAZY_POLYGLOT_CLI_PATH__"; // replaced at install time
 
 /** Spawn function signature — extracted so tests can inject a counting fake. */
 export type SpawnFn = (
@@ -46,7 +46,7 @@ export type SpawnFn = (
 const defaultSpawn: SpawnFn = (cmd, args, opts) =>
   spawnSync(cmd, args, opts) as { error?: unknown; status: number | null; stdout?: string };
 
-/** Run `langcouch hook` with a JSON payload on stdin; "" on any failure. */
+/** Run `lazy-polyglot hook` with a JSON payload on stdin; "" on any failure. */
 function runCliHook(payloadObj: Record<string, unknown>, spawn: SpawnFn): string {
   const payload = JSON.stringify(payloadObj);
 
@@ -130,7 +130,7 @@ export function buildPlugin(spawn: SpawnFn = defaultSpawn, fallbackClient?: unkn
 
             const block = runHook(textPart.text, info.sessionID, spawn);
             if (!block) return; // silent no-op on any failure
-            // prepend the langcouch block to the user's text — model reads it
+            // prepend the lazy-polyglot block to the user's text — model reads it
             // before the user's actual prompt, same position as Claude's hook
             (textPart as { text: string }).text = `${block}\n\n${textPart.text}`;
             return;

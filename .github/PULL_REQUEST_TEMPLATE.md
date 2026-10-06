@@ -26,7 +26,7 @@ All boxes must be ticked before review.
 
 ## If this PR changes the hook path
 
-- [ ] `langcouch hook` still exits 0 with empty stdout on every error path (the hook contract is sacred — it must never break the host session)
+- [ ] `lazy-polyglot hook` still exits 0 with empty stdout on every error path (the hook contract is sacred — it must never break the host session)
 - [ ] Tested under both `bun` and `node >=22.6` (the plugin fallback runs under Node)
 
 ## Verification

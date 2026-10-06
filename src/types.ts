@@ -81,10 +81,10 @@ export interface Config {
   seenVersion?: string;
   /**
    * Weave algorithm (src/instruction.ts): 1 = every listed word (default), 2 = only where it fits,
-   * 3 = fit + nudge + interval ladder with honest counting (src/ladder.ts). Set by `langcouch mode`.
+   * 3 = fit + nudge + interval ladder with honest counting (src/ladder.ts). Set by `lazy-polyglot mode`.
    */
   algorithm?: 1 | 2 | 3;
-  /** The hook already asked once which language translations should be in (or `langcouch native` set it). */
+  /** The hook already asked once which language translations should be in (or `lazy-polyglot native` set it). */
   nativeAsked?: boolean;
   /** Placement test, per language: concept ids answered "don't know", so the next run carries on. */
   placementSkipped?: Record<string, string[]>;
@@ -96,7 +96,7 @@ export interface Config {
   readingAsked?: string[];
 }
 
-/** Algorithm 3 since 0.6.0; a config without the field gets it. `langcouch mode 1` brings the old weave back. */
+/** Algorithm 3 since 0.6.0; a config without the field gets it. `lazy-polyglot mode 1` brings the old weave back. */
 export const DEFAULT_ALGORITHM = 3;
 export const algorithmOf = (config: Config): 1 | 2 | 3 => config.algorithm ?? DEFAULT_ALGORITHM;
 

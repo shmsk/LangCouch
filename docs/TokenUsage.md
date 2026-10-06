@@ -1,10 +1,10 @@
-# How many tokens does LangCouch cost?
+# How many tokens does Lazy Polyglot cost?
 
 Short answer: a few hundred input tokens per prompt, almost all of them read from the prompt cache. In a typical session that is roughly 1–3% of what you would spend anyway.
 
 ## Where the tokens go
 
-LangCouch adds tokens in three places:
+Lazy Polyglot adds tokens in three places:
 
 - **Every prompt.** The `UserPromptSubmit` hook adds one short weave instruction to the context. It stays in the conversation history, so the context grows by the size of that instruction with each prompt you send.
 - **Session start.** The `SessionStart` hook adds the same instruction once.
@@ -14,7 +14,7 @@ Nothing else is sent. There are no extra requests to the model, no tool calls an
 
 ## Instruction size by level
 
-Measured with `langcouch instruction` on 0.4.0. Tokens are estimated at about 4 bytes per token, so treat them as approximate.
+Measured with `lazy-polyglot instruction` on 0.4.0. Tokens are estimated at about 4 bytes per token, so treat them as approximate.
 
 | Level | Spanish / French | German | English |
 |-------|------------------|--------|---------|
@@ -37,15 +37,15 @@ The overhead grows linearly with the number of prompts. It shows most in long se
 
 ## Paying less
 
-- **Lower the level.** `/langcouch:level 1` cuts the instruction by about a third compared to the default.
-- **Pause it.** `/langcouch:pause` makes the hook print nothing, so it costs zero tokens until `/langcouch:resume`.
+- **Lower the level.** `/lazy-polyglot:level 1` cuts the instruction by about a third compared to the default.
+- **Pause it.** `/lazy-polyglot:pause` makes the hook print nothing, so it costs zero tokens until `/lazy-polyglot:resume`.
 
 ## Measure it yourself
 
 Print the exact instruction your current settings produce and count its bytes:
 
 ```sh
-langcouch instruction | wc -c
+lazy-polyglot instruction | wc -c
 ```
 
-Inside Claude Code, use `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh instruction`. To compare whole sessions, run `/context` in two similar sessions, one with LangCouch paused and one with it on.
+Inside Claude Code, use `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh instruction`. To compare whole sessions, run `/context` in two similar sessions, one with Lazy Polyglot paused and one with it on.

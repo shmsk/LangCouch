@@ -1,11 +1,11 @@
 {
-  "name": "langcouch",
+  "name": "lazy-polyglot",
   "version": "0.9.4",
-  "description": "The cards mod on its own, for `claude plugin test mods/cards`; users get it inside the langcouch plugin",
+  "description": "The cards mod on its own, for `claude plugin test mods/cards`; users get it inside the lazy-polyglot plugin",
   "author": {
     "name": "Kirill Shumskii",
     "url": "https://github.com/shmsk"
   },
-  "homepage": "https://github.com/shmsk/LangCouch",
+  "homepage": "https://github.com/shmsk/lazy-polyglot",
   "types": "./types/index.d.ts"
 }

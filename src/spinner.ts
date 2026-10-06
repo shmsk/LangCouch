@@ -8,10 +8,12 @@ import { glossFor, isAbsorbed } from "./types.ts";
  * Spinner tips: while Claude Code thinks, its spinner rotates `spinnerTipsOverride.tips`.
  * A plugin can't ship that key and has no uninstall hook, so we edit the user's
  * settings.json surgically: every line we add starts with SPINNER_MARKER, and removal
- * is by that prefix — never by a stored list, so it works even if ~/.langcouch is gone.
+ * is by that prefix — never by a stored list, so it works even if ~/.lazy-polyglot is gone.
  * Nothing else in the file is touched.
  */
-export const SPINNER_MARKER = "LangCouch · ";
+export const SPINNER_MARKER = "Lazy Polyglot · ";
+/** Tips written before the rename: still ours to count and remove, so the first write after upgrading leaves none. */
+const LEGACY_SPINNER_MARKER = "LangCouch · ";
 export const SPINNER_TIPS = 5;
 
 type Settings = Record<string, unknown>;
@@ -20,13 +22,14 @@ interface TipsOverride {
   [key: string]: unknown;
 }
 
-/** Claude Code user settings; LANGCOUCH_CLAUDE_SETTINGS overrides (tests), CLAUDE_CONFIG_DIR is honoured. */
+/** Claude Code user settings; LAZY_POLYGLOT_CLAUDE_SETTINGS (old name LANGCOUCH_CLAUDE_SETTINGS) overrides (tests), CLAUDE_CONFIG_DIR is honoured. */
 export function claudeSettingsPath(): string {
-  if (process.env.LANGCOUCH_CLAUDE_SETTINGS) return process.env.LANGCOUCH_CLAUDE_SETTINGS;
+  const override = process.env.LAZY_POLYGLOT_CLAUDE_SETTINGS ?? process.env.LANGCOUCH_CLAUDE_SETTINGS;
+  if (override) return override;
   return join(process.env.CLAUDE_CONFIG_DIR ?? join(homedir(), ".claude"), "settings.json");
 }
 
-const isOurs = (t: unknown) => typeof t === "string" && t.startsWith(SPINNER_MARKER);
+const isOurs = (t: unknown) => typeof t === "string" && (t.startsWith(SPINNER_MARKER) || t.startsWith(LEGACY_SPINNER_MARKER));
 
 /** Words worth reviewing: in progress and not yet absorbed, most recently shown first. */
 export function pickSpinnerWords(words: Word[], state: State, n = SPINNER_TIPS): Word[] {
@@ -71,7 +74,7 @@ export function readSettings(path = claudeSettingsPath()): Settings {
   if (raw.trim() === "") return {};
   const parsed: unknown = JSON.parse(raw);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error(`langcouch: ${path} is not a JSON object — leaving it alone`);
+    throw new Error(`lazy-polyglot: ${path} is not a JSON object — leaving it alone`);
   }
   return parsed as Settings;
 }
@@ -89,7 +92,7 @@ export function writeSettingsIfChanged(before: Settings, after: Settings, backup
     writeFileSync(backup, readFileSync(path, "utf8"));
   }
   mkdirSync(dirname(path), { recursive: true });
-  const tmp = `${path}.langcouch.tmp`;
+  const tmp = `${path}.lazy-polyglot.tmp`;
   writeFileSync(tmp, JSON.stringify(after, null, 2) + "\n");
   renameSync(tmp, path);
   return true;

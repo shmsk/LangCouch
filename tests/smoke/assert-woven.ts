@@ -2,13 +2,13 @@
  * Smoke-test assertions, run in CI after a host finished one turn.
  *
  *   bun tests/smoke/assert-woven.ts request <fake-llm-log.jsonl>
- *     The block reached the model: some recorded request carries <langcouch>.
+ *     The block reached the model: some recorded request carries <lazy-polyglot>.
  *   bun tests/smoke/assert-woven.ts reply <reply.txt> <lang>
- *     A real model wove what LangCouch served: at least one word the hook put
+ *     A real model wove what Lazy Polyglot served: at least one word the hook put
  *     into this run's instruction (read back from state.<lang>.json and mapped
  *     to its lemma via the wordlist) appears as **word** (translation).
  *   bun tests/smoke/assert-woven.ts settled
- *     The host's after-reply event reached LangCouch: a session in served.json
+ *     The host's after-reply event reached Lazy Polyglot: a session in served.json
  *     was read back by a Stop (weave algorithm 3, honest counting).
  *
  * Prints what it found either way, so a red run shows why.
@@ -42,20 +42,20 @@ if (mode === "request") {
   console.log(`${lines.length} request(s): ${lines.map((l) => l.path).join(", ")}`);
   // walk the parsed body for the string (a message's content) carrying the block
   const find = (v: unknown): string | undefined => {
-    if (typeof v === "string") return v.includes("<langcouch>") ? v : undefined;
+    if (typeof v === "string") return v.includes("<lazy-polyglot>") ? v : undefined;
     if (v && typeof v === "object") for (const x of Object.values(v)) { const s = find(x); if (s) return s; }
     return undefined;
   };
   for (const l of lines) {
     let found: string | undefined;
-    try { found = find(JSON.parse(l.body)); } catch { found = l.body.includes("<langcouch>") ? l.body : undefined; }
+    try { found = find(JSON.parse(l.body)); } catch { found = l.body.includes("<lazy-polyglot>") ? l.body : undefined; }
     if (found) {
-      const at = found.indexOf("<langcouch>");
-      console.log(`OK: <langcouch> found in ${l.path}:\n${found.slice(Math.max(0, at - 200), at + 300)}`);
+      const at = found.indexOf("<lazy-polyglot>");
+      console.log(`OK: <lazy-polyglot> found in ${l.path}:\n${found.slice(Math.max(0, at - 200), at + 300)}`);
       process.exit(0);
     }
   }
-  console.error("FAIL: no request to the model contained a <langcouch> block");
+  console.error("FAIL: no request to the model contained a <lazy-polyglot> block");
   process.exit(1);
 } else {
   console.log(`reply:\n${text}\n`);

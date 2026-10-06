@@ -30,6 +30,7 @@ import { installOpencode } from "../adapters/opencode/install.ts";
 import { installHermes } from "../adapters/hermes/install.ts";
 import { installOpenclaw } from "../adapters/openclaw/install.ts";
 import { installGemini } from "../adapters/gemini/install.ts";
+import { migrateLegacyDataDir } from "./migrate.ts";
 
 /**
  * Build this turn's instruction. `mark` records the turn: algorithms 1-2 count the
@@ -317,7 +318,7 @@ function status(): string {
   });
 
   return [
-    `langcouch — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response) · mode ${algorithmOf(config)}`,
+    `lazy-polyglot — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response) · mode ${algorithmOf(config)}`,
     news,
     coreLine,
     regionalLine,
@@ -326,8 +327,8 @@ function status(): string {
     numberLine,
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
-    `Spinner tips: ${config.spinner ? "on" : "off (langcouch spinner on)"}`,
-    `Due cards in status line: ${config.cardsStatus ? "on" : "off (langcouch cards-status on)"}`,
+    `Spinner tips: ${config.spinner ? "on" : "off (lazy-polyglot spinner on)"}`,
+    `Due cards in status line: ${config.cardsStatus ? "on" : "off (lazy-polyglot cards-status on)"}`,
     `Data: ${DATA_DIR}`,
     top ? `Most exposed:\n${top}` : `No exposures yet — run a session with the hook installed.`,
   ]
@@ -362,6 +363,9 @@ const MODE_NAMES: Record<1 | 2 | 3, string> = {
 const userPath = (p: string) => resolve(p === "~" || p.startsWith("~/") ? homedir() + p.slice(1) : p);
 
 const [cmd, ...args] = process.argv.slice(2);
+
+// first run after the rename: ~/.langcouch becomes ~/.lazy-polyglot (DATA_DIR is only a path, read lazily)
+migrateLegacyDataDir();
 
 try {
   switch (cmd) {
@@ -497,7 +501,7 @@ try {
       if (sub === "reveal") {
         const [id, dir] = args.slice(1);
         if (!id || (dir !== "forward" && dir !== "reverse")) {
-          console.error("usage: langcouch cards reveal <id> <forward|reverse>");
+          console.error("usage: lazy-polyglot cards reveal <id> <forward|reverse>");
           process.exit(1);
         }
         out({ expected: revealCard(words, config, { id, dir }) });
@@ -507,8 +511,8 @@ try {
         const [id, kind, dir, ...rest] = args.slice(1);
         const graded = sub === "grade" ? rest[0] : "ok";
         if (!id || (kind !== "review" && kind !== "placement") || (dir !== "forward" && dir !== "reverse") || (graded !== "ok" && graded !== "fail")) {
-          console.error(`usage: langcouch cards answer <id> <review|placement> <forward|reverse> [answer...] (no answer = don't know)
-       langcouch cards grade <id> <review|placement> <forward|reverse> <ok|fail>   self-graded, where no answer can be typed`);
+          console.error(`usage: lazy-polyglot cards answer <id> <review|placement> <forward|reverse> [answer...] (no answer = don't know)
+       lazy-polyglot cards grade <id> <review|placement> <forward|reverse> <ok|fail>   self-graded, where no answer can be typed`);
           process.exit(1);
         }
         // a self-grade is recorded as the right answer or as "don't know", through the same path as a typed one
@@ -531,7 +535,7 @@ try {
           undo = undefined;
         }
         if (!id || (kind !== "review" && kind !== "placement") || (dir !== "forward" && dir !== "reverse") || !undo || typeof undo.state !== "object" || !Array.isArray(undo.skipped)) {
-          console.error("usage: langcouch cards accept <id> <review|placement> <forward|reverse> <undo-json>   (undo from the answer's output)");
+          console.error("usage: lazy-polyglot cards accept <id> <review|placement> <forward|reverse> <undo-json>   (undo from the answer's output)");
           process.exit(1);
         }
         const skipped = skippedFor(config, lang);
@@ -541,7 +545,7 @@ try {
         out({ ...result, status: cardStatus(words, state, loadConfig(), now) });
         break;
       }
-      console.error("usage: langcouch cards status | next [n] | answer <id> <review|placement> <forward|reverse> [answer...] | reveal <id> <dir> | grade <id> <kind> <dir> <ok|fail> | accept <id> <kind> <dir> <undo-json>");
+      console.error("usage: lazy-polyglot cards status | next [n] | answer <id> <review|placement> <forward|reverse> [answer...] | reveal <id> <dir> | grade <id> <kind> <dir> <ok|fail> | accept <id> <kind> <dir> <undo-json>");
       process.exit(1);
     }
     case "placement": {
@@ -581,7 +585,7 @@ try {
       if (sub === "answer") {
         const pairs = args.slice(1);
         if (pairs.length === 0 || pairs.some((p) => !p.includes("="))) {
-          console.error('usage: langcouch placement answer "<word>=<translation>" ... (empty translation = don\'t know)');
+          console.error('usage: lazy-polyglot placement answer "<word>=<translation>" ... (empty translation = don\'t know)');
           process.exit(1);
         }
         const queue = new Map(placementQueue(words, state, skipped).map((w) => [w.target.toLowerCase(), w]));
@@ -605,12 +609,12 @@ try {
         break;
       }
       if (sub !== undefined && !/^\d+$/.test(sub)) {
-        console.error("usage: langcouch placement [n] | next [n] | answer <word>=<translation>... | --reset");
+        console.error("usage: lazy-polyglot placement [n] | next [n] | answer <word>=<translation>... | --reset");
         process.exit(1);
       }
       const queue = placementQueue(words, state, skipped);
       if (queue.length === 0) {
-        console.log(`Placement done. ${summary()}. \`langcouch placement --reset\` asks the "don't know" words again.`);
+        console.log(`Placement done. ${summary()}. \`lazy-polyglot placement --reset\` asks the "don't know" words again.`);
         break;
       }
       const n = sub ? Math.max(1, Number(sub)) : queue.length;
@@ -633,7 +637,7 @@ try {
         save();
       }
       rl.close();
-      console.log(`\nKnown this round: ${right}/${asked}. ${summary()}.${left() ? " Run `langcouch placement` again to carry on." : ""}`);
+      console.log(`\nKnown this round: ${right}/${asked}. ${summary()}.${left() ? " Run `lazy-polyglot placement` again to carry on." : ""}`);
       break;
     }
     case "level": {
@@ -641,7 +645,7 @@ try {
       const arg = args[0] ?? "";
       const next = arg === "up" ? config.level + 1 : arg === "down" ? config.level - 1 : Number(arg);
       if (!Number.isInteger(next) || next < 1 || next > 10) {
-        console.error("usage: langcouch level <1-10|up|down>");
+        console.error("usage: lazy-polyglot level <1-10|up|down>");
         process.exit(1);
       }
       saveConfig({ ...config, level: next });
@@ -657,7 +661,7 @@ try {
       }
       const next = Number(arg);
       if (next !== 1 && next !== 2 && next !== 3) {
-        console.error("usage: langcouch mode <1|2|3> — 3: interval ladder (default), 2: only words that fit, 1: every listed word");
+        console.error("usage: lazy-polyglot mode <1|2|3> — 3: interval ladder (default), 2: only words that fit, 1: every listed word");
         process.exit(1);
       }
       saveConfig({ ...config, algorithm: next });
@@ -672,7 +676,7 @@ try {
         break;
       }
       if (!GLOSS_LANGS.includes(arg)) {
-        console.error(`usage: langcouch native <${GLOSS_LANGS.join("|")}>`);
+        console.error(`usage: lazy-polyglot native <${GLOSS_LANGS.join("|")}>`);
         process.exit(1);
       }
       saveConfig({ ...config, native: arg, nativeAsked: true });
@@ -693,16 +697,16 @@ try {
       }
       const code = normalizeLang(args[0]);
       if (!availableLangs().includes(code)) {
-        console.error(`langcouch: no wordlist for "${code}" — available: ${availableLangs().join(", ")}`);
+        console.error(`lazy-polyglot: no wordlist for "${code}" — available: ${availableLangs().join(", ")}`);
         process.exit(1);
       }
       loadWordlist(code); // fail now, not in the hook, if a variant's base is missing or a file is broken
       saveConfig({ ...config, lang: code });
       console.log(`Language: ${config.lang} → ${code} (progress is per-language, ${config.lang} is kept)`);
-      if (!placementStarted(config, code)) console.log(`Already know some ${langName(code)}? \`langcouch placement\` (or /langcouch:placement in Claude Code) checks the list and marks the words you know.`);
+      if (!placementStarted(config, code)) console.log(`Already know some ${langName(code)}? \`lazy-polyglot placement\` (or /lazy-polyglot:placement in Claude Code) checks the list and marks the words you know.`);
       const sample = loadWordlist(code).find((w) => w.ipa);
       if (sample) {
-        console.log(`Pronunciation of new words: ${readingOf(config, code, true)} — change with \`langcouch reading off|native|ipa\` (/langcouch:reading):`);
+        console.log(`Pronunciation of new words: ${readingOf(config, code, true)} — change with \`lazy-polyglot reading off|native|ipa\` (/lazy-polyglot:reading):`);
         console.log(readingExamples(code, config.native, sample).join("\n"));
       }
       break;
@@ -712,7 +716,7 @@ try {
       const sub = args[0] ?? "status";
       const sample = loadWordlist(config.lang).find((w) => w.ipa);
       if (!sample) {
-        console.log(`${langName(config.lang)} reads as it is written: LangCouch shows no pronunciation for it.`);
+        console.log(`${langName(config.lang)} reads as it is written: Lazy Polyglot shows no pronunciation for it.`);
         break;
       }
       if (sub === "status") {
@@ -721,7 +725,7 @@ try {
         break;
       }
       if (!READING_MODES.includes(sub as ReadingMode)) {
-        console.error("usage: langcouch reading <off|native|ipa|status>");
+        console.error("usage: lazy-polyglot reading <off|native|ipa|status>");
         process.exit(1);
       }
       const asked = config.readingAsked ?? [];
@@ -733,7 +737,7 @@ try {
     case "validate": {
       const target = args.find((a) => !a.startsWith("--"));
       if (!target) {
-        console.error(`usage: langcouch validate <code|path.json> [--full] — user languages live in ${USER_WORDLISTS_DIR}`);
+        console.error(`usage: lazy-polyglot validate <code|path.json> [--full] — user languages live in ${USER_WORDLISTS_DIR}`);
         process.exit(1);
       }
       let layers: string[];
@@ -741,12 +745,12 @@ try {
         // An explicit variant file (…/pt-BR.json) is still checked merged over its installed base.
         const base = baseLang(normalizeLang(basename(target, ".json")));
         const basePath = base ? wordlistPath(base) : null;
-        if (base && !basePath) throw new Error(`langcouch: ${target} is a variant of "${base}", but there is no ${base} wordlist to build on`);
+        if (base && !basePath) throw new Error(`lazy-polyglot: ${target} is a variant of "${base}", but there is no ${base} wordlist to build on`);
         layers = basePath ? [basePath, target] : [target];
       } else {
         const code = normalizeLang(target);
         if (!wordlistPath(code)) {
-          console.error(`langcouch: no wordlist for "${code}" — put it at ${USER_WORDLISTS_DIR}/${code}.json`);
+          console.error(`lazy-polyglot: no wordlist for "${code}" — put it at ${USER_WORDLISTS_DIR}/${code}.json`);
           process.exit(1);
         }
         layers = wordlistLayers(code);
@@ -758,7 +762,7 @@ try {
     case "resume": {
       const config = loadConfig();
       saveConfig({ ...config, enabled: cmd === "resume" });
-      console.log(cmd === "pause" ? "Weaving paused (langcouch resume to turn it back on)" : "Weaving resumed");
+      console.log(cmd === "pause" ? "Weaving paused (lazy-polyglot resume to turn it back on)" : "Weaving resumed");
       break;
     }
     case "spinner": {
@@ -772,13 +776,13 @@ try {
             ? n > 0
               ? `Spinner tips on: ${n} words in ${claudeSettingsPath()} (refreshed every session start)`
               : "Spinner tips on — no words in progress yet, they appear after a few replies"
-            : `Spinner tips off: LangCouch lines removed from ${claudeSettingsPath()}`,
+            : `Spinner tips off: Lazy Polyglot lines removed from ${claudeSettingsPath()}`,
         );
       } else if (sub === "status") {
         const n = countOurTips(readSettings());
-        console.log(`Spinner tips: ${config.spinner ? "on" : "off"} · ${n} LangCouch lines in ${claudeSettingsPath()}`);
+        console.log(`Spinner tips: ${config.spinner ? "on" : "off"} · ${n} Lazy Polyglot lines in ${claudeSettingsPath()}`);
       } else {
-        console.error("usage: langcouch spinner <on|off|status>");
+        console.error("usage: lazy-polyglot spinner <on|off|status>");
         process.exit(1);
       }
       break;
@@ -792,7 +796,7 @@ try {
         const v = loadConfig().cardsStatus;
         console.log(`Due-card count in the status line: ${v === true ? "on" : v === false ? "off" : "off (never chosen; /cards asks once)"}`);
       } else {
-        console.error("usage: langcouch cards-status <on|off|status>");
+        console.error("usage: lazy-polyglot cards-status <on|off|status>");
         process.exit(1);
       }
       break;
@@ -803,7 +807,7 @@ try {
     case "export": {
       const { bundle, skipped } = exportBundle();
       // the home folder by default: a chat host's working directory could be anywhere
-      const target = args.find((a) => !a.startsWith("--")) ?? join(homedir(), `langcouch-export-${bundle.exportedAt.slice(0, 10)}.json`);
+      const target = args.find((a) => !a.startsWith("--")) ?? join(homedir(), `lazy-polyglot-export-${bundle.exportedAt.slice(0, 10)}.json`);
       const json = JSON.stringify(bundle, null, 2) + "\n";
       if (target === "-") {
         process.stdout.write(json);
@@ -813,10 +817,10 @@ try {
       const dataDir = existsSync(DATA_DIR) ? realpathSync(DATA_DIR) : resolve(DATA_DIR);
       const parent = existsSync(dirname(path)) ? realpathSync(dirname(path)) : dirname(path);
       if (parent === dataDir || parent.startsWith(dataDir + sep)) {
-        throw new Error(`langcouch: ${path} is inside ${DATA_DIR}, where it could replace your progress; pick another place`);
+        throw new Error(`lazy-polyglot: ${path} is inside ${DATA_DIR}, where it could replace your progress; pick another place`);
       }
       if (existsSync(path) && !args.includes("--force")) {
-        throw new Error(`langcouch: ${path} already exists; add --force to replace it, or give another file name`);
+        throw new Error(`lazy-polyglot: ${path} already exists; add --force to replace it, or give another file name`);
       }
       writeFileSync(path, json);
       console.log(formatExportSummary(bundle, path, skipped));
@@ -825,7 +829,7 @@ try {
     case "import": {
       const file = args.find((a) => !a.startsWith("--"));
       if (!file) {
-        console.error("usage: langcouch import <file> [--config]");
+        console.error("usage: lazy-polyglot import <file> [--config]");
         process.exit(1);
       }
       const path = userPath(file);
@@ -833,7 +837,7 @@ try {
       try {
         raw = JSON.parse(readFileSync(path, "utf8"));
       } catch (e) {
-        throw new Error(`langcouch: cannot read ${path} as JSON (${e instanceof Error ? e.message : String(e)}) — nothing was imported`);
+        throw new Error(`lazy-polyglot: cannot read ${path} as JSON (${e instanceof Error ? e.message : String(e)}) — nothing was imported`);
       }
       const report = importBundle(parseBundle(raw), { takeConfig: args.includes("--config") });
       console.log(formatImportReport(report, path));
@@ -873,7 +877,7 @@ try {
       } else if (args[0] === "openclaw") {
         console.log(installOpenclaw());
       } else {
-        console.error("usage: langcouch install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | gemini [--scope project|user] | hermes | openclaw>");
+        console.error("usage: lazy-polyglot install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | gemini [--scope project|user] | hermes | openclaw>");
         process.exit(1);
       }
       break;
@@ -881,13 +885,13 @@ try {
     default:
       console.log(
         [
-          "langcouch — learn a language without leaving the terminal (diglot weave for AI CLIs)",
+          "lazy-polyglot — learn a language without leaving the terminal (diglot weave for AI CLIs)",
           "",
-          "  init                      create ~/.langcouch",
+          "  init                      create ~/.lazy-polyglot",
           "  pause / resume            turn weaving off/on",
           "  status [--absorbed]       level, core/grammar progress; --absorbed lists absorbed words",
           "  lang [code]               switch language / list available (regional variants too: pt-BR)",
-          "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.langcouch/wordlists/)",
+          "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.lazy-polyglot/wordlists/)",
           "  native [en|ru|uz]         your language: translations when a message's language is unclear, quiz answers",
           "  level <1-10|up|down>      weaving intensity",
           "  mode [1|2|3]              weave algorithm: 3 interval ladder (default), 2 fit only, 1 every word",
@@ -895,7 +899,7 @@ try {
           "  placement [n]             check which listed words you already know; they skip the new-word stage",
           "  placement next [n] / answer <word>=<translation>...   the same, one batch at a time (for agents)",
           "  cards status | next [n] | answer <id> <kind> <dir> [answer] | reveal | grade | accept   flashcards as JSON (for the cards mod)",
-          "  export [file|-] [--force] save progress to one file (default ~/langcouch-export-<date>.json) for another machine",
+          "  export [file|-] [--force] save progress to one file (default ~/lazy-polyglot-export-<date>.json) for another machine",
           "  import <file> [--config]  merge an export into this machine's progress (keeps the best of both)",
           "  reading <off|native|ipa|status>   pronunciation of new words: your letters (default), IPA, or none (fr, en, pt)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
@@ -906,7 +910,7 @@ try {
           "  install codex [--scope project|user]   register the hook in Codex CLI (hooks.json)",
           "  install opencode [--scope project|user]   install the plugin + AGENTS.md fallback for opencode",
           "  install gemini [--scope project|user]   register the hook in Gemini CLI (settings.json, beta)",
-          "  install hermes            install the Hermes Agent plugin ($HERMES_HOME/plugins/langcouch)",
+          "  install hermes            install the Hermes Agent plugin ($HERMES_HOME/plugins/lazy-polyglot)",
           "  install openclaw          generate the OpenClaw plugin and print the link commands",
         ].join("\n"),
       );

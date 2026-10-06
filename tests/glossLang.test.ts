@@ -46,7 +46,7 @@ describe("promptGlossLang", () => {
     "Сделай commit и потом push в main",
     "Сделай review PR #123, проверь useEffect dependencies и TypeScript types",
     "посмотри @src/cli.ts и @adapters/gemini/install.ts",
-    "посмотри /Users/ks/Projects/LangCouch/src/glossLang.ts",
+    "посмотри /Users/ks/Projects/Lazy Polyglot/src/glossLang.ts",
     "почему падает?\nTypeError: Cannot read properties of undefined (reading 'map')\n    at renderList (/Users/x/app/List.tsx:42:17)\n    at App (/Users/x/app/App.tsx:10:3)",
     "~~~\nconst fooBarBaz = computeSomethingVeryLong(argumentOne, argumentTwo)\n~~~\nпочини",
     "claim access with the same email tied to your paid subscription -- ты же сам написал?))",
@@ -60,7 +60,7 @@ describe("promptGlossLang", () => {
 
 describe("instruction with the ask line", () => {
   const words = loadWordlist("es");
-  const ask = "Translations are in English: LangCouch couldn't tell this message's language. Once, in one short line after the answer, ask which language the user wants translations in (English, Russian or Uzbek); `langcouch native <en|ru|uz>` sets it.";
+  const ask = "Translations are in English: Lazy Polyglot couldn't tell this message's language. Once, in one short line after the answer, ask which language the user wants translations in (English, Russian or Uzbek); `lazy-polyglot native <en|ru|uz>` sets it.";
 
   test("fits the budget at max level in every algorithm, with grammar and a rule cue", () => {
     const picks = pickWords(words, {}, wordsPerResponse(10));
@@ -69,7 +69,7 @@ describe("instruction with the ask line", () => {
     const rule = rules.reduce((a, b) => (JSON.stringify(b).length > JSON.stringify(a).length ? b : a));
     for (const algo of [1, 2, 3] as const) {
       const text = buildInstruction({ lang: "es", native: "en", level: 10 }, picks, grammar, rule, algo, [], ask);
-      expect(text).toContain("langcouch native");
+      expect(text).toContain("lazy-polyglot native");
       expect(text.length).toBeLessThanOrEqual(INSTRUCTION_BUDGET);
     }
   });
@@ -85,12 +85,12 @@ describe("instruction with the ask line", () => {
 describe("hook picks the gloss language from the prompt", () => {
   const CLI = join(import.meta.dir, "..", "src", "cli.ts");
   const fresh = (config: object) => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-gloss-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-gloss-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify(config));
     return dir;
   };
   const hook = (dir: string, prompt: string, session = "s") =>
-    spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LANGCOUCH_DIR: dir }, input: JSON.stringify({ prompt, session_id: session, hook_event_name: "UserPromptSubmit" }), encoding: "utf8" }).stdout;
+    spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, input: JSON.stringify({ prompt, session_id: session, hook_event_name: "UserPromptSubmit" }), encoding: "utf8" }).stdout;
   const glosses = (out: string) => out.match(/= ([^;\n,]+)/g)?.join(" ") ?? "";
 
   test("Russian prompt → Russian glosses, English prompt → English, same config", () => {
@@ -98,26 +98,26 @@ describe("hook picks the gloss language from the prompt", () => {
     expect(glosses(hook(dir, "Давай построим план на следующий релиз"))).toMatch(/[а-я]/);
     const en = hook(dir, "Let's plan the next release together", "s2");
     expect(glosses(en)).not.toMatch(/[а-я]/);
-    expect(en).toContain("<langcouch>");
+    expect(en).toContain("<lazy-polyglot>");
   });
 
   test("an unsure prompt asks once, then never again", () => {
     const dir = fresh({ lang: "es", native: "en", level: 2, algorithm: 3 });
-    expect(hook(dir, "ok", "s0")).not.toContain("langcouch native"); // too short to spend the question on
-    expect(hook(dir, "გამარჯობა, როგორ ხარ")).toContain("langcouch native");
+    expect(hook(dir, "ok", "s0")).not.toContain("lazy-polyglot native"); // too short to spend the question on
+    expect(hook(dir, "გამარჯობა, როგორ ხარ")).toContain("lazy-polyglot native");
     expect(JSON.parse(readFileSync(join(dir, "config.json"), "utf8")).nativeAsked).toBe(true);
-    expect(hook(dir, "გამარჯობა, კიდევ ერთხელ", "s2")).not.toContain("langcouch native");
+    expect(hook(dir, "გამარჯობა, კიდევ ერთხელ", "s2")).not.toContain("lazy-polyglot native");
   });
 
   test("a clear prompt never asks", () => {
     const dir = fresh({ lang: "es", native: "en", level: 2, algorithm: 3 });
-    expect(hook(dir, "Давай построим план")).not.toContain("langcouch native");
+    expect(hook(dir, "Давай построим план")).not.toContain("lazy-polyglot native");
     expect(JSON.parse(readFileSync(join(dir, "config.json"), "utf8")).nativeAsked).toBeUndefined();
   });
 
-  test("`langcouch native` sets the language and stops the question; a bad code writes nothing", () => {
+  test("`lazy-polyglot native` sets the language and stops the question; a bad code writes nothing", () => {
     const dir = fresh({ lang: "es", native: "en", level: 2 });
-    const run = (...a: string[]) => spawnSync("bun", [CLI, "native", ...a], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" });
+    const run = (...a: string[]) => spawnSync("bun", [CLI, "native", ...a], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" });
     expect(run("ru").status).toBe(0);
     expect(JSON.parse(readFileSync(join(dir, "config.json"), "utf8"))).toMatchObject({ native: "ru", nativeAsked: true });
     const before = readFileSync(join(dir, "config.json"), "utf8");

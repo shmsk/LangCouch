@@ -1,5 +1,5 @@
 /**
- * Weave-quality eval: how well do models follow the <langcouch> instruction?
+ * Weave-quality eval: how well do models follow the <lazy-polyglot> instruction?
  * The logic (stages, seed, topics, metrics, judge) is described in evals/README.md.
  *
  *   bun evals/weave.ts [--algo 1|2|3] [--stage beginner|half|advanced|all] [--models a,b] [--reps 2] [--no-judge] [--dry]
@@ -12,7 +12,7 @@
  *     Claude subscription: no --bare, API-key env vars removed, no settings
  *     sources (so no hooks or plugins add a second block).
  *   provider/model → OpenRouter chat/completions. The key comes from the macOS
- *     Keychain (service "langcouch-openrouter"), else OPENROUTER_API_KEY.
+ *     Keychain (service "lazy-polyglot-openrouter"), else OPENROUTER_API_KEY.
  *
  * Writes raw replies and judge verdicts to evals/out/<run>/ and the tables to evals/results/algo-<n>.md.
  */
@@ -44,12 +44,22 @@ function arg(name: string): string | undefined {
 const readJson = <T>(file: string): T => JSON.parse(readFileSync(join(DIR, file), "utf8")) as T;
 const readJsonl = <T>(path: string): T[] => (existsSync(path) ? readFileSync(path, "utf8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l) as T) : []);
 
+/** Keychain entry under the current name, else under the pre-rename "langcouch-openrouter" name. */
+function keychainKey(): string {
+  const read = (service: string) => execFileSync("security", ["find-generic-password", "-s", service, "-w"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  try {
+    return read("lazy-polyglot-openrouter");
+  } catch {
+    return read("langcouch-openrouter");
+  }
+}
+
 function openrouterKey(): string {
   try {
-    return execFileSync("security", ["find-generic-password", "-s", "langcouch-openrouter", "-w"], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return keychainKey();
   } catch {
     const k = process.env.OPENROUTER_API_KEY;
-    if (!k) throw new Error('no OpenRouter key: run security add-generic-password -s langcouch-openrouter -a "$USER" -w');
+    if (!k) throw new Error('no OpenRouter key: run security add-generic-password -s lazy-polyglot-openrouter -a "$USER" -w');
     return k;
   }
 }

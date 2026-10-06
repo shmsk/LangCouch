@@ -6,7 +6,7 @@ import { DATA_DIR as dir, PLUGIN_VERSION, changelogFor } from "../src/store.ts";
 
 const CLI = join(import.meta.dir, "..", "src", "cli.ts");
 const root = join(import.meta.dir, "..");
-const status = () => spawnSync("bun", [CLI, "status"], { env: { ...process.env, LANGCOUCH_DIR: dir }, encoding: "utf8" }).stdout;
+const status = () => spawnSync("bun", [CLI, "status"], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir }, encoding: "utf8" }).stdout;
 
 describe("changelog", () => {
   test("every released version has a changelog section, and the manifests agree on it", () => {
@@ -43,8 +43,8 @@ describe("changelog", () => {
 });
 
 test("numbered Upgrade notes steps reach status too", () => {
-  const dir = require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "langcouch-cl-"));
+  const dir = require("node:fs").mkdtempSync(join(require("node:os").tmpdir(), "lazy-polyglot-cl-"));
   const file = join(dir, "CHANGELOG.md");
-  writeFileSync(file, "## [9.0.0] - 2030-01-01\n\n### Upgrade notes\n1. Run `langcouch init`.\n   Then check status.\n\n### Added\n- Thing.\n");
-  expect(changelogFor("9.0.0", file)).toEqual(["1. Run `langcouch init`. Then check status.", "Thing."]);
+  writeFileSync(file, "## [9.0.0] - 2030-01-01\n\n### Upgrade notes\n1. Run `lazy-polyglot init`.\n   Then check status.\n\n### Added\n- Thing.\n");
+  expect(changelogFor("9.0.0", file)).toEqual(["1. Run `lazy-polyglot init`. Then check status.", "Thing."]);
 });

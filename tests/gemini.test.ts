@@ -11,7 +11,7 @@ describe("installGemini", () => {
   let cwd: string;
   beforeEach(() => {
     cwd = process.cwd();
-    dir = mkdtempSync(join(tmpdir(), "langcouch-gemini-"));
+    dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-gemini-"));
     process.chdir(dir);
   });
   afterEach(() => process.chdir(cwd));
@@ -23,7 +23,7 @@ describe("installGemini", () => {
     const s = settings();
     for (const event of GEMINI_EVENTS) {
       const entry = s.hooks[event][0].hooks[0];
-      expect(entry).toMatchObject({ type: "command", name: "langcouch", timeout: 10000 });
+      expect(entry).toMatchObject({ type: "command", name: "lazy-polyglot", timeout: 10000 });
       expect(entry.command).toEndWith("hook --host gemini");
     }
   });
@@ -44,12 +44,12 @@ describe("installGemini", () => {
 describe("hook --host gemini", () => {
   const CLI = join(import.meta.dir, "..", "src", "cli.ts");
   const fresh = () => {
-    const dir = mkdtempSync(join(tmpdir(), "langcouch-gemhook-"));
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-gemhook-"));
     writeFileSync(join(dir, "config.json"), JSON.stringify({ lang: "es", native: "en", level: 2, algorithm: 3 }));
     return dir;
   };
   const run = (dir: string, payload: object | string, extraEnv: Record<string, string> = {}) =>
-    spawnSync("bun", [CLI, "hook", "--host", "gemini"], { env: { ...process.env, LANGCOUCH_DIR: dir, ...extraEnv }, input: typeof payload === "string" ? payload : JSON.stringify(payload), encoding: "utf8" });
+    spawnSync("bun", [CLI, "hook", "--host", "gemini"], { env: { ...process.env, LAZY_POLYGLOT_DIR: dir, ...extraEnv }, input: typeof payload === "string" ? payload : JSON.stringify(payload), encoding: "utf8" });
   const base = { session_id: "g1", transcript_path: "/nonexistent.json", cwd: "/tmp", timestamp: "2026-10-01T10:00:00Z" };
 
   test("BeforeAgent → JSON with additionalContext, no decision", () => {
@@ -57,13 +57,13 @@ describe("hook --host gemini", () => {
     expect(r.status).toBe(0);
     const out = JSON.parse(r.stdout);
     expect(out.hookSpecificOutput.hookEventName).toBe("BeforeAgent");
-    expect(out.hookSpecificOutput.additionalContext).toContain("<langcouch>");
+    expect(out.hookSpecificOutput.additionalContext).toContain("<lazy-polyglot>");
     expect(out.decision).toBeUndefined();
   });
 
   test("SessionStart → JSON too", () => {
     const out = JSON.parse(run(fresh(), { ...base, hook_event_name: "SessionStart", source: "startup" }).stdout);
-    expect(out.hookSpecificOutput.additionalContext).toContain("<langcouch>");
+    expect(out.hookSpecificOutput.additionalContext).toContain("<lazy-polyglot>");
   });
 
   test("AfterAgent counts the words prompt_response wove, prints {}", () => {
@@ -91,7 +91,38 @@ describe("hook --host gemini", () => {
   });
 
   test("without --host gemini the hook still prints plain text", () => {
-    const r = spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LANGCOUCH_DIR: fresh() }, input: JSON.stringify({ ...base, hook_event_name: "UserPromptSubmit", prompt: "hello there" }), encoding: "utf8" });
-    expect(r.stdout.startsWith("<langcouch>")).toBe(true);
+    const r = spawnSync("bun", [CLI, "hook"], { env: { ...process.env, LAZY_POLYGLOT_DIR: fresh() }, input: JSON.stringify({ ...base, hook_event_name: "UserPromptSubmit", prompt: "hello there" }), encoding: "utf8" });
+    expect(r.stdout.startsWith("<lazy-polyglot>")).toBe(true);
+  });
+});
+
+describe("installGemini over an old LangCouch install", () => {
+  test("old entries (name langcouch) are replaced, other hooks stay, a rerun is a no-op", () => {
+    const dir = mkdtempSync(join(tmpdir(), "lazy-polyglot-gemini-up-"));
+    const cwd = process.cwd();
+    process.chdir(dir);
+    try {
+      const old = { type: "command", name: "langcouch", timeout: 10000, command: "bun /old/langcouch/src/cli.ts hook --host gemini" };
+      const foreign = { type: "command", command: "other" };
+      mkdirSync(join(dir, ".gemini"));
+      const path = join(dir, ".gemini", "settings.json");
+      writeFileSync(path, JSON.stringify({ theme: "Dracula", hooks: { BeforeAgent: [{ hooks: [old] }], SessionStart: [{ hooks: [foreign, old] }], AfterAgent: [{ hooks: [old] }] } }));
+
+      expect(installGemini("project")).toContain("Replaced 3 old langcouch hook entries");
+      const s = JSON.parse(readFileSync(path, "utf8"));
+      expect(s.theme).toBe("Dracula");
+      for (const event of GEMINI_EVENTS) {
+        const all = s.hooks[event].flatMap((g: { hooks: object[] }) => g.hooks) as { name?: string; command: string }[];
+        expect(all.filter((h) => h.name === "langcouch")).toHaveLength(0);
+        expect(all.filter((h) => h.name === "lazy-polyglot")).toHaveLength(1);
+      }
+      expect(s.hooks.SessionStart[0].hooks[0]).toEqual(foreign);
+
+      const once = readFileSync(path, "utf8");
+      expect(installGemini("project")).toContain("already installed");
+      expect(readFileSync(path, "utf8")).toBe(once);
+    } finally {
+      process.chdir(cwd);
+    }
   });
 });

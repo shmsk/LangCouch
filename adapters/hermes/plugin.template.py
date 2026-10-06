@@ -1,17 +1,17 @@
-# langcouch
-"""LangCouch adapter for Hermes Agent.
+# lazy-polyglot
+"""Lazy Polyglot adapter for Hermes Agent.
 
-Installed by `langcouch install hermes` into $HERMES_HOME/plugins/langcouch/.
+Installed by `lazy-polyglot install hermes` into $HERMES_HOME/plugins/lazy-polyglot/.
 All logic lives in the TypeScript CLI; this file only shells out to it.
 
 - pre_llm_call: Hermes fires it once per user turn, before the tool loop.
-  We pipe the turn into `langcouch hook` and return the <langcouch> block as
+  We pipe the turn into `lazy-polyglot hook` and return the <lazy-polyglot> block as
   {"context": ...}, which Hermes appends to the user message. Same contract as
   the Claude Code UserPromptSubmit hook.
 - post_llm_call: fires once the turn's final answer is done. We hand the
-  answer to `langcouch hook` as a Stop event, so only the words it really
+  answer to `lazy-polyglot hook` as a Stop event, so only the words it really
   used count as shown (weave algorithm 3).
-- /langcouch <args>: routes to the CLI (lang, level, pause, resume, status)
+- /lazy-polyglot <args>: routes to the CLI (lang, level, pause, resume, status)
   and returns its output. Works in the CLI and on gateway platforms.
 
 Sacred hook contract (matches src/cli.ts): never break the host session.
@@ -25,7 +25,7 @@ import re
 import shlex
 import subprocess
 
-CLI_PATH = "__LANGCOUCH_CLI_PATH__"  # replaced at install time
+CLI_PATH = "__LAZY_POLYGLOT_CLI_PATH__"  # replaced at install time
 TIMEOUT = 5
 
 # Subcommands safe to run from a chat. quiz is interactive and init/install
@@ -96,16 +96,16 @@ def post_llm_call(session_id="", assistant_response="", **kwargs):
     return None
 
 
-def langcouch_command(raw_args=""):
+def lazy_polyglot_command(raw_args=""):
     try:
         args = shlex.split(raw_args or "")
     except ValueError:
         args = (raw_args or "").split()
     if not args or args[0] not in COMMANDS:
-        return "Usage: /langcouch <" + "|".join(COMMANDS) + "> [args]"
+        return "Usage: /lazy-polyglot <" + "|".join(COMMANDS) + "> [args]"
     r = _run(args)
     if r is None:
-        return "LangCouch: the CLI did not run. It needs bun or Node.js >= 22.6."
+        return "Lazy Polyglot: the CLI did not run. It needs bun or Node.js >= 22.6."
     # errors (bad language code, wrong level) come back on stderr
     return (r.stdout.strip() or r.stderr.strip()) or "ok"
 
@@ -114,8 +114,8 @@ def register(ctx):
     ctx.register_hook("pre_llm_call", pre_llm_call)
     ctx.register_hook("post_llm_call", post_llm_call)
     ctx.register_command(
-        "langcouch",
-        handler=langcouch_command,
-        description="LangCouch: lang, level, pause, resume, status, export, import",
+        "lazy-polyglot",
+        handler=lazy_polyglot_command,
+        description="Lazy Polyglot: lang, level, pause, resume, status, export, import",
         args_hint="<lang|level|pause|resume|status|export|import> [args]",
     )

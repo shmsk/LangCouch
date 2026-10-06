@@ -1,5 +1,5 @@
 {
-  "description": "LangCouch diglot weave — injects the vocabulary instruction into context; on Stop, counts the words the reply actually wove (algorithm 3)",
+  "description": "Lazy Polyglot diglot weave — injects the vocabulary instruction into context; on Stop, counts the words the reply actually wove (algorithm 3)",
   "hooks": {
     "UserPromptSubmit": [
       {

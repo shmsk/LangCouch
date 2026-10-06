@@ -3,18 +3,18 @@ import { buildPlugin, runHook, type SpawnFn } from "../adapters/opencode/plugin.
 import type { Message, Part } from "@opencode-ai/sdk";
 
 /**
- * The plugin template ships with `CLI_PATH = "__LANGCOUCH_CLI_PATH__"` as a
+ * The plugin template ships with `CLI_PATH = "__LAZY_POLYGLOT_CLI_PATH__"` as a
  * literal placeholder — the installer stamps the real path in at install time.
  * For these tests we never actually spawn (we inject a fake spawn), so the
  * placeholder is irrelevant.
  */
 
-const LANGCOUCH_BLOCK = `<langcouch>
+const LAZY_POLYGLOT_BLOCK = `<lazy-polyglot>
 Passive language immersion. Replace ~4 words with Spanish ones from this list:
 casa = house; tiempo = time; día = day; año = year
-</langcouch>`;
+</lazy-polyglot>`;
 
-/** Fake spawn that counts calls and returns a langcouch block on the first
+/** Fake spawn that counts calls and returns a lazy-polyglot block on the first
  *  successful "bun" invocation. Tests can inspect `.calls` to verify dedup. */
 function makeFakeSpawn(mode: "ok" | "empty" | "fail"): { spawn: SpawnFn; calls: { cmd: string; args: string[] }[] } {
   const calls: { cmd: string; args: string[] }[] = [];
@@ -23,7 +23,7 @@ function makeFakeSpawn(mode: "ok" | "empty" | "fail"): { spawn: SpawnFn; calls: 
     if (mode === "fail") return { error: new Error("boom"), status: null };
     if (mode === "empty") return { status: 0, stdout: "" };
     // "ok": return the block only when invoked with "hook" (skip the `node -v` probe)
-    if (args.includes("hook")) return { status: 0, stdout: LANGCOUCH_BLOCK };
+    if (args.includes("hook")) return { status: 0, stdout: LAZY_POLYGLOT_BLOCK };
     return { status: 0, stdout: "v23.0.0\n" }; // pretend node exists so the bun-only path isn't the only one
   };
   return { spawn, calls };
@@ -60,7 +60,7 @@ describe("opencode plugin — turn-scoped dedup", () => {
     for (let i = 0; i < 5; i++) {
       await transform({}, { messages });
     }
-    // only the first call should have spawned `langcouch hook`
+    // only the first call should have spawned `lazy-polyglot hook`
     const hookCalls = calls.filter((c) => c.args.includes("hook"));
     expect(hookCalls.length).toBe(1);
   });
@@ -124,7 +124,7 @@ describe("opencode plugin — turn-scoped dedup", () => {
     expect(hookCalls.length).toBe(1);
   });
 
-  test("injection prepends the langcouch block to the user's text", async () => {
+  test("injection prepends the lazy-polyglot block to the user's text", async () => {
     const { spawn } = makeFakeSpawn("ok");
     const plugin = buildPlugin(spawn);
     const hooks = await plugin({} as never);
@@ -133,10 +133,10 @@ describe("opencode plugin — turn-scoped dedup", () => {
     const messages = userTurn("sess-1", "msg-1", "my actual prompt");
     await transform({}, { messages });
     const text = (messages[0]!.parts[0] as { text: string }).text;
-    expect(text.startsWith("<langcouch>")).toBe(true);
+    expect(text.startsWith("<lazy-polyglot>")).toBe(true);
     expect(text).toContain("my actual prompt");
     // block comes first, then the user's text
-    expect(text.indexOf("<langcouch>")).toBeLessThan(text.indexOf("my actual prompt"));
+    expect(text.indexOf("<lazy-polyglot>")).toBeLessThan(text.indexOf("my actual prompt"));
   });
 
   test("hook errors swallowed — never throws, never breaks the host session", async () => {

@@ -1,10 +1,46 @@
 # Changelog
 
-What changed in each version, written for people who use LangCouch. The format follows
+What changed in each version, written for people who use Lazy Polyglot. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
-[Semantic Versioning](https://semver.org/). `langcouch status` shows the newest section once
+[Semantic Versioning](https://semver.org/). `lazy-polyglot status` shows the newest section once
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
+
+## [0.9.7] - 2026-10-06
+
+### Upgrade notes
+Skip these if you installed 0.9.7 or later as Lazy Polyglot. The full version, with the
+other hosts, is in [UPGRADING.md](UPGRADING.md).
+1. Back up your progress. In Claude Code run `/langcouch:export`. It writes
+   `~/langcouch-export-YYYY-MM-DD.json`. If the command is missing, skip this step: your data
+   is still in `~/.langcouch`.
+2. Run `/plugin marketplace remove langcouch`. This removes the old plugin and keeps your
+   progress.
+3. Run `/plugin marketplace add shmsk/lazy-polyglot`, then
+   `/plugin install lazy-polyglot@lazy-polyglot`.
+4. Run `/reload-plugins`, or restart Claude Code.
+5. Run `/lazy-polyglot:status`. It should show your language and the same word counts as
+   before; on first run Lazy Polyglot moves `~/.langcouch` to `~/.lazy-polyglot` by itself.
+6. If the status shows zero words, run `/lazy-polyglot:import ~/langcouch-export-YYYY-MM-DD.json`
+   with the file from step 1. Import merges, so running it twice is harmless.
+7. On opencode, Codex CLI, Gemini CLI, Hermes Agent or OpenClaw: back up with
+   `bun src/cli.ts export`, run `git pull`, then run `bun src/cli.ts install <host>` again.
+   The installer replaces the old LangCouch entry. Then check `bun src/cli.ts status`.
+
+### Changed
+- LangCouch is now Lazy Polyglot ("Get (almost) accidentally fluent"). The plugin is going
+  into Anthropic's official plugin directory, and the new name is quicker to understand there.
+  Same plugin, same words, same progress.
+- Commands are `/lazy-polyglot:status`, `/lazy-polyglot:lang` and so on; the CLI is
+  `lazy-polyglot`; the weave block in the context is tagged `<lazy-polyglot>`.
+- Your data folder moves from `~/.langcouch` to `~/.lazy-polyglot` automatically on first run.
+  `LAZY_POLYGLOT_DIR` replaces `LANGCOUCH_DIR`; the old variable still works.
+- Spinner tips start with "Lazy Polyglot · ", and the export file is
+  `~/lazy-polyglot-export-YYYY-MM-DD.json`.
+- The Hermes plugin lives in `$HERMES_HOME/plugins/lazy-polyglot`, OpenClaw uses
+  `plugins.entries.lazy-polyglot`, and re-running `install <host>` replaces an old LangCouch
+  install.
+- The repository is now github.com/shmsk/lazy-polyglot; links to the old address redirect.
 
 ## [0.9.5] - 2026-10-06
 

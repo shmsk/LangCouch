@@ -14,7 +14,7 @@ labels: bug
 
 ## Reproduction
 
-1. `langcouch …` (or: had the hook installed, then …)
+1. `lazy-polyglot …` (or: had the hook installed, then …)
 2. …
 3. Observed:
 
@@ -26,13 +26,13 @@ labels: bug
 
 - OS: <!-- macOS / Linux / Windows + version -->
 - Runtime: <!-- bun --version / node --version -->
-- LangCouch version: <!-- git sha, or tag, or `cat ~/.langcouch/config.json` lang/level -->
-- Installed via: <!-- /plugin install (Claude Code) | langcouch install claude | langcouch install opencode (plugin) | langcouch install opencode (AGENTS.md fallback) | langcouch install codex | other -->
+- Lazy Polyglot version: <!-- git sha, or tag, or `cat ~/.lazy-polyglot/config.json` lang/level -->
+- Installed via: <!-- /plugin install (Claude Code) | lazy-polyglot install claude | lazy-polyglot install opencode (plugin) | lazy-polyglot install opencode (AGENTS.md fallback) | lazy-polyglot install codex | other -->
 
 ## State (optional)
 
 ```bash
-cat ~/.langcouch/config.json
+cat ~/.lazy-polyglot/config.json
 # and, if relevant:
-ls ~/.langcouch/
+ls ~/.lazy-polyglot/
 ```

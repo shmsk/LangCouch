@@ -8,14 +8,14 @@ function cliPath(): string {
 }
 
 /**
- * Gemini CLI's names for the three moments LangCouch needs: before the model sees
+ * Gemini CLI's names for the three moments Lazy Polyglot needs: before the model sees
  * the prompt (BeforeAgent ≈ UserPromptSubmit), session start, and after the reply
  * (AfterAgent ≈ Stop, with the reply in `prompt_response`).
  */
 export const GEMINI_EVENTS = ["BeforeAgent", "SessionStart", "AfterAgent"];
 
 /**
- * Register `langcouch hook --host gemini` in Gemini CLI's settings.json. The file has
+ * Register `lazy-polyglot hook --host gemini` in Gemini CLI's settings.json. The file has
  * the same `hooks` shape as Claude Code's, but Gemini reads context only from JSON on
  * stdout (`hookSpecificOutput.additionalContext`), hence the --host flag.
  * scope=project → ./.gemini/settings.json (Gemini warns before running a new project hook)
@@ -26,12 +26,13 @@ export function installGemini(scope: "project" | "user"): string {
   const settingsPath =
     scope === "user" ? join(homedir(), ".gemini", "settings.json") : join(process.cwd(), ".gemini", "settings.json");
 
-  const added = addHooks(settingsPath, `bun ${cliPath()} hook --host gemini`, GEMINI_EVENTS, { name: "langcouch", timeout: 10000 });
-  if (added.length === 0) return `langcouch hook already installed in ${settingsPath} — leaving it alone`;
+  const { changed, replaced } = addHooks(settingsPath, `bun ${cliPath()} hook --host gemini`, GEMINI_EVENTS, { name: "lazy-polyglot", timeout: 10000 });
+  if (changed.length === 0) return `lazy-polyglot hook already installed in ${settingsPath} — leaving it alone`;
   return [
-    `Hook installed (${added.join(" + ")}): ${settingsPath}`,
+    `Hook installed (${changed.join(" + ")}): ${settingsPath}`,
+    replaced ? `Replaced ${replaced} old langcouch hook ${replaced === 1 ? "entry" : "entries"}.` : "",
     "Gemini CLI support is beta: built from Gemini's hooks reference, not yet tested against a live Gemini CLI.",
-    scope === "project" ? "Gemini asks before running a new project hook: allow langcouch when it does." : "",
+    scope === "project" ? "Gemini asks before running a new project hook: allow lazy-polyglot when it does." : "",
     "Then replies will start weaving words.",
   ]
     .filter(Boolean)

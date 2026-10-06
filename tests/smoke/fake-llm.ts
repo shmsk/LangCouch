@@ -6,7 +6,7 @@
  *
  *   FAKE_LLM_PORT=4010 FAKE_LLM_LOG=requests.jsonl bun tests/smoke/fake-llm.ts
  *
- * The smoke test then asserts the recorded request contains "<langcouch>":
+ * The smoke test then asserts the recorded request contains "<lazy-polyglot>":
  * proof that the plugin loaded, the hook fired, and the block reached the model.
  */
 import { appendFileSync } from "node:fs";

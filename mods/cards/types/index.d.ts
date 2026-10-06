@@ -1,10 +1,10 @@
 export type CardDir = 'forward' | 'reverse'
 export type CardKind = 'review' | 'placement'
 
-/** One card as `langcouch cards next` returns it. */
+/** One card as `lazy-polyglot cards next` returns it. */
 export type Card = { id: string; kind: CardKind; dir: CardDir; prompt: string; reading?: string }
 
-/** `langcouch cards status`, also carried by `next` and every answer. */
+/** `lazy-polyglot cards status`, also carried by `next` and every answer. */
 export type CardStatus = {
   lang: string
   /** The learner's language; missing from a CLI older than 0.9.4. */
@@ -35,6 +35,6 @@ export type CardsView =
 
 declare module 'claude-code' {
   interface PluginState {
-    langcouch: { view: CardsView }
+    lazy-polyglot: { view: CardsView }
   }
 }

@@ -2,7 +2,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 
-const PLACEHOLDER = '"__LANGCOUCH_CLI_PATH__"';
+const PLACEHOLDER = '"__LAZY_POLYGLOT_CLI_PATH__"';
 
 /** Absolute path to src/cli.ts in this checkout. */
 export function cliPath(): string {
@@ -28,10 +28,11 @@ export function stampCliPath(template: string, path: string): string {
 
 /**
  * Write-guard shared by the file-based adapters: a file carrying our marker
- * may be refreshed, a foreign file is never overwritten.
+ * (or one of several, e.g. the current and the pre-rename one) may be refreshed,
+ * a foreign file is never overwritten.
  */
-export function ownershipAction(existing: string, marker: string, path: string): "added" | "updated" {
-  if (existing.includes(marker)) return "updated";
-  if (existing) throw new Error(`langcouch: ${path} already exists and isn't ours — move it aside and re-run`);
+export function ownershipAction(existing: string, marker: string | string[], path: string): "added" | "updated" {
+  if ([marker].flat().some((m) => existing.includes(m))) return "updated";
+  if (existing) throw new Error(`lazy-polyglot: ${path} already exists and isn't ours — move it aside and re-run`);
   return "added";
 }

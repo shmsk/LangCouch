@@ -1,8 +1,8 @@
 name: Host smoke tests
 
 # Installs Hermes Agent and OpenClaw on a throwaway runner (never on a dev
-# machine) and checks the LangCouch adapters end to end:
-#   fake-model jobs: the plugin loads, the hook fires, and the <langcouch>
+# machine) and checks the Lazy Polyglot adapters end to end:
+#   fake-model jobs: the plugin loads, the hook fires, and the <lazy-polyglot>
 #     block reaches the model request. No API key needed.
 #   live jobs: a real cheap model on OpenRouter actually weaves words.
 #     Never on pull requests: they need the OPENROUTER_API_KEY secret.
@@ -57,7 +57,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - name: Isolated dirs
         run: |
-          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "LAZY_POLYGLOT_DIR=$RUNNER_TEMP/lazy-polyglot" >> "$GITHUB_ENV"
           echo "HERMES_HOME=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
           echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
       - run: bun install
@@ -66,7 +66,7 @@ jobs:
           uv tool install --python 3.12 "hermes-agent==$HERMES_VERSION"
           uv tool dir --bin >> "$GITHUB_PATH"
       - run: hermes --version
-      - name: Install the LangCouch plugin
+      - name: Install the Lazy Polyglot plugin
         run: |
           bun src/cli.ts init && bun src/cli.ts level 5
           bun src/cli.ts install hermes
@@ -79,7 +79,7 @@ jobs:
             default: fake-model
             context_length: 128000
           plugins:
-            enabled: [langcouch]
+            enabled: [lazy-polyglot]
           EOF
       - name: Start the fake model
         run: |
@@ -96,15 +96,15 @@ jobs:
           hooks, cmds = list(get_plugin_manager()._hooks), list(get_plugin_commands())
           print("hooks:", hooks, "commands:", cmds)
           assert "pre_llm_call" in hooks, "pre_llm_call not registered"
-          assert "langcouch" in cmds, "/langcouch not registered"
+          assert "lazy-polyglot" in cmds, "/lazy-polyglot not registered"
           EOF
       - name: One turn against the fake model
         run: |
           hermes -z "hello from CI" > "$RUNNER_TEMP/reply.txt"; code=$?
           echo "exit $code, reply: $(cat "$RUNNER_TEMP/reply.txt")"; exit $code
-      - name: The <langcouch> block reached the model
+      - name: The <lazy-polyglot> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
-      - name: The finished reply came back to LangCouch
+      - name: The finished reply came back to Lazy Polyglot
         run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
@@ -130,13 +130,13 @@ jobs:
           node-version: 24
       - name: Isolated dirs
         run: |
-          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "LAZY_POLYGLOT_DIR=$RUNNER_TEMP/lazy-polyglot" >> "$GITHUB_ENV"
           echo "OPENCLAW_HOME=$RUNNER_TEMP/ochome" >> "$GITHUB_ENV"
           echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
       - run: bun install
       - name: Install OpenClaw
         run: npm install -g "openclaw@$OPENCLAW_VERSION" && openclaw --version
-      - name: Install the LangCouch plugin
+      - name: Install the Lazy Polyglot plugin
         run: |
           bun src/cli.ts init && bun src/cli.ts level 5
           bun src/cli.ts install openclaw
@@ -158,12 +158,12 @@ jobs:
           EOF
       - name: Link, allow, enable (the commands the installer prints)
         run: |
-          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force --accept-capabilities
-          openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
-          openclaw plugins enable langcouch
+          openclaw plugins install --link "$LAZY_POLYGLOT_DIR/openclaw-plugin" --force --accept-capabilities
+          openclaw config set plugins.entries.lazy-polyglot.hooks.allowConversationAccess true --strict-json
+          openclaw plugins enable lazy-polyglot
       - name: Plugin registered its hook
         run: |
-          openclaw plugins inspect langcouch --runtime --json > "$RUNNER_TEMP/inspect.json"; cat "$RUNNER_TEMP/inspect.json"
+          openclaw plugins inspect lazy-polyglot --runtime --json > "$RUNNER_TEMP/inspect.json"; cat "$RUNNER_TEMP/inspect.json"
           grep -q before_prompt_build "$RUNNER_TEMP/inspect.json"
       - name: Start the fake model
         run: |
@@ -172,9 +172,9 @@ jobs:
           cat "$RUNNER_TEMP/fake-llm.out"; exit 1
       - name: One turn against the fake model
         run: openclaw agent --local --agent main --message "hello from CI" --timeout 120
-      - name: The <langcouch> block reached the model
+      - name: The <lazy-polyglot> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
-      - name: The finished reply came back to LangCouch
+      - name: The finished reply came back to Lazy Polyglot
         run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
@@ -200,13 +200,13 @@ jobs:
           node-version: 24
       - name: Isolated dirs
         run: |
-          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "LAZY_POLYGLOT_DIR=$RUNNER_TEMP/lazy-polyglot" >> "$GITHUB_ENV"
           echo "CODEX_HOME=$RUNNER_TEMP/codex" >> "$GITHUB_ENV"
           echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
       - run: bun install
       - name: Install Codex
         run: npm install -g "@openai/codex@$CODEX_VERSION" && codex --version
-      - name: Install the LangCouch hook
+      - name: Install the Lazy Polyglot hook
         run: |
           bun src/cli.ts init && bun src/cli.ts level 5
           bun src/cli.ts install codex --scope user
@@ -230,9 +230,9 @@ jobs:
       - name: One turn against the fake model
         # --dangerously-bypass-hook-trust stands in for the one-time /hooks review a user does
         run: FAKE_API_KEY=x codex exec --skip-git-repo-check --ephemeral --dangerously-bypass-hook-trust -s read-only "hello from CI"
-      - name: The <langcouch> block reached the model
+      - name: The <lazy-polyglot> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
-      - name: The finished reply came back to LangCouch
+      - name: The finished reply came back to Lazy Polyglot
         run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
@@ -258,13 +258,13 @@ jobs:
           node-version: 24
       - name: Isolated dirs
         run: |
-          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "LAZY_POLYGLOT_DIR=$RUNNER_TEMP/lazy-polyglot" >> "$GITHUB_ENV"
           echo "FAKE_LLM_LOG=$RUNNER_TEMP/fake-llm.jsonl" >> "$GITHUB_ENV"
           mkdir -p "$RUNNER_TEMP/install" "$RUNNER_TEMP/work"
       - run: bun install
       - name: Install opencode
         run: npm install -g "opencode-ai@$OPENCODE_VERSION" && opencode --version
-      - name: Install the LangCouch plugin (user scope, ~/.config/opencode/plugin)
+      - name: Install the Lazy Polyglot plugin (user scope, ~/.config/opencode/plugin)
         # installed from a scratch dir: the installer also writes an AGENTS.md
         # fallback into the cwd, and the turn below must exercise the plugin alone
         working-directory: ${{ runner.temp }}/install
@@ -295,9 +295,9 @@ jobs:
       - name: One turn against the fake model
         working-directory: ${{ runner.temp }}/work
         run: opencode run -m fake/fake-model "hello from CI"
-      - name: The <langcouch> block reached the model
+      - name: The <lazy-polyglot> block reached the model
         run: bun tests/smoke/assert-woven.ts request "$FAKE_LLM_LOG"
-      - name: The finished reply came back to LangCouch
+      - name: The finished reply came back to Lazy Polyglot
         run: bun tests/smoke/assert-woven.ts settled
       - name: Logs on failure
         if: failure()
@@ -330,7 +330,7 @@ jobs:
           node-version: 24
       - name: Isolated dirs
         run: |
-          echo "LANGCOUCH_DIR=$RUNNER_TEMP/langcouch" >> "$GITHUB_ENV"
+          echo "LAZY_POLYGLOT_DIR=$RUNNER_TEMP/lazy-polyglot" >> "$GITHUB_ENV"
           echo "HERMES_HOME=$RUNNER_TEMP/hermes" >> "$GITHUB_ENV"
           echo "OPENCLAW_HOME=$RUNNER_TEMP/ochome" >> "$GITHUB_ENV"
           echo "CODEX_HOME=$RUNNER_TEMP/codex" >> "$GITHUB_ENV"
@@ -340,7 +340,7 @@ jobs:
         run: |
           uv tool install --python 3.12 "hermes-agent==$HERMES_VERSION"
           bun src/cli.ts install hermes
-          printf 'plugins:\n  enabled: [langcouch]\n' > "$HERMES_HOME/config.yaml"
+          printf 'plugins:\n  enabled: [lazy-polyglot]\n' > "$HERMES_HOME/config.yaml"
       - name: OpenClaw setup
         if: matrix.host == 'openclaw'
         run: |
@@ -348,9 +348,9 @@ jobs:
           bun src/cli.ts install openclaw
           mkdir -p "$OPENCLAW_HOME/.openclaw"
           printf '{"agents":{"defaults":{"model":{"primary":"openrouter/%s"}}}}\n' "$MODEL" > "$OPENCLAW_HOME/.openclaw/openclaw.json"
-          openclaw plugins install --link "$LANGCOUCH_DIR/openclaw-plugin" --force --accept-capabilities
-          openclaw config set plugins.entries.langcouch.hooks.allowConversationAccess true --strict-json
-          openclaw plugins enable langcouch
+          openclaw plugins install --link "$LAZY_POLYGLOT_DIR/openclaw-plugin" --force --accept-capabilities
+          openclaw config set plugins.entries.lazy-polyglot.hooks.allowConversationAccess true --strict-json
+          openclaw plugins enable lazy-polyglot
       - name: Codex setup
         if: matrix.host == 'codex'
         run: |
