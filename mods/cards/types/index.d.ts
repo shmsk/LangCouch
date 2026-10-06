@@ -35,6 +35,6 @@ export type CardsView =
 
 declare module 'claude-code' {
   interface PluginState {
-    lazy-polyglot: { view: CardsView }
+    'lazy-polyglot': { view: CardsView }
   }
 }
