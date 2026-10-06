@@ -132,10 +132,10 @@ async function grade($: Engine, ok: boolean) {
 }
 
 /** The once-only question on the done screen: show the due count in the status line? */
-async function chooseStatusLine($: Engine, on: boolean) {
+async function chooseStatusLine($: Engine, show: boolean) {
   try {
     const cli = await findCli($)
-    const { exitCode, stderr } = await $.process.run(['/bin/sh', cli, 'cards-status', on ? 'on' : 'off'])
+    const { exitCode, stderr } = await $.process.run(['/bin/sh', cli, 'cards-status', show ? 'on' : 'off'])
     if (exitCode !== 0) throw new Error(stderr.trim() || 'lazy-polyglot cards-status failed')
     const status = (await cards($, ['status'])) as CardStatus
     await showStatus($, status)
