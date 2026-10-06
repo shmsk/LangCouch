@@ -15,60 +15,9 @@ Lazy Polyglot weaves words from the language you're learning into your AI coding
 
 ## What's new in 0.9.7
 
-- **New name: Lazy Polyglot.** Same plugin, same words, same progress. Commands are now `/lazy-polyglot:…` (for example `/lazy-polyglot:status`), the CLI is `lazy-polyglot`, and your data folder is `~/.lazy-polyglot`, moved there automatically on first run. If you installed it under the old name, the switch takes about a minute: see [UPGRADING.md](UPGRADING.md). Version 0.9.6 was skipped.
+- **New name: Lazy Polyglot.** Same plugin, same words, same progress. Commands are now `/lazy-polyglot:…` (for example `/lazy-polyglot:status`), the CLI is `lazy-polyglot`, and your data folder is `~/.lazy-polyglot`, moved there automatically on first run. If you installed it under the old name, the switch takes about a minute: see [UPGRADING.md](UPGRADING.md).
 
-## What's new in 0.9.5
-
-- **Pronunciation next to new words** in French, English and Portuguese, in letters you can read: **maison** [мезо́н] (дом) if you write in Russian, [meh-ZAWN] in English, [mezon] in Uzbek, or IPA [mɛzɔ̃] if you prefer. Lazy Polyglot asks once which you want; `/lazy-polyglot:reading off|native|ipa` changes it. See [Pronunciation](#pronunciation).
-
-## What's new in 0.9.4
-
-- **Cards show the language of each word.** `/cards` puts a flag and the language's name next to the word and the answer: 🇮🇹 casa Italiano, ✓ дом 🇷🇺 Русский. "natural" in Spanish and in English no longer look the same.
-
-## What's new in 0.9.3
-
-- **Cards look like cards.** In the Desktop Code tab, VS Code and mobile, `/cards` shows a flashcard: the word big, a progress bar, the answer in green or red, the score as a ring. The terminal pane is unchanged.
-
-## What's new in 0.9.2
-
-- **Cards accept what you meant.** "to work", "the child" and common synonyms ("kid" for child) are right now. After a miss, "My answer was right" takes it back.
-- **The due count in the status line is now opt-in.** It is off until you say yes: `/cards` asks once at the end of a round, `/lazy-polyglot:cards-status on|off` changes it.
-
-## What's new in 0.9.1
-
-- **Flashcards come with Lazy Polyglot.** `/cards` is there after a normal update, nothing extra to install. If you installed `langcouch-cards` in 0.9.0, remove it: `/plugin uninstall langcouch-cards@langcouch`.
-
-## What's new in 0.9.0
-
-- **Flashcards.** `/cards`: due words first, both ways (from the 3rd ladder step also your language → the one you learn), then placement words. Same progress as the weave.
-- **Older data.** Data from before 0.7.6 is no longer tested: update through 0.7.6 first (CHANGELOG, Upgrade notes).
-
-## What's new in 0.8.0
-
-- **Numbers 1–1000.** Every language now teaches the 30 numerals that every number is built from (0–20, the tens, 100, 1000), one per reply, woven next to its digit: 3 (**tre**). Short rules explain the rest: in English learn 11 and 12, then it's *-teen*; in French 70 is 60+10 and 80 is 4×20; in Turkish the tens are words to learn.
-- **False friends in your language.** The warning next to a word-building rule now gives the real meaning in Russian or Uzbek too, not only English: *attualmente = сейчас*.
-
-## What's new in 0.7.6
-
-- **Placement test.** Already know part of a language? `lazy-polyglot placement` (or `/lazy-polyglot:placement` in Claude Code) asks the listed words, and the ones you translate right skip the new-word stage. Lazy Polyglot offers it when you start a language and whenever you say the words are too easy.
-
-## What's new in 0.7.5
-
-- **Translations in the language you write in.** Write to the agent in Russian and you get **casa** (дом); write in English and you get **casa** (house). No setting to switch. If Lazy Polyglot can't tell the language, it uses your `native` and asks you once which one you want.
-- **Gemini CLI, beta.** `lazy-polyglot install gemini` registers the hooks. It is built from Gemini's hooks reference and covered by tests, but hasn't been run against a live Gemini CLI yet.
-
-## What's new in 0.7.0
-
-- **Take your progress to another machine.** `lazy-polyglot export` saves it to one file, `lazy-polyglot import <file>` merges it in on the other side. If you already started learning there, nothing is lost: see [Moving to another machine](#moving-to-another-machine).
-
-## What's new in 0.6.0
-
-- **Spaced repetition.** Each word comes back after 30 minutes, 8 hours, a day, 4 days, 2 weeks, a month, then 6 months. It moves up a step only when a reply actually used it.
-- **Honest counting.** Lazy Polyglot reads the finished reply back, so a word the model skipped isn't counted as learned. It returns on the next turn instead.
-- **Translations fade.** New words come as **casa** (house). Familiar ones come as plain **casa**, with a single `casa = house` line at the end of the reply. Words you know get no translation at all.
-- **Only words that fit.** The model uses a word only where the reply already needs its meaning. A word that keeps getting skipped may go into one short aside, never into code or text you will copy.
-
-We tested this against the old behaviour on four models: answers stayed as good, and the words read more naturally. [How each model does](evals/MODELS.md). `lazy-polyglot mode 1` brings the old weave back. If you installed outside the Claude Code plugin, see the [upgrade notes](CHANGELOG.md).
+Earlier releases are in [CHANGELOG.md](CHANGELOG.md).
 
 ## Why the new name
 

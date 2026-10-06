@@ -18,60 +18,9 @@ Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI kodlash agentingizning ja
 
 ## 0.9.7 da nima yangi
 
-- **Yangi nom: Lazy Polyglot.** Plagin ham, soʻzlar ham, progress ham oldingidek. Buyruqlar endi `/lazy-polyglot:…` (masalan, `/lazy-polyglot:status`), CLI `lazy-polyglot` deb ataladi, maʼlumotlar papkasi esa `~/.lazy-polyglot`: u birinchi ishga tushishda oʻzi koʻchiriladi. Plaginni eski nom ostida oʻrnatgan boʻlsangiz, oʻtish taxminan bir daqiqa oladi: [UPGRADING.md](UPGRADING.md) ga qarang. 0.9.6 versiyasi oʻtkazib yuborilgan.
+- **Yangi nom: Lazy Polyglot.** Plagin ham, soʻzlar ham, progress ham oldingidek. Buyruqlar endi `/lazy-polyglot:…` (masalan, `/lazy-polyglot:status`), CLI `lazy-polyglot` deb ataladi, maʼlumotlar papkasi esa `~/.lazy-polyglot`: u birinchi ishga tushishda oʻzi koʻchiriladi. Plaginni eski nom ostida oʻrnatgan boʻlsangiz, oʻtish taxminan bir daqiqa oladi: [UPGRADING.md](UPGRADING.md) ga qarang.
 
-## 0.9.5 da nima yangi
-
-- **Yangi soʻzlar yonida talaffuz** fransuz, ingliz va portugal tillarida, siz oʻqiy oladigan harflarda: oʻzbekcha yozsangiz **maison** [mezon] (uy), ruscha yozsangiz [мезо́н], inglizcha yozsangiz [meh-ZAWN], yoki xohlasangiz IPA [mɛzɔ̃]. Lazy Polyglot qaysi biri qulayligini bir marta soʻraydi; `/lazy-polyglot:reading off|native|ipa` uni oʻzgartiradi. Batafsil: [Talaffuz](#talaffuz).
-
-## 0.9.4 da nima yangi
-
-- **Kartochkalar har bir soʻzning tilini koʻrsatadi.** `/cards` soʻz va javob yoniga bayroq va til nomini qoʻyadi: 🇮🇹 casa Italiano, ✓ дом 🇷🇺 Русский. Ispancha va inglizcha «natural» endi bir xil koʻrinmaydi.
-
-## 0.9.3 da nima yangi
-
-- **Kartochkalar haqiqiy kartochkaga oʻxshaydi.** Desktop'ning Code boʻlimida, VS Code'da va telefonda `/cards` fleshkartani koʻrsatadi: soʻz yirik qilib, raund uchun progress chizigʻi, javob yashil yoki qizil rangda, oxirida natija halqa shaklida. Terminaldagi panel oʻzgarmadi.
-
-## 0.9.2 da nima yangi
-
-- **Kartochkalar maʼnoni qabul qiladi.** «to work», «the child» va koʻp uchraydigan sinonimlar («kid», child oʻrniga) endi toʻgʻri hisoblanadi. Xatodan keyin «My answer was right» tugmasi uni bekor qiladi.
-- **Holat qatoridagi kartochkalar soni endi ixtiyoriy.** Siz rozilik bermaguningizcha u oʻchiq: `/cards` raund oxirida bir marta soʻraydi, `/lazy-polyglot:cards-status on|off` almashtiradi.
-
-## 0.9.1 da nima yangi
-
-- **Kartochkalar Lazy Polyglot ichida.** `/cards` oddiy yangilanishdan keyin paydo boʻladi, alohida hech narsa oʻrnatish shart emas. Agar 0.9.0 da `langcouch-cards` ni oʻrnatgan boʻlsangiz, uni oʻchiring: `/plugin uninstall langcouch-cards@langcouch`.
-
-## 0.9.0 da nima yangi
-
-- **Kartochkalar.** `/cards`: avval vaqti kelgan soʻzlar, ikki tomonga (zinapoyaning 3-bosqichidan sizning tilingiz → oʻrganilayotgan til ham), keyin daraja testi soʻzlari. Natija toʻqish bilan umumiy.
-- **Eski maʼlumotlar.** 0.7.6 dan oldingi versiyalar maʼlumotlari endi tekshirilmaydi: avval 0.7.6 ga yangilang (CHANGELOG, Upgrade notes).
-
-## 0.8.0 da nima yangi
-
-- **1 dan 1000 gacha sonlar.** Endi har bir til istalgan son tuziladigan 30 ta sonni (0–20, oʻnliklar, 100, 1000) oʻrgatadi, har javobda bittadan, raqam yonida: 3 (**tre**). Qolganini qisqa qoidalar tushuntiradi: ingliz tilida 11 va 12 ni yodlash kerak, keyin *-teen*; fransuz tilida 70 bu 60+10, 80 esa 4×20; turk tilida oʻnliklarni yodlash kerak.
-- **Soxta doʻstlar sizning tilingizda.** Soʻz yasash qoidasi yonidagi ogohlantirish endi haqiqiy maʼnoni faqat inglizcha emas, ruscha yoki oʻzbekcha ham beradi: *attualmente = hozir*.
-
-## 0.7.6 da nima yangi
-
-- **Daraja testi.** Tilning bir qismini allaqachon bilasizmi? `lazy-polyglot placement` (yoki Claude Code'da `/lazy-polyglot:placement`) roʻyxatdagi soʻzlarni soʻraydi, toʻgʻri tarjima qilganlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. Lazy Polyglot testni til boshlanganda va soʻzlar juda oson deb yozsangiz taklif qiladi.
-
-## 0.7.5 da nima yangi
-
-- **Tarjimalar siz yozayotgan tilda.** Agentga ruscha yozsangiz, **casa** (дом) keladi; inglizcha yozsangiz, **casa** (house). Hech narsani almashtirish shart emas. Lazy Polyglot tilni aniqlay olmasa, sizning `native` tilingizni oladi va qaysi tilni xohlashingizni bir marta soʻraydi.
-- **Gemini CLI, beta.** `lazy-polyglot install gemini` hooklarni roʻyxatdan oʻtkazadi. U Gemini'ning hooklar qoʻllanmasiga qarab yozilgan va testlar bilan qoplangan, lekin jonli Gemini CLI'da hali ishga tushirib koʻrilmagan.
-
-## 0.7.0 da nima yangi
-
-- **Natijangizni boshqa kompyuterga olib oʻtish mumkin.** `lazy-polyglot export` uni bitta faylga saqlaydi, `lazy-polyglot import <fayl>` esa boshqa tomonda qoʻshib qoʻyadi. U yerda allaqachon oʻrganishni boshlagan boʻlsangiz ham hech narsa yoʻqolmaydi: [Boshqa kompyuterga koʻchirish](#boshqa-kompyuterga-koʻchirish) boʻlimiga qarang.
-
-## 0.6.0 da nima yangi
-
-- **Oraliqli takrorlash.** Har bir soʻz 30 daqiqa, 8 soat, bir kun, 4 kun, 2 hafta, bir oy va keyin 6 oydan soʻng qaytadi. Javob uni haqiqatan ishlatgandagina soʻz keyingi pogʻonaga oʻtadi.
-- **Halol hisob.** Lazy Polyglot tayyor javobni oʻqiydi, shuning uchun model tashlab ketgan soʻz oʻrganilgan deb hisoblanmaydi va keyingi navbatda yana keladi.
-- **Tarjimalar asta-sekin yoʻqoladi.** Yangi soʻz **casa** (house) koʻrinishida keladi. Tanish soʻz shunchaki **casa** boʻlib keladi, javob oxirida esa bitta `casa = house` qatori turadi. Siz biladigan soʻzlarga tarjima berilmaydi.
-- **Faqat mos soʻzlar.** Model soʻzni faqat javobga shu maʼno baribir kerak boʻlgan joyda ishlatadi. Uzoq vaqt tashlab ketilgan soʻz bitta qisqa izohga tushishi mumkin, lekin hech qachon kodga yoki siz nusxa oladigan matnga emas.
-
-Buni toʻrtta modelda eski xatti-harakat bilan solishtirdik: javoblar avvalgidek yaxshi qoldi, soʻzlar esa tabiiyroq oʻqiladi. [Har bir model qanday uddalaydi](evals/MODELS.md) (ingliz tilida). Eski toʻqishni `lazy-polyglot mode 1` qaytaradi. Lazy Polyglot'ni Claude Code plagini sifatida oʻrnatmagan boʻlsangiz, [yangilanish eslatmalarini](CHANGELOG.md) koʻring.
+Oldingi versiyalar [CHANGELOG.md](CHANGELOG.md) da (ingliz tilida).
 
 ## Nima uchun yangi nom
 
