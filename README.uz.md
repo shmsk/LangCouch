@@ -12,6 +12,8 @@ Har kuni baribir oʻqiydigan AI javoblaringiz orqali til oʻrganing.
 Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblariga toʻqib boradi (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
 
 > Siz: "Barselonada dam olish kunlarini rejalashtirishga yordam ber"
+
+
 > Agent: "**Sábado** (shanba) kunini Gotika kvartalida oʻtkazing: olomon boʻlmaganda, **temprano** (erta) chiqing, kechqurun esa **mar** (dengiz) boʻyida kechki ovqatlaning."
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
