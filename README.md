@@ -8,22 +8,10 @@ Learn a language from the AI replies you already read every day.
 
 Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
-> You: "why is the deploy failing?"
-> Agent: "Port 8080 is still held by a **viejo** (old) process from your **primero** (first) run this morning. Kill it with `lsof -ti :8080 | xargs kill` and the deploy will go through **ahora** (now)."
+> You: "help me plan a weekend in Barcelona"
+> Agent: "Spend **sábado** (Saturday) in the Gothic Quarter: go **temprano** (early), before the crowds, and end the day with dinner by the **mar** (sea)."
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
-
-## What's new in 0.9.8
-
-- **Grammar for English, Portuguese and Italian.** From level 4 the weave now teaches short constructions in `en`, `en-GB`, `pt`, `pt-BR` and `it`, not only Spanish: *the house is big*, *estou trabalhando*, *lo studente*. UK English and Brazilian Portuguese get their own first: *have you got a car? (US: do you have a car?)*, *você trabalha (Portugal: tu trabalhas)*.
-- **Days of the week and months** in every language, 19 new words (451 now).
-- **(0.9.7) New name: Lazy Polyglot.** Same plugin, same words, same progress. Commands are now `/lazy-polyglot:…` (for example `/lazy-polyglot:status`), the CLI is `lazy-polyglot`, and your data folder is `~/.lazy-polyglot`, moved there automatically on first run. If you installed it under the old name, the switch takes about a minute: see [UPGRADING.md](UPGRADING.md).
-
-Earlier releases are in [CHANGELOG.md](CHANGELOG.md).
-
-## Why the new name
-
-The plugin is going into Anthropic's official plugin directory, and the new name is quicker to understand for everyone who meets it there. Nothing else changes. If you installed the old version, remove the old marketplace with `/plugin marketplace remove langcouch`, add the new one, and your progress carries over. The steps are in [UPGRADING.md](UPGRADING.md); an AI agent can follow them for you.
 
 ## Why I built this
 
@@ -58,6 +46,18 @@ It works in the terminal, the Desktop app's Code tab, VS Code and the mobile app
 ## Will it make my agent's answers worse?
 
 It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt, mostly read from the prompt cache: about 1–3% of a typical session ([details](docs/TokenUsage.md)). How four models handle it: [evals/MODELS.md](evals/MODELS.md). If you need a clean session, `/lazy-polyglot:pause` stops it instantly and `/lazy-polyglot:resume` brings it back.
+
+## What's new in 0.9.8
+
+- **Grammar for English, Portuguese and Italian.** From level 4 the weave now teaches short constructions in `en`, `en-GB`, `pt`, `pt-BR` and `it`, not only Spanish: *the house is big*, *estou trabalhando*, *lo studente*. UK English and Brazilian Portuguese get their own first: *have you got a car? (US: do you have a car?)*, *você trabalha (Portugal: tu trabalhas)*.
+- **Days of the week and months** in every language, 19 new words (451 now).
+- **(0.9.7) New name: Lazy Polyglot.** Same plugin, same words, same progress. Commands are now `/lazy-polyglot:…` (for example `/lazy-polyglot:status`), the CLI is `lazy-polyglot`, and your data folder is `~/.lazy-polyglot`, moved there automatically on first run. If you installed it under the old name, the switch takes about a minute: see [UPGRADING.md](UPGRADING.md).
+
+Earlier releases are in [CHANGELOG.md](CHANGELOG.md).
+
+## Why the new name
+
+The plugin is going into Anthropic's official plugin directory, and the new name is quicker to understand for everyone who meets it there. Nothing else changes. If you installed the old version, remove the old marketplace with `/plugin marketplace remove langcouch`, add the new one, and your progress carries over. The steps are in [UPGRADING.md](UPGRADING.md); an AI agent can follow them for you.
 
 ## Quick start
 

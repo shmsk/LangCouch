@@ -11,22 +11,10 @@ Har kuni baribir oʻqiydigan AI javoblaringiz orqali til oʻrganing.
 
 Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblariga toʻqib boradi (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
 
-> Siz: "nega deploy muvaffaqiyatsiz boʻlyapti?"
-> Agent: "8080-portni ertalabki **primero** (birinchi) ishga tushirishdan qolgan **viejo** (eski) jarayon hali ham band qilib turibdi. Uni `lsof -ti :8080 | xargs kill` bilan toʻxtating, deploy **ahora** (hozir) oʻtadi."
+> Siz: "Barselonada dam olish kunlarini rejalashtirishga yordam ber"
+> Agent: "**Sábado** (shanba) kunini Gotika kvartalida oʻtkazing: olomon boʻlmaganda, **temprano** (erta) chiqing, kechqurun esa **mar** (dengiz) boʻyida kechki ovqatlaning."
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
-
-## 0.9.8 da nima yangi
-
-- **Ingliz, portugal va italyan tillari uchun grammatika.** 4-darajadan boshlab qurilmalar endi faqat ispan tilida emas, `en`, `en-GB`, `pt`, `pt-BR` va `it` da ham bor: *the house is big*, *estou trabalhando*, *lo studente*. Britaniya inglizchasi va Braziliya portugalchasi avval oʻzinikini oʻrgatadi: *have you got a car? (US: do you have a car?)*, *você trabalha (Portugal: tu trabalhas)*.
-- **Hafta kunlari va oylar** barcha tillarda, 19 ta yangi soʻz (endi 451 ta).
-- **(0.9.7) Yangi nom: Lazy Polyglot.** Plagin ham, soʻzlar ham, progress ham oldingidek. Buyruqlar endi `/lazy-polyglot:…` (masalan, `/lazy-polyglot:status`), CLI `lazy-polyglot` deb ataladi, maʼlumotlar papkasi esa `~/.lazy-polyglot`: u birinchi ishga tushishda oʻzi koʻchiriladi. Plaginni eski nom ostida oʻrnatgan boʻlsangiz, oʻtish taxminan bir daqiqa oladi: [UPGRADING.md](UPGRADING.md) ga qarang.
-
-Oldingi versiyalar [CHANGELOG.md](CHANGELOG.md) da (ingliz tilida).
-
-## Nima uchun yangi nom
-
-Plagin Anthropic'ning rasmiy plaginlar katalogiga kiryapti, yangi nom esa uni u yerda uchratgan hamma uchun tezroq tushunarli. Boshqa hech narsa oʻzgarmaydi. Eski versiyani oʻrnatgan boʻlsangiz, eski marketplace'ni `/plugin marketplace remove langcouch` bilan oʻchiring, yangisini qoʻshing, progressingiz saqlanadi. Qadamlar [UPGRADING.md](UPGRADING.md) da; ularni siz uchun AI agent ham bajara oladi.
 
 ## Nega buni yaratdim
 
@@ -61,6 +49,18 @@ Terminalda, Desktop ilovasining Code boʻlimida, VS Code'da va mobil ilovada ish
 ## Bu agentimning javoblarini yomonlashtiradimi?
 
 Yoʻq, aynan shunday boʻlmasligi uchun moʻljallangan. Toʻqish koʻrsatmasi kod bloklari, inline kod, identifikatorlar, buyruqlar, yoʻllar, URL manzillar, iqtiboslar va texnik atamalarga tegishni taqiqlaydi hamda modelga javobning maʼnosi va sifati toʻqishdan har doim ustun ekanini aytadi. Buning narxi — har bir soʻrov uchun bitta qisqa koʻrsatma (≤600 token), u asosan prompt keshidan oʻqiladi: odatiy sessiyaning taxminan 1–3% ([batafsil](docs/TokenUsage.md), ingliz tilida). Toʻrtta model buni qanday uddalashi: [evals/MODELS.md](evals/MODELS.md), ingliz tilida. Toza sessiya kerak boʻlsa, `/lazy-polyglot:pause` uni darhol toʻxtatadi, `/lazy-polyglot:resume` esa qaytaradi.
+
+## 0.9.8 da nima yangi
+
+- **Ingliz, portugal va italyan tillari uchun grammatika.** 4-darajadan boshlab qurilmalar endi faqat ispan tilida emas, `en`, `en-GB`, `pt`, `pt-BR` va `it` da ham bor: *the house is big*, *estou trabalhando*, *lo studente*. Britaniya inglizchasi va Braziliya portugalchasi avval oʻzinikini oʻrgatadi: *have you got a car? (US: do you have a car?)*, *você trabalha (Portugal: tu trabalhas)*.
+- **Hafta kunlari va oylar** barcha tillarda, 19 ta yangi soʻz (endi 451 ta).
+- **(0.9.7) Yangi nom: Lazy Polyglot.** Plagin ham, soʻzlar ham, progress ham oldingidek. Buyruqlar endi `/lazy-polyglot:…` (masalan, `/lazy-polyglot:status`), CLI `lazy-polyglot` deb ataladi, maʼlumotlar papkasi esa `~/.lazy-polyglot`: u birinchi ishga tushishda oʻzi koʻchiriladi. Plaginni eski nom ostida oʻrnatgan boʻlsangiz, oʻtish taxminan bir daqiqa oladi: [UPGRADING.md](UPGRADING.md) ga qarang.
+
+Oldingi versiyalar [CHANGELOG.md](CHANGELOG.md) da (ingliz tilida).
+
+## Nima uchun yangi nom
+
+Plagin Anthropic'ning rasmiy plaginlar katalogiga kiryapti, yangi nom esa uni u yerda uchratgan hamma uchun tezroq tushunarli. Boshqa hech narsa oʻzgarmaydi. Eski versiyani oʻrnatgan boʻlsangiz, eski marketplace'ni `/plugin marketplace remove langcouch` bilan oʻchiring, yangisini qoʻshing, progressingiz saqlanadi. Qadamlar [UPGRADING.md](UPGRADING.md) da; ularni siz uchun AI agent ham bajara oladi.
 
 ## Tezkor boshlash
 
