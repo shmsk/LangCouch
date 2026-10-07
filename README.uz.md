@@ -13,7 +13,6 @@ Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblarig
 
 > Siz: "Barselonada dam olish kunlarini rejalashtirishga yordam ber"
 
-
 > Agent: "**Sábado** (shanba) kunini Gotika kvartalida oʻtkazing: olomon boʻlmaganda, **temprano** (erta) chiqing, kechqurun esa **mar** (dengiz) boʻyida kechki ovqatlaning."
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
