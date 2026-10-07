@@ -1,6 +1,6 @@
 # Lazy Polyglot
 
-English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
+English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md) · [Privacy](docs/PRIVACY.md)
 
 **Get (almost) accidentally fluent 🙂**
 

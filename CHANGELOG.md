@@ -6,6 +6,12 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.10] - 2026-10-07
+
+### Added
+- A privacy policy, linked from the top of the README: Lazy Polyglot runs on your
+  computer, stores only your word progress, and sends nothing anywhere.
+
 ## [0.9.9] - 2026-10-07
 
 ### Changed

@@ -1,6 +1,6 @@
 # Lazy Polyglot
 
-[English](README.md) · Русский · [O'zbekcha](README.uz.md)
+[English](README.md) · Русский · [O'zbekcha](README.uz.md) · [Приватность](docs/PRIVACY.md)
 
 *Переведено с README.md (дата исходника: 2026-10-07). При расхождении основной считается английская версия.*
 

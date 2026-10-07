@@ -1,6 +1,6 @@
 # Lazy Polyglot
 
-[English](README.md) · [Русский](README.ru.md) · O'zbekcha
+[English](README.md) · [Русский](README.ru.md) · O'zbekcha · [Maxfiylik](docs/PRIVACY.md)
 
 *README.md dan tarjima qilingan (manba sanasi: 2026-10-07). Farq boʻlsa, inglizcha versiya asosiy hisoblanadi.*
 
