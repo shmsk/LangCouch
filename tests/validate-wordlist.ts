@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Data validator. Exits 1 with a report if broken.
-// Validates concepts.json plus every wordlist mapping (or one: bun tests/validate-wordlist.ts [path|lang]).
+// Validates data/concepts.json plus every wordlist mapping (or one: bun tests/validate-wordlist.ts [path|lang]).
 // --full: missing concepts are errors, not info — required for new-language contributions (docs/AddLanguage.md).
 import { readdirSync } from "node:fs";
 import { basename, join } from "node:path";
@@ -9,8 +9,8 @@ import { runValidation } from "../src/validate.ts";
 import { baseLang, normalizeLang } from "../src/store.ts";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const WORDLISTS_DIR = join(ROOT, "wordlists");
-const CONCEPTS_PATH = join(ROOT, "concepts.json");
+const WORDLISTS_DIR = join(ROOT, "data", "wordlists");
+const CONCEPTS_PATH = join(ROOT, "data", "concepts.json");
 
 const flags = process.argv.slice(2).filter((a) => a.startsWith("--"));
 const requireFull = flags.includes("--full");

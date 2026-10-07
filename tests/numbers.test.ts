@@ -15,7 +15,7 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const NUMERAL_IDS = [...Array.from({ length: 21 }, (_, i) => i), 30, 40, 50, 60, 70, 80, 90, 100, 1000].map((n) => `num-${n}`);
 const NATIVES = ["en", "ru", "uz"];
 const fullLangs = availableLangs().filter((l) => !baseLang(l));
-const bundled = (dir: string) => readdirSync(join(ROOT, dir)).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
+const bundled = (dir: string) => readdirSync(join(ROOT, "data", dir)).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
 
 const word = (id: string, target: string, pos: Word["pos"] = "noun"): Word => ({ id, target, pos, tier: 1, gloss: { en: `en-${id}`, ru: `ru-${id}` } });
 const nouns = Array.from({ length: 30 }, (_, i) => word(`w${String(i).padStart(2, "0")}`, `parola${i}`));
@@ -94,7 +94,7 @@ describe("numeral data", () => {
   test("a variant's number rules only override rules its base has", () => {
     for (const code of bundled("numbers").filter((l) => baseLang(l))) {
       const baseIds = new Set(loadNumberRules(baseLang(code)!).map((r) => r.id));
-      const own = JSON.parse(readFileSync(join(ROOT, "numbers", `${code}.json`), "utf8")) as NumberRule[];
+      const own = JSON.parse(readFileSync(join(ROOT, "data", "numbers", `${code}.json`), "utf8")) as NumberRule[];
       for (const r of own) expect(baseIds.has(r.id), `${code} ${r.id}`).toBe(true);
     }
   });

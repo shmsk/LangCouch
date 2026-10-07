@@ -2,7 +2,7 @@
 
 ## The contribution we want most: add your language
 
-Every language is one JSON file mapping ~400 canonical concepts to that language's words. The full flow — designed so **your AI coding agent can do it for you** — lives in [docs/AddLanguage.md](docs/AddLanguage.md). Point Claude Code (or any agent) at that file with your language code and review the PR it produces.
+Every language is one JSON file mapping ~400 canonical concepts to that language's words. The full flow — designed so **your AI coding agent can do it for you** — lives in [docs/AddLanguage.md](../docs/AddLanguage.md). Point Claude Code (or any agent) at that file with your language code and review the PR it produces.
 
 Also welcome via the same doc: native-language glosses (so learners can see translations in their own language) and grammar construction files for existing languages.
 
@@ -19,15 +19,15 @@ All three must be green before a PR. CI runs the same commands.
 
 ### Host smoke tests
 
-[`.github/workflows/hosts-smoke.yml`](.github/workflows/hosts-smoke.yml) installs Codex CLI, opencode, Hermes Agent and OpenClaw on a clean runner and checks each adapter end to end. Never run these hosts on your own machine for this; the runner is thrown away afterwards.
+[`.github/workflows/hosts-smoke.yml`](workflows/hosts-smoke.yml) installs Codex CLI, opencode, Hermes Agent and OpenClaw on a clean runner and checks each adapter end to end. Never run these hosts on your own machine for this; the runner is thrown away afterwards.
 
-- **Fake-model jobs** point each host at [`tests/smoke/fake-llm.ts`](tests/smoke/fake-llm.ts), a tiny stand-in for an OpenAI-compatible API. It records every request and always answers "ok". The job passes when a recorded request contains the `<lazy-polyglot>` block: the plugin loaded, the hook fired, and the block reached the model. No API key needed, and the result is the same every run.
+- **Fake-model jobs** point each host at [`tests/smoke/fake-llm.ts`](../tests/smoke/fake-llm.ts), a tiny stand-in for an OpenAI-compatible API. It records every request and always answers "ok". The job passes when a recorded request contains the `<lazy-polyglot>` block: the plugin loaded, the hook fired, and the block reached the model. No API key needed, and the result is the same every run.
 - **Live jobs** run each host on real cheap models through OpenRouter. They pass when the reply contains, as `**word** (translation)`, at least one of the words the hook served in that run (read back from the state file). They run only after all fake-model jobs pass, and never on pull requests, because they need the `OPENROUTER_API_KEY` secret.
 - To run the live jobs in your fork, add your own `OPENROUTER_API_KEY` secret with a spending limit, then start the workflow by hand in the Actions tab. The key is given only to the step that calls the model, and is never written to disk.
 
 ### Weave eval
 
-[`evals/`](evals/README.md) measures how well models follow the weave instruction, at three learner stages and on five everyday topics, with deterministic metrics and a blind judge. How it works and how to run it: [`evals/README.md`](evals/README.md). Latest numbers: [`evals/RESULTS.md`](evals/RESULTS.md).
+[`evals/`](../evals/README.md) measures how well models follow the weave instruction, at three learner stages and on five everyday topics, with deterministic metrics and a blind judge. How it works and how to run it: [`evals/README.md`](../evals/README.md). Latest numbers: [`evals/RESULTS.md`](../evals/RESULTS.md).
 
 ## Ground rules
 

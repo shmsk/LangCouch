@@ -17,7 +17,7 @@ Before opening the issue, please confirm:
 ## Notes for reviewers
 
 - Any forced compromises (shared words, periphrastic forms) — list them here so the second-model auditor reviews them deliberately.
-- Native-language glosses you're adding (e.g. `de`, `fr`) — gloss keys are added to `concepts.json`, not to wordlists.
+- Native-language glosses you're adding (e.g. `de`, `fr`) — gloss keys are added to `data/concepts.json`, not to wordlists.
 - Roughly how many entries are short (<3 chars, won't trigger prompt-recall)?
 
 The validator gate (`bun tests/validate-wordlist.ts --full`) must pass with 100% concept coverage before the PR can merge.

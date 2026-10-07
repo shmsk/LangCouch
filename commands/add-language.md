@@ -6,7 +6,7 @@ allowed-tools: Read, Write(~/.lazy-polyglot/**), Edit(~/.lazy-polyglot/**), Bash
 
 Add the language "$ARGUMENTS" to Lazy Polyglot for this user.
 
-Follow `${CLAUDE_PLUGIN_ROOT}/docs/AddLanguage.md` (path "For yourself"), reading the concept inventory from `${CLAUDE_PLUGIN_ROOT}/concepts.json`. Differences from a repo contribution:
+Follow `${CLAUDE_PLUGIN_ROOT}/docs/AddLanguage.md` (path "For yourself"), reading the concept inventory from `${CLAUDE_PLUGIN_ROOT}/data/concepts.json`. Differences from a repo contribution:
 
 - Write the wordlist to `~/.lazy-polyglot/wordlists/<code>.json`, and any optional file next to it under `~/.lazy-polyglot/grammar/`, `~/.lazy-polyglot/patterns/` or `~/.lazy-polyglot/falseFriends/` (each `<code>.json`, see the doc's Steps 4 and 4b), never inside `${CLAUDE_PLUGIN_ROOT}`. Files in the plugin folder are replaced on every plugin update.
 - Validate with `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full` and fix every reported error until it passes.

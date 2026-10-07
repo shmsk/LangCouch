@@ -885,7 +885,7 @@ try {
     default:
       console.log(
         [
-          "lazy-polyglot — learn a language without leaving the terminal (diglot weave for AI CLIs)",
+          "lazy-polyglot — learn a language without leaving the terminal (diglot weave for AI agents)",
           "",
           "  init                      create ~/.lazy-polyglot",
           "  pause / resume            turn weaving off/on",

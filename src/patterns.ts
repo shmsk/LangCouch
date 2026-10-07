@@ -3,7 +3,7 @@ import { meansFor, type FalseFriend, type State } from "./types.ts";
 /**
  * A word-building rule: one native suffix maps to one target suffix, so a learner who
  * knows it recognises a whole family of words at once (-ция → -ción: revolución,
- * información, nación…). Lives in patterns/<lang>.json, in teaching order.
+ * información, nación…). Lives in data/patterns/<lang>.json, in teaching order.
  */
 export interface Pattern {
   /** Stable across languages ("tion", "ity", "irovat") */

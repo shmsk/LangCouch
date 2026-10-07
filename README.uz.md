@@ -185,7 +185,7 @@ flowchart LR
     H --> I[After the reply: words it used<br/>climb the ladder in local state]
 ```
 
-- **Kontseptga bogʻlangan lugʻat**: maʼnolar `concepts.json`da bir marta saqlanadi (id, pos, tier, har bir ona til uchun glosslar); har bir `wordlists/<lang>.json` esa yupqa kontsept→lemma xaritasi, shuning uchun yangi til qoʻshish — bitta kichik fayl, va glosslar hech qachon bir-biridan chetlanmaydi
+- **Kontseptga bogʻlangan lugʻat**: maʼnolar `data/concepts.json`da bir marta saqlanadi (id, pos, tier, har bir ona til uchun glosslar); har bir `data/wordlists/<lang>.json` esa yupqa kontsept→lemma xaritasi, shuning uchun yangi til qoʻshish — bitta kichik fayl, va glosslar hech qachon bir-biridan chetlanmaydi
 - **Soʻz roʻyxatlari**: har bir til uchun ~400 ta asosiy mazmun soʻzi (ot/fe'l/sifat/ravish) va 30 ta son, yordamchi soʻzlarsiz; tier maydoni →1000 soʻzlik bosqich uchun joy ajratadi, u yadro ~80% oʻzlashtirilganda ochiladi
 - **Har bir til boʻyicha progress**: holat `~/.lazy-polyglot/state.<lang>.json` faylida, kontsept id boʻyicha saqlanadi — progress lemma tuzatishlaridan omon qoladi va tillar oʻrtasida solishtirish mumkin ("siz *quyosh* soʻzini 5 tildan 3 tasida bilasiz")
 - **Oraliqlar zinasi**: har bir soʻz 30 daqiqadan, 8 soatdan, 1 kundan, 4 kundan, 2 haftadan, 1 oydan, soʻng 6 oydan keyin qaytadi. U zinadan bir pogʻona faqat vaqti kelganda javob uni haqiqatan ishlatsagina koʻtariladi; vaqti kelgan soʻzlar birinchi turadi, har bir roʻyxatning choragi esa yangi soʻzlar uchun boʻsh qoladi
@@ -195,7 +195,7 @@ flowchart LR
 - **Yodga tushirish signali**: koʻrish hali bilim emas. Oʻz soʻrovingizda ishlatgan yoki `quiz`da toʻgʻri javob bergan soʻz bir pogʻona koʻtariladi; quizdagi notoʻgʻri javob uni boshiga qaytaradi
 - **Daraja testi**: tilning bir qismini allaqachon bilasizmi? Terminalda `lazy-polyglot placement` yoki Claude Code'da `/lazy-polyglot:placement` roʻyxatdagi hali oʻzlashtirilmagan soʻzlarni, eng koʻp ishlatiladiganlaridan boshlab soʻraydi. Toʻgʻri tarjima qilingan soʻz yangi soʻz bosqichini oʻtkazib, toʻgʻridan-toʻgʻri oʻzlashtirilganlarga oʻtadi (ikki haftadan keyin takrorlanadi); bilmagan soʻzingiz shunchaki yangi boʻlib qoladi. Har bir soʻzdan keyin saqlanadi, toʻxtab, keyin davom ettirish mumkin. Lazy Polyglot testni til boshlanganda bir marta, soʻzlar juda oson deb yozsangiz yana taklif qiladi
 - **Rejimlar**: `lazy-polyglot mode 3` yuqoridagilarning hammasi (standart). `mode 2` faqat joyiga tushadigan soʻzlarni toʻqiydi, `mode 1` esa roʻyxatdagi har bir soʻzni soʻraydi; ikkalasi ham soʻzni berilgan paytda hisoblaydi
-- **1–10 darajalar**: soʻzlar 1-darajadan; soʻz yasash qoidalari 2-darajadan (`patterns/<lang>.json`); soʻz birikmalari 4-darajadan va oddiy gaplar 7-darajadan, agar tilda boʻlsa, `grammar/<lang>.json` dagi qurilmalar asosida
+- **1–10 darajalar**: soʻzlar 1-darajadan; soʻz yasash qoidalari 2-darajadan (`data/patterns/<lang>.json`); soʻz birikmalari 4-darajadan va oddiy gaplar 7-darajadan, agar tilda boʻlsa, `data/grammar/<lang>.json` dagi qurilmalar asosida
 - **Ona tili**: agar siz oʻz ona tilingizni oʻrganayotgan boʻlsangiz (masalan, native `en` bilan `en`), glosslar boshqa tilga oʻtadi
 
 ## Qoʻllab-quvvatlanadigan tillar
@@ -246,7 +246,7 @@ Koʻp soʻzlar bir nechta tilda bir xil tuziladi. *Revolution* ispanchada *revol
 - **Sizning tomoningiz:** qoʻshimcha ona tilingizda koʻrsatiladi. Ingliz tilida soʻzlashuvchi *-tion → -ción* ni, rus tilida soʻzlashuvchi *-ция → -ción* ni koʻradi. Oʻzbek tili uchun alohida qoidalar hozircha yoʻq, shuning uchun inglizcha tomoni koʻrsatiladi.
 - **Progress:** qoida uchta javobdan keyin kiritilgan hisoblanadi, soʻng keyingisi boshlanadi. `status` buni *Word-building rules: 1/8 introduced* deb koʻrsatadi.
 - **Soxta doʻstlar:** qoida unga oʻxshagan, lekin boshqa maʼnoli soʻzlar haqida ogohlantiradi, masalan *-al* yonida *actual = joriy*. Maʼno siz yozayotgan tilda beriladi.
-- **Maʼlumotlar qayerda:** qoidalar `patterns/<lang>.json` da, soxta doʻstlar va qoʻpol soʻzlar `falseFriends/<lang>.json` da. Har bir tildagi qoidalar soni “Qoʻllab-quvvatlanadigan tillar” jadvalida. Har bir qoida va misol lugʻat bilan (asosan Wiktionary) solishtirilgan, soʻng boshqa yetkazib beruvchining ikkinchi modeli tomonidan tekshirilgan.
+- **Maʼlumotlar qayerda:** qoidalar `data/patterns/<lang>.json` da, soxta doʻstlar va qoʻpol soʻzlar `data/falseFriends/<lang>.json` da. Har bir tildagi qoidalar soni “Qoʻllab-quvvatlanadigan tillar” jadvalida. Har bir qoida va misol lugʻat bilan (asosan Wiktionary) solishtirilgan, soʻng boshqa yetkazib beruvchining ikkinchi modeli tomonidan tekshirilgan.
 
 ## Sonlar
 
@@ -255,7 +255,7 @@ Koʻp soʻzlar bir nechta tilda bir xil tuziladi. *Revolution* ispanchada *revol
 - **Qolgani qoidalar orqali.** Javobda son boʻlsa, Lazy Polyglot kattaroq sonlar qanday tuzilishini ham koʻrsatadi, bir vaqtda bitta qoida: *11–16 tayyor soʻzlar: undici, dodici… (e.g. 13 = tredici)*. Shundan soʻng javob shu tarzda tuzilgan sonni ishlatishi mumkin, hatto u roʻyxatda boʻlmasa ham.
 - **Har bir tilning oʻz mantiqi bor.** Ingliz tilida 11 va 12 ni yodlaysiz, keyin *-teen*. Fransuz tilida 70 bu *soixante-dix* (60+10), 80 esa *quatre-vingts* (4×20). Nemis tilida birlik oldin keladi: *einundzwanzig* (bir-va-yigirma). Turk tilida oʻnliklarni yodlash kerak, oʻzbekcha soʻzlashuvchilar ulardan bir nechtasini taniydi (*kırk*, *elli*).
 - **Progress:** qoida uchta javobdan keyin kiritilgan hisoblanadi, soʻng oʻrin soʻz yasash qoidasiga qaytadi. `status` buni *Number rules: 2/7 introduced* deb koʻrsatadi.
-- **Maʼlumotlar qayerda:** sonlar soʻz roʻyxatlarida, qoidalar `numbers/<lang>.json` da, har biri Wiktionary sahifasiga havola qiladi (barcha havolalar tekshirilgan) va ikkinchi model tomonidan koʻrib chiqilgan.
+- **Maʼlumotlar qayerda:** sonlar soʻz roʻyxatlarida, qoidalar `data/numbers/<lang>.json` da, har biri Wiktionary sahifasiga havola qiladi (barcha havolalar tekshirilgan) va ikkinchi model tomonidan koʻrib chiqilgan.
 
 Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangilanishdan keyin `status` yangi versiyadagi oʻzgarishlarni bir marta koʻrsatadi.
 
@@ -272,7 +272,7 @@ Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangila
 
 Codex CLI, OpenCode, Hermes Agent va OpenClaw toza CI runnerga oʻrnatilib, boshidan oxirigacha sinovdan oʻtkaziladi ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): plagin yuklanadi, blok modelga yetib boradi, OpenRouterdagi haqiqiy modellar esa ularga berilgan soʻzlarni toʻqiydi.
 
-Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md). Har qanday adapter rioya qilishi kerak boʻlgan hook shartnomasi: xost sessiyasini hech qachon buzmaslik (har qanday xatoda hech narsa chop etmasdan 0 bilan chiqish).
+Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](.github/CONTRIBUTING.md). Har qanday adapter rioya qilishi kerak boʻlgan hook shartnomasi: xost sessiyasini hech qachon buzmaslik (har qanday xatoda hech narsa chop etmasdan 0 bilan chiqish).
 
 ## Buyruqlar
 
@@ -364,7 +364,7 @@ Gʻoyangiz bormi yoki nimadir jonga tegyaptimi? Ikkalasi ham foydali.
 
 ## Hissa qoʻshish
 
-Eng qimmatli hissa — bu sizning tilingiz, va [docs/AddLanguage.md](docs/AddLanguage.md) AI agentingiz uni boshidan oxirigacha bajara olishi uchun yozilgan. Ishlab chiqish sikli, testlar va asosiy qoidalar [CONTRIBUTING.md](CONTRIBUTING.md) da berilgan.
+Eng qimmatli hissa — bu sizning tilingiz, va [docs/AddLanguage.md](docs/AddLanguage.md) AI agentingiz uni boshidan oxirigacha bajara olishi uchun yozilgan. Ishlab chiqish sikli, testlar va asosiy qoidalar [CONTRIBUTING.md](.github/CONTRIBUTING.md) da berilgan.
 
 ## Yoʻl xaritasi
 

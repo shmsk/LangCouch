@@ -4,7 +4,7 @@ This document is written for an AI coding agent (Claude Code, Codex, etc.) — a
 
 ## What you are building
 
-Lazy Polyglot weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file**. Three more are optional: grammar constructions, word-building rules and false friends. No code changes: the language name is derived from its ISO code.
+Lazy Polyglot weaves target-language words into an AI agent's replies. Vocabulary is defined once as a canonical inventory of ~400 language-independent meanings (`data/concepts.json`); each language is a thin file mapping concept ids to that language's words. You will produce **one JSON file**. Three more are optional: grammar constructions, word-building rules and false friends. No code changes: the language name is derived from its ISO code.
 
 Inputs you need before starting:
 - the ISO 639-1 language code (`tr`, `de`, `fr`, …) — called `<code>` below
@@ -12,13 +12,13 @@ Inputs you need before starting:
 ## Two ways to add a language
 
 - **For yourself** (Claude Code plugin users): run `/lazy-polyglot:add-language <language>`, or follow this doc and put the file at `~/.lazy-polyglot/wordlists/<code>.json` (optional files go next to it: `~/.lazy-polyglot/grammar/`, `~/.lazy-polyglot/patterns/`, `~/.lazy-polyglot/falseFriends/`, each as `<code>.json`). It lives next to your progress and survives plugin updates. No clone needed; validate with `lazy-polyglot validate <code> --full` (inside Claude Code: `${CLAUDE_PLUGIN_ROOT}/scripts/cli.sh validate <code> --full`). Never write into the plugin folder (`~/.claude/plugins/cache/…`): it is replaced on every update.
-- **For everyone** (a PR): work in a clone of this repo with [bun](https://bun.sh) (`bun install`), put the file at `wordlists/<code>.json`, and follow every step below including the PR checklist.
+- **For everyone** (a PR): work in a clone of this repo with [bun](https://bun.sh) (`bun install`), put the file at `data/wordlists/<code>.json`, and follow every step below including the PR checklist.
 
 A file in `~/.lazy-polyglot/wordlists/` overrides a bundled one with the same code, so you can also fix a word locally.
 
 ## Step 1 — Read the concept inventory
 
-Open `concepts.json` (repo root). Each entry is:
+Open `data/concepts.json`. Each entry is:
 
 ```json
 { "id": "house", "pos": "noun", "tier": 1, "gloss": { "en": "house", "ru": "дом" } }
@@ -57,19 +57,19 @@ Translation rules (the validator enforces the mechanical ones):
 
 The instruction names the language via `Intl.DisplayNames` (`ka` → Georgian). Use a standard ISO 639-1 code and it just works; there is no code to edit.
 
-## Step 4 (optional) — `grammar/<code>.json`
+## Step 4 (optional) — `data/grammar/<code>.json`
 
-Grammar constructions unlock at higher levels. Mirror the schema of `grammar/es.json`:
+Grammar constructions unlock at higher levels. Mirror the schema of `data/grammar/es.json`:
 
 ```json
 { "id": "def-article", "pattern": "gender + definite article (el/la + noun)", "exampleTarget": "la casa", "exampleGloss": "the house", "unlock": { "pos": "noun", "absorbedCount": 3 } }
 ```
 
-8–12 constructions, ordered easy → hard with rising `absorbedCount` thresholds (compare `grammar/es.json`). `pattern` and `exampleGloss` are in English; `exampleTarget` must use words from your wordlist. Skip this step if unsure — languages work without a grammar file.
+8–12 constructions, ordered easy → hard with rising `absorbedCount` thresholds (compare `data/grammar/es.json`). `pattern` and `exampleGloss` are in English; `exampleTarget` must use words from your wordlist. Skip this step if unsure — languages work without a grammar file.
 
-## Step 4b (optional) — `patterns/<code>.json` and `falseFriends/<code>.json`
+## Step 4b (optional) — `data/patterns/<code>.json` and `data/falseFriends/<code>.json`
 
-Word-building rules teach one suffix that turns a whole family of known words into your language: *-tion → -ción* makes *revolución*, *información*, *nación* readable at once. One rule per reply, from level 2. Mirror `patterns/es.json`:
+Word-building rules teach one suffix that turns a whole family of known words into your language: *-tion → -ción* makes *revolución*, *información*, *nación* readable at once. One rule per reply, from level 2. Mirror `data/patterns/es.json`:
 
 ```json
 { "id": "tion", "from": { "en": "-tion", "ru": "-ция" }, "to": "-ción", "examples": [ { "target": "revolución", "gloss": { "en": "revolution", "ru": "революция" } } ], "source": "https://en.wiktionary.org/wiki/-ci%C3%B3n" }
@@ -81,7 +81,7 @@ Word-building rules teach one suffix that turns a whole family of known words in
 - `source`: a URL that backs the correspondence, usually the Wiktionary page of the suffix.
 - 5–8 rules, most reliable first; the file order is the teaching order. Drop a rule whose exceptions outnumber its matches.
 
-False friends warn about words that look like a rule but mean something else. Mirror `falseFriends/es.json`:
+False friends warn about words that look like a rule but mean something else. Mirror `data/falseFriends/es.json`:
 
 ```json
 { "target": "actual", "means": { "en": "current", "ru": "текущий", "uz": "joriy" }, "register": "neutral", "looksLike": { "en": "actual" }, "pattern": "al", "source": "https://en.wiktionary.org/wiki/actual" }
@@ -91,11 +91,11 @@ False friends warn about words that look like a rule but mean something else. Mi
 
 Check every example and false friend against a live dictionary, then run the Step 6 audit on these files too.
 
-## Step 4c — numbers: the 30 numerals and `numbers/<code>.json`
+## Step 4c — numbers: the 30 numerals and `data/numbers/<code>.json`
 
 Numbers are taught as building blocks plus rules. The wordlist maps the 30 numeral concepts (`num-0` … `num-20`, `num-30` … `num-90`, `num-100`, `num-1000`) to the standalone counting form ("uno", "cien", "mil"); `--full` validation fails without them. Put them early in the wordlist (after the first ~40 entries): the file order is the order new words come in. A reply carries at most one numeral, woven next to its digit: `3 (**tre**)`.
 
-`numbers/<code>.json` holds 4–8 rules, in teaching order, that let a learner build any number up to 1000 from those blocks:
+`data/numbers/<code>.json` holds 4–8 rules, in teaching order, that let a learner build any number up to 1000 from those blocks:
 
 ```json
 { "id": "teens", "hint": { "en": "17-19: dicia-/dician- + unit, one word", "ru": "17-19: dicia-/dician- + единица, одним словом", "uz": "17-19: dicia-/dician- + birlik, bitta so'z" }, "example": { "value": 17, "target": "diciassette" }, "source": "https://en.wiktionary.org/wiki/diciassette" }
@@ -107,7 +107,7 @@ Numbers are taught as building blocks plus rules. The wordlist maps the 30 numer
 
 A rule is shown when a numeral is in the reply and some rule is still new (shown fewer than 3 times); it then takes the word-building rule's place.
 
-## Step 4d (optional) — `readings/<code>.json`
+## Step 4d (optional) — `data/readings/<code>.json`
 
 Only for a language that is not read the way it is spelled (French, English, Portuguese are; Spanish, Italian, Turkish are not). New words then come with their pronunciation, rendered for each learner in their own letters or as IPA (`/lazy-polyglot:reading`). The file maps every concept id to its IPA:
 
@@ -157,7 +157,7 @@ Expect a `<lazy-polyglot>` block containing `word = gloss` pairs in your languag
 
 ## Step 8 — PR checklist
 
-- [ ] Files touched are exactly: `wordlists/<code>.json` and optionally `grammar/<code>.json`, `patterns/<code>.json`, `falseFriends/<code>.json`, `numbers/<code>.json`, `readings/<code>.json`
+- [ ] Files touched are exactly: `data/wordlists/<code>.json` and optionally `data/grammar/<code>.json`, `data/patterns/<code>.json`, `data/falseFriends/<code>.json`, `data/numbers/<code>.json`, `data/readings/<code>.json`
 - [ ] Output of all three Step 5 commands pasted
 - [ ] Audit summary: model used, findings applied/rejected
 - [ ] Live smoke test output pasted
@@ -168,18 +168,18 @@ Expect a `<lazy-polyglot>` block containing `word = gloss` pairs in your languag
 Some learners want one regional standard specifically: Brazilian Portuguese says *trem* and *celular*, European Portuguese says *comboio* and *telemóvel*. A variant is **not** a full copy of the language. It is a small file holding only the words that differ from the base language; every other concept comes from the base.
 
 - **Code**: BCP 47, `<base>-<REGION>` (`pt-BR`, `es-MX`, `es-419`). Case doesn't matter on the command line (`lang pt-br` works); the file name uses the canonical form, `pt-BR.json`. The name comes from `Intl.DisplayNames` ("Brazilian Portuguese"), nothing to register.
-- **File**: `~/.lazy-polyglot/wordlists/pt-BR.json` for yourself, `wordlists/pt-BR.json` for a PR. The base (`pt`) must exist, bundled or local.
+- **File**: `~/.lazy-polyglot/wordlists/pt-BR.json` for yourself, `data/wordlists/pt-BR.json` for a PR. The base (`pt`) must exist, bundled or local.
 - **Content**: go through the base wordlist and add an entry only where the variant's everyday word differs. Rules 1–8 above apply to each entry. Don't copy a base word into the variant: the validator rejects entries identical to the base.
-- **Grammar**: optional `grammar/pt-BR.json`, an overlay on the base's grammar. An item with a base `id` replaces that item, a new `id` is added. Give a regional item `baseExample` (the base's way of saying it), and it is taught first with a contrast: *ustedes trabajan (Spain: vosotros trabajáis)*. See `grammar/es-419.json`.
-- **Word-building rules**: a variant uses its base's `patterns/` file; add `patterns/<code>.json` only for rules that differ.
-- **Rude words**: if a base word is rude in the variant's region, add it to the base's `falseFriends/<base>.json` with `"vulgarIn": ["<code>"]`. The contrast then warns about it (*Spain: coger (vulgar in much of Latin America)*), and the tests fail if the variant ever teaches it.
+- **Grammar**: optional `data/grammar/pt-BR.json`, an overlay on the base's grammar. An item with a base `id` replaces that item, a new `id` is added. Give a regional item `baseExample` (the base's way of saying it), and it is taught first with a contrast: *ustedes trabajan (Spain: vosotros trabajáis)*. See `data/grammar/es-419.json`.
+- **Word-building rules**: a variant uses its base's `data/patterns/` file; add `data/patterns/<code>.json` only for rules that differ.
+- **Rude words**: if a base word is rude in the variant's region, add it to the base's `data/falseFriends/<base>.json` with `"vulgarIn": ["<code>"]`. The contrast then warns about it (*Spain: coger (vulgar in much of Latin America)*), and the tests fail if the variant ever teaches it.
 - **Validate**: `lazy-polyglot validate pt-BR --full` (repo: `bun tests/validate-wordlist.ts pt-BR --full`). Duplicates and coverage are checked on the merged result, so a variant word that clashes with another base word is caught.
 - **Audit**: run Step 6 on the variant entries plus the base entries you considered and kept. The question for the auditor is "is this what a speaker of that region says every day?"
 - **Progress** is shared with the base for every word spelled the same, and for shared grammar and rules. Switching from `pt` to `pt-BR` keeps all of it; only the variant's own words and constructions start fresh, and they come first.
 
 ## Also possible: adding native-language glosses
 
-Learners see translations in their own language via `config.native`. To support a new *native* language, add a `"<code>": "…"` key to the `gloss` object of every concept in `concepts.json` (keep `en` and existing keys). The same quality rules and audit flow apply; validate with `bun tests/validate-wordlist.ts`.
+Learners see translations in their own language via `config.native`. To support a new *native* language, add a `"<code>": "…"` key to the `gloss` object of every concept in `data/concepts.json` (keep `en` and existing keys). The same quality rules and audit flow apply; validate with `bun tests/validate-wordlist.ts`.
 
 ## FAQ / known limitations
 

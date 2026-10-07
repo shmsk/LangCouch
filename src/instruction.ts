@@ -78,7 +78,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
   ];
 
   if (stage >= 2 && grammar) {
-    // data-driven construction (grammar/<lang>.json) takes the place of the generic collocation line
+    // data-driven construction (data/grammar/<lang>.json) takes the place of the generic collocation line
     lines.push(
       `${fitOnly ? "Where it fits, apply" : "Additionally, apply"} the construction "${grammar.pattern}" 1-2 times with words from the list — e.g. ${grammar.exampleTarget} (${grammar.exampleGloss}${grammarContrast}), translation in parentheses.`,
     );

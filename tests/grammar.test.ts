@@ -73,7 +73,7 @@ describe("instruction with grammar data", () => {
   });
 });
 
-const GRAMMAR_DIR = fileURLToPath(new URL("../grammar/", import.meta.url));
+const GRAMMAR_DIR = fileURLToPath(new URL("../data/grammar/", import.meta.url));
 const readGrammar = (code: string) => JSON.parse(readFileSync(join(GRAMMAR_DIR, `${code}.json`), "utf8")) as GrammarItem[];
 const bundled = readdirSync(GRAMMAR_DIR).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length));
 const bases = bundled.filter((c) => !c.includes("-"));

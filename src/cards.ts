@@ -21,7 +21,7 @@ export interface Card {
   dir: CardDir;
   /** What the learner sees: the target word (forward) or its gloss in their language (reverse). */
   prompt: string;
-  /** Forward cards: the word's pronunciation, when the learner has it on (readings/<lang>.json). */
+  /** Forward cards: the word's pronunciation, when the learner has it on (data/readings/<lang>.json). */
   reading?: string;
 }
 

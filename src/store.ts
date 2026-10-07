@@ -157,21 +157,23 @@ export function saveState(lang: string, state: State): void {
 }
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-export const WORDLISTS_DIR = join(REPO_ROOT, "wordlists");
-const GRAMMAR_DIR = join(REPO_ROOT, "grammar");
+// Bundled language data lives in data/ so the repo root stays short.
+const BUNDLED = join(REPO_ROOT, "data");
+export const WORDLISTS_DIR = join(BUNDLED, "wordlists");
+const GRAMMAR_DIR = join(BUNDLED, "grammar");
 // User-added languages live next to progress, so they survive plugin updates
 // (the plugin itself is replaced wholesale per version). A user file overrides a bundled one.
 export const USER_WORDLISTS_DIR = join(DATA_DIR, "wordlists");
 const USER_GRAMMAR_DIR = join(DATA_DIR, "grammar");
-const PATTERNS_DIR = join(REPO_ROOT, "patterns");
+const PATTERNS_DIR = join(BUNDLED, "patterns");
 const USER_PATTERNS_DIR = join(DATA_DIR, "patterns");
-const FALSE_FRIENDS_DIR = join(REPO_ROOT, "falseFriends");
+const FALSE_FRIENDS_DIR = join(BUNDLED, "falseFriends");
 const USER_FALSE_FRIENDS_DIR = join(DATA_DIR, "falseFriends");
-const NUMBERS_DIR = join(REPO_ROOT, "numbers");
+const NUMBERS_DIR = join(BUNDLED, "numbers");
 const USER_NUMBERS_DIR = join(DATA_DIR, "numbers");
-const READINGS_DIR = join(REPO_ROOT, "readings");
+const READINGS_DIR = join(BUNDLED, "readings");
 const USER_READINGS_DIR = join(DATA_DIR, "readings");
-export const CONCEPTS_PATH = join(REPO_ROOT, "concepts.json");
+export const CONCEPTS_PATH = join(BUNDLED, "concepts.json");
 const CHANGELOG_PATH = join(REPO_ROOT, "CHANGELOG.md");
 
 /** Version of the installed plugin, from its package.json. */

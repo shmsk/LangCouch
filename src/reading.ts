@@ -3,7 +3,7 @@ import { glossFor } from "./types.ts";
 
 /**
  * Pronunciation next to new words. Each word's sound is stored once, as IPA, in
- * readings/<lang>.json; what the learner sees is rendered from it: the IPA itself, or
+ * data/readings/<lang>.json; what the learner sees is rendered from it: the IPA itself, or
  * the closest spelling in their own alphabet (ru Cyrillic, en respelling, uz Latin).
  * Rendering is a longest-match table, not a phonology: good enough to say the word,
  * never a dictionary entry.

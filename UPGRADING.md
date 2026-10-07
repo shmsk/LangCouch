@@ -35,7 +35,7 @@ If you installed LangCouch before version 0.9.7, do the steps below once. They t
 
 **If the status shows zero words:** run `/lazy-polyglot:import ~/langcouch-export-YYYY-MM-DD.json` with the file from step 1. Import merges, so running it twice is harmless.
 
-## opencode, Codex CLI, Gemini CLI, Hermes Agent, OpenClaw
+## OpenCode, Codex CLI, Gemini CLI, Hermes Agent, OpenClaw
 
 1. Back up: `bun src/cli.ts export` (in your old checkout).
 2. Update your checkout. GitHub redirects the old URL, so `git pull` works. Optionally point it at the new address: `git remote set-url origin https://github.com/shmsk/lazy-polyglot.git`.

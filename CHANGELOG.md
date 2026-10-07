@@ -6,6 +6,13 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.9] - 2026-10-07
+
+### Changed
+- Tidier repository: the language data (words, grammar, pronunciations) now sits in one
+  `data/` folder, so the GitHub page gets to the description faster. Nothing changes for you:
+  your progress and any languages you added stay where they were.
+
 ## [0.9.8] - 2026-10-07
 
 ### Added

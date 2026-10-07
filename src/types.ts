@@ -1,7 +1,7 @@
 export type Pos = "noun" | "verb" | "adj" | "adv" | "num";
 
 /**
- * A language-independent meaning, authored once in concepts.json.
+ * A language-independent meaning, authored once in data/concepts.json.
  * Glosses are keyed by native-language code — adding a native language
  * is one more key here, never a wordlist change.
  */
@@ -38,14 +38,14 @@ export interface Word {
   baseTarget?: string;
   /** Regional variant only: a warning about baseTarget here ("vulgar in much of Latin America"). */
   baseNote?: string;
-  /** Pronunciation as IPA, from readings/<lang>.json; absent for languages that read as written. */
+  /** Pronunciation as IPA, from data/readings/<lang>.json; absent for languages that read as written. */
   ipa?: string;
 }
 
 /**
  * A word that misleads: it looks like a native word but means something else (neutral),
  * or it is rude somewhere (vulgar). Vulgar entries are never teaching content; they only
- * warn and guard the data. Lives in falseFriends/<lang>.json, keyed by the word's language.
+ * warn and guard the data. Lives in data/falseFriends/<lang>.json, keyed by the word's language.
  */
 export interface FalseFriend {
   target: string;
@@ -56,7 +56,7 @@ export interface FalseFriend {
   looksLike?: Record<string, string>;
   /** Language codes (a variant, or a native language) where the word is rude */
   vulgarIn?: string[];
-  /** Id of the word-building rule it poses as (patterns/<lang>.json) */
+  /** Id of the word-building rule it poses as (data/patterns/<lang>.json) */
   pattern?: string;
   /** How the warning reads; default "vulgar in <region>" */
   note?: string;
@@ -65,7 +65,7 @@ export interface FalseFriend {
 }
 
 export interface Config {
-  /** Target language code, matches wordlists/<lang>.json */
+  /** Target language code, matches data/wordlists/<lang>.json */
   lang: string;
   /** User's native language — used for glosses in the instruction */
   native: string;

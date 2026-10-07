@@ -180,7 +180,7 @@ flowchart LR
     H --> I[After the reply: words it used<br/>climb the ladder in local state]
 ```
 
-- **Concept-keyed vocabulary**: meanings live once in `concepts.json` (id, pos, tier, glosses per native language); each `wordlists/<lang>.json` is a thin concept→lemma map, so adding a language is one small file and glosses never drift
+- **Concept-keyed vocabulary**: meanings live once in `data/concepts.json` (id, pos, tier, glosses per native language); each `data/wordlists/<lang>.json` is a thin concept→lemma map, so adding a language is one small file and glosses never drift
 - **Wordlists**: ~400 core content words per language (noun/verb/adj/adv) plus the 30 numerals, no function words; the tier field reserves room for the →1000-word band, unlocked when the core is ~80% absorbed
 - **Per-language progress**: state lives in `~/.lazy-polyglot/state.<lang>.json`, keyed by concept id — progress survives lemma fixes and can be compared across languages ("you know *sun* in 3 of 5")
 - **Interval ladder**: each word comes back after 30 min, 8 h, 1 day, 4 days, 2 weeks, 1 month, then 6 months. It climbs a step only when a reply actually uses it while it is due; words that are due come first, and a quarter of each list stays open for new words
@@ -190,7 +190,7 @@ flowchart LR
 - **Recall signal**: exposure is not knowledge. A word you use in your own prompt, or answer right in `quiz`, climbs a step; a wrong quiz answer sends it back to the start
 - **Placement test**: already know part of a language? `lazy-polyglot placement` in a terminal, or `/lazy-polyglot:placement` in Claude Code, asks the listed words you haven't absorbed yet, most common first. Each word you translate right skips the new-word stage and goes straight to the absorbed pool (reviewed in two weeks); a word you don't know just stays new. Progress saves after every word, so you can stop and carry on later. Lazy Polyglot offers the test once when you start a language, and again whenever you say the words are too easy
 - **Modes**: `lazy-polyglot mode 3` is the above (default). `mode 2` weaves only words that fit, and `mode 1` asks for every listed word; both count a word when it is served
-- **Levels 1–10**: words from level 1; [word-building rules](#word-building-rules) from level 2 (`patterns/<lang>.json`); collocations from 4 and simple sentences from 7, using the constructions in `grammar/<lang>.json` where a language has them
+- **Levels 1–10**: words from level 1; [word-building rules](#word-building-rules) from level 2 (`data/patterns/<lang>.json`); collocations from 4 and simple sentences from 7, using the constructions in `data/grammar/<lang>.json` where a language has them
 - **Native language**: when you learn your own native language (e.g. `en` with native `en`), glosses fall back to another language
 
 ## Supported languages
@@ -241,7 +241,7 @@ Many words are built the same way in several languages. *Revolution* is *revoluc
 - **Your side of the rule:** the suffix is shown in your native language. An English speaker sees *-tion → -ción*, a Russian speaker sees *-ция → -ción*. Some rules exist for one side only: *-ly → -mente* for English speakers, *-ировать → -ieren* (*kopieren*) for Russian speakers.
 - **Progress:** a rule counts as introduced after three replies, and then the next one starts. `status` shows it as *Word-building rules: 1/8 introduced*.
 - **False friends:** a rule warns about words that look like it but mean something else, e.g. *actual = current* next to *-al*. The meaning comes in the language you write in.
-- **Where the data lives:** rules in `patterns/<lang>.json`, false friends and rude words in `falseFriends/<lang>.json`. The table in [Supported languages](#supported-languages) shows how many rules each language has. Every rule and example was checked against a dictionary (mostly Wiktionary) and then audited by a second model from another vendor.
+- **Where the data lives:** rules in `data/patterns/<lang>.json`, false friends and rude words in `data/falseFriends/<lang>.json`. The table in [Supported languages](#supported-languages) shows how many rules each language has. Every rule and example was checked against a dictionary (mostly Wiktionary) and then audited by a second model from another vendor.
 
 ## Numbers
 
@@ -250,7 +250,7 @@ Every number up to 1000 is built from 30 words: 0–20, the tens, 100 and 1000. 
 - **The rest is rules.** When a numeral is in the reply, Lazy Polyglot also shows how bigger numbers are built, one rule at a time: *11–16 are fixed words: undici, dodici… (e.g. 13 = tredici)*. A reply may then use a number built that way, even if it isn't on your list.
 - **Each language has its own logic.** In English you learn 11 and 12, then it's *-teen*. In French 70 is *soixante-dix* (60+10) and 80 is *quatre-vingts* (4×20). In German the unit comes first: *einundzwanzig* (one-and-twenty). In Turkish the tens are words to learn, and Uzbek speakers will recognise several (*kırk*, *elli*).
 - **Progress:** a rule counts as introduced after three replies; then the word-building rule gets its slot back. `status` shows *Number rules: 2/7 introduced*.
-- **Where the data lives:** numerals in the wordlists, rules in `numbers/<lang>.json`, each citing a Wiktionary page (every link checked) and reviewed by a second model.
+- **Where the data lives:** numerals in the wordlists, rules in `data/numbers/<lang>.json`, each citing a Wiktionary page (every link checked) and reviewed by a second model.
 
 What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update, `status` shows the new version's changes once.
 
@@ -267,7 +267,7 @@ What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update
 
 Codex CLI, OpenCode, Hermes Agent and OpenClaw are installed on a clean CI runner and tested end to end ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): the plugin loads, the block reaches the model, and real models on OpenRouter weave the words they were given.
 
-Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook contract any adapter must satisfy: never break the host session (on any error, print nothing and exit 0).
+Adding yours is welcome — see [CONTRIBUTING.md](.github/CONTRIBUTING.md). The hook contract any adapter must satisfy: never break the host session (on any error, print nothing and exit 0).
 
 ## Commands
 
@@ -359,7 +359,7 @@ Got an idea, or is something annoying you? Either is useful.
 
 ## Contributing
 
-The most valuable contribution is your language, and [docs/AddLanguage.md](docs/AddLanguage.md) is written so your AI agent can do it end-to-end. Dev loop, tests and ground rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
+The most valuable contribution is your language, and [docs/AddLanguage.md](docs/AddLanguage.md) is written so your AI agent can do it end-to-end. Dev loop, tests and ground rules are in [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## Roadmap
 

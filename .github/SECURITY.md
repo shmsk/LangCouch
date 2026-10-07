@@ -19,8 +19,8 @@ Lazy Polyglot is a local CLI tool. It has **no network surface** and **no teleme
 |---|---|
 | Your prompt | Read from stdin, scanned in-memory, never persisted or transmitted |
 | `~/.lazy-polyglot/state.*.json` | Local, human-readable, deletable; no sensitive data beyond word counts |
-| `concepts.json` / `wordlists/*.json` | Static data shipped with the repo; reviewed via PR + second-model audit |
-| `grammar/*.json` | Same — static data, PR-reviewed |
+| `data/concepts.json` / `data/wordlists/*.json` | Static data shipped with the repo; reviewed via PR + second-model audit |
+| `data/grammar/*.json` | Same — static data, PR-reviewed |
 | Network | None. No fetch, no telemetry, no auto-update. The tool never opens a socket. |
 
 ## Threat model (what Lazy Polyglot does *not* protect against)

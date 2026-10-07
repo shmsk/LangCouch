@@ -111,7 +111,7 @@ describe("rule progress in a regional variant", () => {
 });
 
 describe("bundled patterns/ and falseFriends/", () => {
-  const root = join(import.meta.dir, "..");
+  const root = join(import.meta.dir, "..", "data");
   const files = (sub: string) => (existsSync(join(root, sub)) ? readdirSync(join(root, sub)).filter((f) => f.endsWith(".json")) : []);
 
   test("every rule is complete and sourced, with 3 examples and unique ids", () => {

@@ -12,7 +12,7 @@ import { cardQueue } from "../src/cards.ts";
 import { tipFor } from "../src/spinner.ts";
 import type { Config, Word } from "../src/types.ts";
 
-const READINGS = join(import.meta.dir, "..", "readings");
+const READINGS = join(import.meta.dir, "..", "data", "readings");
 const files = readdirSync(READINGS).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length));
 const NATIVES = ["ru", "en", "uz"];
 const read = (lang: string): Record<string, string> => JSON.parse(readFileSync(join(READINGS, `${lang}.json`), "utf8"));
@@ -37,7 +37,7 @@ describe("bundled readings", () => {
 
   test.each(["en-GB", "pt-BR"])("%s gives its own reading to every word it spells differently", (lang) => {
     const own = read(lang);
-    const variant = JSON.parse(readFileSync(join(import.meta.dir, "..", "wordlists", `${lang}.json`), "utf8")) as Record<string, string>;
+    const variant = JSON.parse(readFileSync(join(import.meta.dir, "..", "data", "wordlists", `${lang}.json`), "utf8")) as Record<string, string>;
     for (const id of Object.keys(variant)) expect(own[id], `${lang}: ${id}`).toBeDefined();
   });
 

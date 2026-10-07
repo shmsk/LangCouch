@@ -4,7 +4,7 @@ import type { Pos, State, Word } from "./types.ts";
  * How numbers are built in a language: the numeral words (num-0 … num-1000) are ordinary
  * concepts on the ladder, and these rules show how any number up to 1000 is assembled from
  * them (English 11 and 12 to memorize, then <unit>+teen; French 70 = 60+10). Lives in
- * numbers/<lang>.json, in teaching order.
+ * data/numbers/<lang>.json, in teaching order.
  */
 export interface NumberRule {
   /** Stable within a language ("teens", "tens", "hundreds", "seventy") */
