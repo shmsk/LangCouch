@@ -44,6 +44,6 @@ describe("user-added languages in ~/.lazy-polyglot", () => {
     const item = { id: "g1", pattern: "p", exampleTarget: "t", exampleGloss: "g", unlock: { pos: "noun" as const, absorbedCount: 1 } };
     writeFileSync(join(userGrammar, "ka.json"), JSON.stringify([item]));
     expect(loadGrammar("ka")).toEqual([item]);
-    expect(loadGrammar("pt")).toEqual([]); // still no grammar anywhere for pt
+    expect(loadGrammar("de")).toEqual([]); // still no grammar anywhere for de
   });
 });

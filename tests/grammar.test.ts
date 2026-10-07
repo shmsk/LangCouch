@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pickGrammar, markGrammarShown, absorbedByPos, grammarKey, type GrammarItem } from "../src/grammar.ts";
 import { buildInstruction } from "../src/instruction.ts";
@@ -72,19 +73,58 @@ describe("instruction with grammar data", () => {
   });
 });
 
-describe("grammar/es.json", () => {
-  test("8-12 starter constructions with valid schema", () => {
-    const list = JSON.parse(readFileSync(fileURLToPath(new URL("../grammar/es.json", import.meta.url)), "utf8")) as GrammarItem[];
+const GRAMMAR_DIR = fileURLToPath(new URL("../grammar/", import.meta.url));
+const readGrammar = (code: string) => JSON.parse(readFileSync(join(GRAMMAR_DIR, `${code}.json`), "utf8")) as GrammarItem[];
+const bundled = readdirSync(GRAMMAR_DIR).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length));
+const bases = bundled.filter((c) => !c.includes("-"));
+const variants = bundled.filter((c) => c.includes("-"));
+
+function checkSchema(list: GrammarItem[]) {
+  expect(new Set(list.map((g) => g.id)).size).toBe(list.length); // unique ids
+  for (const g of list) {
+    expect(g.pattern.length).toBeGreaterThan(0);
+    expect(g.exampleTarget.length).toBeGreaterThan(0);
+    expect(g.exampleGloss.length).toBeGreaterThan(0);
+    expect(["noun", "verb", "adj", "adv"]).toContain(g.unlock.pos);
+    expect(g.unlock.absorbedCount).toBeGreaterThan(0);
+    if (g.stage !== undefined) expect([2, 3]).toContain(g.stage);
+  }
+}
+
+describe("bundled grammar files", () => {
+  test.each(bases)("grammar/%s.json: 8-12 constructions, valid schema, thresholds rise per POS", (code) => {
+    const list = readGrammar(code);
     expect(list.length).toBeGreaterThanOrEqual(8);
     expect(list.length).toBeLessThanOrEqual(12);
-    const ids = new Set(list.map((g) => g.id));
-    expect(ids.size).toBe(list.length); // unique ids
+    checkSchema(list);
+    const last: Partial<Record<Pos, number>> = {};
     for (const g of list) {
-      expect(g.pattern.length).toBeGreaterThan(0);
-      expect(g.exampleTarget.length).toBeGreaterThan(0);
-      expect(g.exampleGloss.length).toBeGreaterThan(0);
-      expect(["noun", "verb", "adj", "adv"]).toContain(g.unlock.pos);
-      expect(g.unlock.absorbedCount).toBeGreaterThan(0);
+      expect(g.unlock.absorbedCount).toBeGreaterThanOrEqual(last[g.unlock.pos] ?? 0);
+      last[g.unlock.pos] = g.unlock.absorbedCount;
+    }
+  });
+
+  test.each(variants)("grammar/%s.json: overlay on a bundled base, every item regional with a source", (code) => {
+    const base = code.split("-")[0]!;
+    expect(bases).toContain(base);
+    const list = readGrammar(code);
+    expect(list.length).toBeGreaterThan(0);
+    checkSchema(list);
+    for (const g of list) {
+      expect(g.baseExample?.length ?? 0).toBeGreaterThan(0);
+      expect(g.source).toMatch(/^https:\/\//);
+    }
+  });
+});
+
+describe("every bundled construction fits the instruction budget", () => {
+  const all = bundled.flatMap((code) => readGrammar(code).map((g) => ({ code, g })));
+  const manyWords = Array.from({ length: 40 }, (_, i) => mkWord(`palabra${i}`));
+  const maxPicks = pickWords(manyWords, {}, wordsPerResponse(10));
+  test.each(all.map(({ code, g }) => [code, g.id, g] as const))("%s %s at level 10 stays within 2400 chars", (code, _id, g) => {
+    for (const native of ["en", "ru", "uz"]) {
+      const text = buildInstruction({ lang: code, native, level: 10 }, maxPicks, g);
+      expect(text.length).toBeLessThanOrEqual(2400);
     }
   });
 });

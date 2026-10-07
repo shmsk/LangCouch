@@ -1,0 +1,5 @@
+[
+  { "id": "progressive", "pattern": "progressive with estar + gerund (-ndo), not estar a + infinitive", "exampleTarget": "estou trabalhando", "exampleGloss": "I am working", "baseExample": "estou a trabalhar", "stage": 3, "unlock": { "pos": "verb", "absorbedCount": 25 }, "source": "https://en.wikipedia.org/wiki/Brazilian_Portuguese" },
+  { "id": "you-voce", "pattern": "você + 3rd person singular verb is the everyday 'you' (tu is regional)", "exampleTarget": "você trabalha", "exampleGloss": "you work", "baseExample": "tu trabalhas", "unlock": { "pos": "verb", "absorbedCount": 12 }, "source": "https://en.wikipedia.org/wiki/Personal_pronouns_in_Portuguese" },
+  { "id": "clitic-proclisis", "pattern": "me/te/se go before the verb (eu me chamo, te vejo), not after it with a hyphen", "exampleTarget": "eu me chamo Ana", "exampleGloss": "my name is Ana", "baseExample": "chamo-me Ana", "stage": 3, "unlock": { "pos": "verb", "absorbedCount": 20 }, "source": "https://en.wikipedia.org/wiki/Brazilian_Portuguese" }
+]

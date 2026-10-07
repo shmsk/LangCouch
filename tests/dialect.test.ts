@@ -319,3 +319,29 @@ describe("rude words", () => {
     expect(loadWordlist("es").find((w) => w.target === "coger")?.baseNote).toBeUndefined(); // fine in Spain
   });
 });
+
+describe("regional grammar (en-GB over en, pt-BR over pt)", () => {
+  const cases = [
+    { code: "en-GB", base: "en", regional: ["have-got", "collective-plural", "perfect-already"], replaced: [] as string[] },
+    { code: "pt-BR", base: "pt", regional: ["progressive", "you-voce", "clitic-proclisis"], replaced: ["progressive"] },
+  ];
+
+  test.each(cases)("$code keeps every base construction it doesn't replace and adds its own", ({ code, base, regional, replaced }) => {
+    const grammar = loadGrammar(code);
+    const baseIds = loadGrammar(base).map((g) => g.id);
+    for (const id of baseIds) expect(grammar.some((g) => g.id === id)).toBe(true);
+    expect(grammar.filter((g) => g.baseExample).map((g) => g.id).sort()).toEqual([...regional].sort());
+    for (const id of replaced) expect(grammar.find((g) => g.id === id)?.baseExample).toBeDefined();
+  });
+
+  test.each(cases)("$code teaches a regional construction first", ({ code }) => {
+    const words = loadWordlist(code);
+    const allAbsorbed = Object.fromEntries(words.map((w) => [w.id, { exposures: 3, recalls: 2, lastSeen: "2026-09-01T00:00:00Z" }]));
+    expect(pickGrammar(loadGrammar(code), words, allAbsorbed, 3)?.baseExample).toBeDefined();
+  });
+
+  test("a Brazilian learner is never taught the European estar a + infinitive", () => {
+    expect(loadGrammar("pt").find((g) => g.id === "progressive")?.exampleTarget).toContain(" a ");
+    for (const g of loadGrammar("pt-BR")) expect(g.exampleTarget).not.toMatch(/\bestou a\b/);
+  });
+});

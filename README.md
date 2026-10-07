@@ -13,9 +13,11 @@ Lazy Polyglot weaves words from the language you're learning into your AI agent'
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
 
-## What's new in 0.9.7
+## What's new in 0.9.8
 
-- **New name: Lazy Polyglot.** Same plugin, same words, same progress. Commands are now `/lazy-polyglot:…` (for example `/lazy-polyglot:status`), the CLI is `lazy-polyglot`, and your data folder is `~/.lazy-polyglot`, moved there automatically on first run. If you installed it under the old name, the switch takes about a minute: see [UPGRADING.md](UPGRADING.md).
+- **Grammar for English, Portuguese and Italian.** From level 4 the weave now teaches short constructions in `en`, `en-GB`, `pt`, `pt-BR` and `it`, not only Spanish: *the house is big*, *estou trabalhando*, *lo studente*. UK English and Brazilian Portuguese get their own first: *have you got a car? (US: do you have a car?)*, *você trabalha (Portugal: tu trabalhas)*.
+- **Days of the week and months** in every language, 19 new words (451 now).
+- **(0.9.7) New name: Lazy Polyglot.** Same plugin, same words, same progress. Commands are now `/lazy-polyglot:…` (for example `/lazy-polyglot:status`), the CLI is `lazy-polyglot`, and your data folder is `~/.lazy-polyglot`, moved there automatically on first run. If you installed it under the old name, the switch takes about a minute: see [UPGRADING.md](UPGRADING.md).
 
 Earlier releases are in [CHANGELOG.md](CHANGELOG.md).
 
@@ -195,16 +197,16 @@ flowchart LR
 
 | Language | Code | Words | Grammar constructions | Word-building rules | Number rules | Pronunciation |
 |---|---|---|---|---|---|---|
-| English (US) | `en` | 432 | — | 7 (for Russian speakers) | 5 | US |
-| English (UK) | `en-GB` | 432, same as US except 9 (*colour*, *centre*, *film*…) | — | 7 (from US) | 5 (1 own: *and* after hundred) | UK (248 words differ from US) |
-| German | `de` | 432 | — | 8 | 7 | — |
-| French | `fr` | 432 | — | 8 | 8 | ✓ |
-| Italian | `it` | 432 | — | 8 | 7 | — |
-| Spanish (Spain) | `es` | 432 | 10 | 8 | 7 | — |
-| Spanish (Latin America) | `es-419` | 432, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) | 7 (from Spain) | — |
-| Portuguese (Portugal) | `pt` | 432 | — | 8 | 6 | Portugal |
-| Portuguese (Brazil) | `pt-BR` | 432, same as Portugal except 12 (*trem*, *celular*, *dezesseis*…) | — | 8 (from Portugal) | 6 (1 own: *dezesseis*) | Brazil (335 words differ from Portugal) |
-| Turkish | `tr` | 432 | — | 5 | 5 | — |
+| English (US) | `en` | 451 | 12 | 7 (for Russian speakers) | 5 | US |
+| English (UK) | `en-GB` | 451, same as US except 9 (*colour*, *centre*, *film*…) | 12 + 3 regional (*have you got*, *the team are*, *have you eaten yet*) | 7 (from US) | 5 (1 own: *and* after hundred) | UK (248 words differ from US) |
+| German | `de` | 451 | — | 8 | 7 | — |
+| French | `fr` | 451 | — | 8 | 8 | ✓ |
+| Italian | `it` | 451 | 12 | 8 | 7 | — |
+| Spanish (Spain) | `es` | 451 | 10 | 8 | 7 | — |
+| Spanish (Latin America) | `es-419` | 451, same as Spain except 9 (*carro*, *computadora*, *lindo*…) | 10 + 2 regional (*ustedes*, preterite for today) | 8 (from Spain) | 7 (from Spain) | — |
+| Portuguese (Portugal) | `pt` | 451 | 11 | 8 | 6 | Portugal |
+| Portuguese (Brazil) | `pt-BR` | 451, same as Portugal except 12 (*trem*, *celular*, *dezesseis*…) | 10 + 3 regional (*você*, *estou trabalhando*, *eu me chamo*) | 8 (from Portugal) | 6 (1 own: *dezesseis*) | Brazil (335 words differ from Portugal) |
+| Turkish | `tr` | 451 | — | 5 | 5 | — |
 
 The code is what you pass to switch languages, e.g. `/lazy-polyglot:lang es-419` (or simply `/lazy-polyglot:lang latam`).
 
@@ -361,7 +363,7 @@ The most valuable contribution is your language, and [docs/AddLanguage.md](docs/
 
 ## Roadmap
 
-- Grammar constructions beyond Spanish (pt, it, fr, de, en, tr), with regional overlays for pt-BR and en-GB
+- Grammar constructions for French, German and Turkish
 - Tier 2 vocabulary (→1000 words per language), unlocked at ~80% core absorption
 - Lexical chunks (whole phrases) once most of the core is absorbed
 - Spanish gerunds in the spinner verbs ("Pensando…")

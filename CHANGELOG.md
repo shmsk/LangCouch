@@ -6,6 +6,23 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.8] - 2026-10-07
+
+### Added
+- Grammar constructions for English, Portuguese and Italian, not only Spanish. From level 4
+  the weave teaches short patterns such as *the house is big*, *nella stanza*, *o centro da
+  cidade*: 12 for `en`, 12 for `it`, 11 for `pt`.
+- UK English and Brazilian Portuguese teach their own constructions first, next to the base
+  form: *have you got a car? (US: do you have a car?)*, *estou trabalhando (Portugal: estou a
+  trabalhar)*. A Brazilian learner is never taught *estar a + infinitive*.
+- Days of the week and months in every language: 19 new words, 451 in all. If you added a
+  language of your own, it keeps working without them; `lazy-polyglot validate <code> --full` lists
+  them as missing so you can add them.
+
+### Fixed
+- About 65 US English pronunciations were wrong, for example *name*, *place*, *time*, *one*,
+  *ten*, *woman*, *country*, *food*. They are now General American.
+
 ## [0.9.7] - 2026-10-06
 
 ### Upgrade notes

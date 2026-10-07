@@ -16,9 +16,11 @@ Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblarig
 
 10 ta maqsadli til qutidan tayyor holda keladi. Glosslar (qavs ichidagi tarjima) ingliz, rus yoki oʻzbek tilida beriladi, qaysi birida xabar yozsangiz, shunisida.
 
-## 0.9.7 da nima yangi
+## 0.9.8 da nima yangi
 
-- **Yangi nom: Lazy Polyglot.** Plagin ham, soʻzlar ham, progress ham oldingidek. Buyruqlar endi `/lazy-polyglot:…` (masalan, `/lazy-polyglot:status`), CLI `lazy-polyglot` deb ataladi, maʼlumotlar papkasi esa `~/.lazy-polyglot`: u birinchi ishga tushishda oʻzi koʻchiriladi. Plaginni eski nom ostida oʻrnatgan boʻlsangiz, oʻtish taxminan bir daqiqa oladi: [UPGRADING.md](UPGRADING.md) ga qarang.
+- **Ingliz, portugal va italyan tillari uchun grammatika.** 4-darajadan boshlab qurilmalar endi faqat ispan tilida emas, `en`, `en-GB`, `pt`, `pt-BR` va `it` da ham bor: *the house is big*, *estou trabalhando*, *lo studente*. Britaniya inglizchasi va Braziliya portugalchasi avval oʻzinikini oʻrgatadi: *have you got a car? (US: do you have a car?)*, *você trabalha (Portugal: tu trabalhas)*.
+- **Hafta kunlari va oylar** barcha tillarda, 19 ta yangi soʻz (endi 451 ta).
+- **(0.9.7) Yangi nom: Lazy Polyglot.** Plagin ham, soʻzlar ham, progress ham oldingidek. Buyruqlar endi `/lazy-polyglot:…` (masalan, `/lazy-polyglot:status`), CLI `lazy-polyglot` deb ataladi, maʼlumotlar papkasi esa `~/.lazy-polyglot`: u birinchi ishga tushishda oʻzi koʻchiriladi. Plaginni eski nom ostida oʻrnatgan boʻlsangiz, oʻtish taxminan bir daqiqa oladi: [UPGRADING.md](UPGRADING.md) ga qarang.
 
 Oldingi versiyalar [CHANGELOG.md](CHANGELOG.md) da (ingliz tilida).
 
@@ -200,16 +202,16 @@ flowchart LR
 
 | Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari | Son qoidalari | Talaffuz |
 |---|---|---|---|---|---|---|
-| Ingliz tili (AQSH) | `en` | 432 | — | 7 (rus tilida soʻzlashuvchilar uchun) | 5 | AQSH |
-| Ingliz tili (Britaniya) | `en-GB` | 432, AQSH bilan bir xil, 9 tasidan tashqari (*colour*, *centre*, *film*…) | — | 7 (AQSHdan) | 5 (1 tasi oʻziniki: hundred dan keyin *and*) | Britaniya (248 ta soʻz AQSHnikidan farq qiladi) |
-| Nemis tili | `de` | 432 | — | 8 | 7 | — |
-| Fransuz tili | `fr` | 432 | — | 8 | 8 | ✓ |
-| Italyan tili | `it` | 432 | — | 8 | 7 | — |
-| Ispan tili (Ispaniya) | `es` | 432 | 10 | 8 | 7 | — |
-| Ispan tili (Lotin Amerikasi) | `es-419` | 432, Ispaniya bilan bir xil, 9 tasidan tashqari (*carro*, *computadora*, *lindo*…) | 10 + 2 mintaqaviy (*ustedes*, bugungi ish uchun preterit) | 8 (Ispaniyadan) | 7 (Ispaniyadan) | — |
-| Portugal tili (Portugaliya) | `pt` | 432 | — | 8 | 6 | Portugaliya |
-| Portugal tili (Braziliya) | `pt-BR` | 432, Portugaliya bilan bir xil, 12 tasidan tashqari (*trem*, *celular*, *dezesseis*…) | — | 8 (Portugaliyadan) | 6 (1 tasi oʻziniki: *dezesseis*) | Braziliya (335 ta soʻz Portugaliyanikidan farq qiladi) |
-| Turk tili | `tr` | 432 | — | 5 | 5 | — |
+| Ingliz tili (AQSH) | `en` | 451 | 12 | 7 (rus tilida soʻzlashuvchilar uchun) | 5 | AQSH |
+| Ingliz tili (Britaniya) | `en-GB` | 451, AQSH bilan bir xil, 9 tasidan tashqari (*colour*, *centre*, *film*…) | 12 + 3 mintaqaviy (*have you got*, *the team are*, *have you eaten yet*) | 7 (AQSHdan) | 5 (1 tasi oʻziniki: hundred dan keyin *and*) | Britaniya (248 ta soʻz AQSHnikidan farq qiladi) |
+| Nemis tili | `de` | 451 | — | 8 | 7 | — |
+| Fransuz tili | `fr` | 451 | — | 8 | 8 | ✓ |
+| Italyan tili | `it` | 451 | 12 | 8 | 7 | — |
+| Ispan tili (Ispaniya) | `es` | 451 | 10 | 8 | 7 | — |
+| Ispan tili (Lotin Amerikasi) | `es-419` | 451, Ispaniya bilan bir xil, 9 tasidan tashqari (*carro*, *computadora*, *lindo*…) | 10 + 2 mintaqaviy (*ustedes*, bugungi ish uchun preterit) | 8 (Ispaniyadan) | 7 (Ispaniyadan) | — |
+| Portugal tili (Portugaliya) | `pt` | 451 | 11 | 8 | 6 | Portugaliya |
+| Portugal tili (Braziliya) | `pt-BR` | 451, Portugaliya bilan bir xil, 12 tasidan tashqari (*trem*, *celular*, *dezesseis*…) | 10 + 3 mintaqaviy (*você*, *estou trabalhando*, *eu me chamo*) | 8 (Portugaliyadan) | 6 (1 tasi oʻziniki: *dezesseis*) | Braziliya (335 ta soʻz Portugaliyanikidan farq qiladi) |
+| Turk tili | `tr` | 451 | — | 5 | 5 | — |
 
 Kod tilni almashtirish uchun kerak, masalan `/lazy-polyglot:lang es-419` (yoki shunchaki `/lazy-polyglot:lang latam`).
 
@@ -366,7 +368,7 @@ Eng qimmatli hissa — bu sizning tilingiz, va [docs/AddLanguage.md](docs/AddLan
 
 ## Yoʻl xaritasi
 
-- Ispan tilidan tashqari tillar uchun grammatik qurilmalar (pt, it, fr, de, en, tr), pt-BR va en-GB uchun mintaqaviy qatlamlar bilan
+- Fransuz, nemis va turk tillari uchun grammatik qurilmalar
 - 2-daraja lugʻati (har bir til uchun →1000 soʻz), yadro ~80% oʻzlashtirilganda ochiladi
 - Leksik bloklar (butun iboralar), yadroning katta qismi oʻzlashtirilgach
 - Spinner fe'llarida ispancha gerundiylar («Pensando…»)
