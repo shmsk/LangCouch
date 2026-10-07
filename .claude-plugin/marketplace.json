@@ -1,9 +1,6 @@
 {
   "name": "lazy-polyglot",
   "description": "Lazy Polyglot: get (almost) accidentally fluent. Learn a language from the AI replies you already read every day",
-  "renames": {
-    "langcouch": "lazy-polyglot"
-  },
   "owner": {
     "name": "Kirill Shumskii",
     "url": "https://github.com/shmsk"
