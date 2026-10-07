@@ -6,7 +6,7 @@ English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md) · [Priva
 
 Learn a language from the AI replies you already read every day.
 
-Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
+Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, OpenCode, Codex CLI, Antigravity CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "help me plan a weekend in Barcelona"
 
@@ -62,7 +62,7 @@ The plugin is going into Anthropic's official plugin directory, and the new name
 
 ## Quick start
 
-The easiest way is to ask your AI agent (Claude Code, Codex, OpenCode, Hermes Agent, OpenClaw or another one) to do it. Paste this:
+The easiest way is to ask your AI agent (Claude Code, Codex, OpenCode, Antigravity, Hermes Agent, OpenClaw or another one) to do it. Paste this:
 
 ```
 Install Lazy Polyglot for me: https://github.com/shmsk/lazy-polyglot
@@ -126,7 +126,18 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 # start codex, open /hooks and trust the lazy-polyglot hook — replies start weaving Spanish
 ```
 
-Codex skips any hook you haven't reviewed, so the `/hooks` step is needed once (and again if the hook command changes). A project-scope hook also needs the project to be trusted. If you installed the old experimental version, the installer removes its `AGENTS.md` section for you. Codex currently shows the injected instruction as a visible developer message in the transcript ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); it's cosmetic.
+Codex skips any hook you haven't reviewed, so the `/hooks` step is needed once (and again if the hook command changes). A project-scope hook also needs the project to be trusted. If you installed the old experimental version, the installer removes its `AGENTS.md` section for you. Codex currently shows the injected instruction as a visible developer message in the transcript ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); it's cosmetic. Through Ollama (`ollama launch codex`) words aren't woven yet: Ollama drops the instruction, because it ignores `developer` messages that come after the start of a conversation.
+
+### As an Antigravity CLI plugin
+
+```bash
+git clone https://github.com/shmsk/lazy-polyglot && cd lazy-polyglot
+bun install
+bun src/cli.ts install antigravity --scope user   # ~/.gemini/config/plugins/lazy-polyglot (or --scope project: ./.agents/plugins/lazy-polyglot)
+# start agy — replies start weaving Spanish
+```
+
+The plugin adds the instruction before every model call of a turn (`PreInvocation`) and reads the reply back from the transcript when the turn ends (`Stop`). It also ships a short rule telling the model that the `<lazy-polyglot>` message comes from your own plugin: without it, Gemini may take the message for a prompt injection from a file it just read. `agy -p /hooks` should list two `lazy-polyglot` hooks; `agy plugin disable lazy-polyglot` turns it off. Settings work from inside agy too: `/lazy-polyglot:lang fr`, `/lazy-polyglot:level up`, `/lazy-polyglot:pause`, `/lazy-polyglot:status`, or just ask the agent to switch the language.
 
 ### As a Gemini CLI hook (beta)
 
@@ -262,6 +273,7 @@ What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update
 | Claude Code | **Production** | `/plugin marketplace add shmsk/lazy-polyglot` → `/plugin install lazy-polyglot@lazy-polyglot`, or `lazy-polyglot install claude` | `UserPromptSubmit` hook (context injection, reliable); `Stop` reads the reply back |
 | OpenCode | **Production** (plugin) + **experimental** (fallback) | `lazy-polyglot install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback; `session.idle` reads the reply back |
 | Codex CLI | **Production** | `lazy-polyglot install codex [--scope project\|user]` | `UserPromptSubmit` hook in `hooks.json` (context injection, reliable); `Stop` reads the reply back |
+| Antigravity CLI | **Production** (live-tested by hand, not in CI) | `lazy-polyglot install antigravity [--scope project\|user]` | `PreInvocation` plugin hook (`ephemeralMessage` before every model call) plus a plugin rule; `Stop` reads the reply back from the transcript |
 | Gemini CLI | **Beta** (not live-tested yet) | `lazy-polyglot install gemini [--scope project\|user]` | `BeforeAgent` hook in `settings.json` (JSON `additionalContext`); `AfterAgent` reads the reply back |
 | Hermes Agent | **Production** | `lazy-polyglot install hermes` | `pre_llm_call` plugin hook (context appended to your message); `post_llm_call` reads the reply back |
 | OpenClaw | **Production** | `lazy-polyglot install openclaw` | `before_prompt_build` plugin hook (`prependContext`); `agent_end` reads the reply back |
@@ -295,6 +307,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](.github/CONTRIBUTING.md). The 
 | `install claude [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks |
 | `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for OpenCode |
 | `install codex [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks in Codex CLI's `hooks.json` |
+| `install antigravity [--scope project\|user]` | install the Antigravity CLI (`agy`) plugin: PreInvocation and Stop hooks plus one rule |
 | `install gemini [--scope project\|user]` | beta: register the BeforeAgent, SessionStart and AfterAgent hooks in Gemini CLI's `settings.json` |
 | `install hermes` | install the Hermes Agent plugin into `$HERMES_HOME/plugins/lazy-polyglot/` |
 | `install openclaw` | generate the OpenClaw plugin and print the commands that link and enable it |
@@ -345,6 +358,7 @@ Once a reply is finished, the hook also reads it (the host hands it over, or Cla
 - **Manual Claude Code hook:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` in `.claude/settings.json` (or `~/.claude/settings.json` if you installed with `--scope user`).
 - **OpenCode:** delete `lazy-polyglot.ts` from `.opencode/plugin/` (or `~/.config/opencode/plugin/`) and the section between `<!-- lazy-polyglot:start -->` and `<!-- lazy-polyglot:end -->` in `AGENTS.md`.
 - **Codex CLI:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` from `~/.codex/hooks.json` (or `.codex/hooks.json` for `--scope project`).
+- **Antigravity CLI:** `agy plugin disable lazy-polyglot`, or delete `~/.gemini/config/plugins/lazy-polyglot/` (or `.agents/plugins/lazy-polyglot/` for `--scope project`).
 - **Gemini CLI:** remove the `BeforeAgent`, `SessionStart` and `AfterAgent` entries named `lazy-polyglot` from `~/.gemini/settings.json` (or `.gemini/settings.json` for `--scope project`).
 - **Hermes Agent:** `hermes plugins disable lazy-polyglot`, then delete `~/.hermes/plugins/lazy-polyglot/` (or under your `$HERMES_HOME`).
 - **OpenClaw:** `openclaw plugins uninstall lazy-polyglot`, then delete `~/.lazy-polyglot/openclaw-plugin/`.
@@ -368,7 +382,6 @@ The most valuable contribution is your language, and [docs/AddLanguage.md](docs/
 - Tier 2 vocabulary (→1000 words per language), unlocked at ~80% core absorption
 - Lexical chunks (whole phrases) once most of the core is absorbed
 - Spanish gerunds in the spinner verbs ("Pensando…")
-- Gemini CLI out of beta, after a live run
 - More languages — yours? ([docs/AddLanguage.md](docs/AddLanguage.md))
 
 ## License

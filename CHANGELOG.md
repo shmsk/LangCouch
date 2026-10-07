@@ -6,6 +6,25 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.11] - 2026-10-07
+
+### Added
+- Antigravity CLI (`agy`) support: `lazy-polyglot install antigravity [--scope project|user]`
+  installs a plugin with two hooks, one rule and the same `/lazy-polyglot:*` commands as in
+  Claude Code (`lang`, `level`, `pause`, `status` and the rest). Tested live on agy 1.3.1,
+  including turns where the agent reads files before it answers.
+- Asking the agent in plain words ("switch Lazy Polyglot to French", «переключи язык на
+  французский») now works on every agent: that turn's instruction carries the exact command,
+  so the agent no longer has to search for it. In Claude Code it only points you to
+  `/lazy-polyglot:lang` and never runs a command itself.
+
+### Known issues
+- Codex through Ollama (`ollama launch codex`) doesn't weave: Ollama drops instructions
+  that come after the start of a conversation. Other Codex providers are fine.
+
+### Changed
+- Gemini CLI support stays in beta; it is no longer on the roadmap to leave it.
+
 ## [0.9.10] - 2026-10-07
 
 ### Added

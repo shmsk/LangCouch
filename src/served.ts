@@ -125,3 +125,29 @@ export function lastReply(transcript: string): string {
   }
   return parts.join("\n");
 }
+
+/**
+ * The last turn of an Antigravity CLI transcript (`transcript_full.jsonl`): one step per
+ * line. `USER_INPUT` wraps the prompt in `<USER_REQUEST>` tags next to metadata the user
+ * never typed; the reply is the text of the `PLANNER_RESPONSE` steps after it.
+ */
+export function antigravityTurn(transcript: string): { prompt: string; reply: string } {
+  let prompt = "";
+  const parts: string[] = [];
+  for (const line of transcript.split("\n")) {
+    if (!line.trim()) continue;
+    let e: { type?: string; content?: unknown };
+    try {
+      e = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (typeof e.content !== "string") continue;
+    if (e.type === "USER_INPUT") {
+      const m = e.content.match(/<USER_REQUEST>\n?([\s\S]*?)\n?<\/USER_REQUEST>/);
+      prompt = m ? m[1]! : e.content;
+      parts.length = 0; // a new prompt: the reply starts over
+    } else if (e.type === "PLANNER_RESPONSE" && e.content.trim()) parts.push(e.content);
+  }
+  return { prompt, reply: parts.join("\n") };
+}

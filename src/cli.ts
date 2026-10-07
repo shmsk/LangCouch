@@ -12,7 +12,7 @@ import { pickPattern, markPatternShown, patternCue, patternProgress, PATTERN_MIN
 import { pickNumberRule, markNumberRuleShown, numberCue, numberRuleProgress, pickedNumeral, type NumberRule } from "./numbers.ts";
 import { pickWords, markExposed, unlockedWords, tierProgress, type Pick } from "./scheduler.ts";
 import { migrate, pickLadder } from "./ladder.ts";
-import { putServed, staleServed, takeServed, settleServed, lastReply, readTail } from "./served.ts";
+import { putServed, staleServed, takeServed, settleServed, lastReply, readTail, antigravityTurn } from "./served.ts";
 import { buildInstruction } from "./instruction.ts";
 import { readingOf, readingFor, askReadingLine, readingExamples, READING_MODES, type ReadingMode } from "./reading.ts";
 import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
@@ -30,7 +30,9 @@ import { installOpencode } from "../adapters/opencode/install.ts";
 import { installHermes } from "../adapters/hermes/install.ts";
 import { installOpenclaw } from "../adapters/openclaw/install.ts";
 import { installGemini } from "../adapters/gemini/install.ts";
+import { installAntigravity } from "../adapters/antigravity/install.ts";
 import { migrateLegacyDataDir } from "./migrate.ts";
+import { detectControl, controlCommand, controlLine, claudeControlLine } from "./control.ts";
 
 /**
  * Build this turn's instruction. `mark` records the turn: algorithms 1-2 count the
@@ -88,6 +90,8 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
     saveConfig({ ...fresh, placementOffered: [...(fresh.placementOffered ?? []), config.lang] });
   }
   const extra = [
+    // "switch to French" in plain words: hand the agent the exact command
+    prompt !== "" && detectControl(prompt) ? (process.env.CLAUDE_PLUGIN_ROOT ? claudeControlLine : controlLine(controlCommand())) : "",
     ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : "",
     tooEasy ? OFFER_TOO_EASY : offerStart ? offerAtStart(langName(config.lang)) : "",
   ].filter(Boolean);
@@ -151,6 +155,8 @@ interface HookPayload {
   transcriptPath?: string;
   /** Stop only: the finished reply, when the host sends it directly */
   lastMessage?: string;
+  /** Antigravity CLI: model calls so far in this turn (0 = the turn just started) */
+  invocationNum?: number;
 }
 
 /**
@@ -166,14 +172,16 @@ async function readHookPayload(): Promise<HookPayload> {
   ]);
   if (!raw) return empty;
   try {
-    const payload = JSON.parse(raw) as { prompt?: string; session_id?: string; hook_event_name?: string; transcript_path?: string; last_assistant_message?: string; prompt_response?: string };
+    // Antigravity CLI sends camelCase (conversationId, transcriptPath, invocationNum)
+    const payload = JSON.parse(raw) as { prompt?: string; session_id?: string; conversationId?: string; hook_event_name?: string; transcript_path?: string; transcriptPath?: string; last_assistant_message?: string; prompt_response?: string; invocationNum?: number };
     const str = (v: unknown) => (typeof v === "string" ? v : "");
     return {
       prompt: str(payload.prompt),
-      sessionId: str(payload.session_id),
+      sessionId: str(payload.session_id) || str(payload.conversationId),
       eventName: str(payload.hook_event_name),
-      transcriptPath: str(payload.transcript_path) || undefined,
+      transcriptPath: str(payload.transcript_path) || str(payload.transcriptPath) || undefined,
       lastMessage: str(payload.last_assistant_message) || str(payload.prompt_response) || undefined,
+      invocationNum: typeof payload.invocationNum === "number" ? payload.invocationNum : undefined,
     };
   } catch {
     return { ...empty, prompt: raw }; // plain-text stdin still counts as a prompt
@@ -383,10 +391,18 @@ try {
       // context only from JSON; any non-zero exit or a `decision` would block or retry its turn.
       const gemini = args[0] === "--host" && args[1] === "gemini";
       const GEMINI_EVENT: Record<string, string> = { BeforeAgent: "UserPromptSubmit", AfterAgent: "Stop" };
+      // Antigravity CLI (--host antigravity --event <name>): the payload names no event and
+      // carries no prompt or reply, so both come from its transcript. PreInvocation runs
+      // before every model call of a turn and its ephemeral message lasts one call, so the
+      // turn's first call builds the instruction and later calls repeat it without counting.
+      const antigravity = args[0] === "--host" && args[1] === "antigravity";
+      const ANTIGRAVITY_EVENT: Record<string, string> = { PreInvocation: "UserPromptSubmit", Stop: "Stop" };
+      const TURN_FILE = join(DATA_DIR, "antigravity-turn.json");
       let hostEvent = "";
       // `silent`: the duplicate guard prints nothing for plain-text hosts, as before
       const emit = (text: string, silent = false) => {
         if (gemini) console.log(text ? JSON.stringify({ hookSpecificOutput: { hookEventName: hostEvent || "BeforeAgent", additionalContext: text } }) : "{}");
+        else if (antigravity) console.log(text ? JSON.stringify({ injectSteps: [{ ephemeralMessage: text }] }) : "{}");
         else if (!silent) console.log(text);
         process.exit(0);
       };
@@ -395,6 +411,26 @@ try {
         payload = await readHookPayload();
         hostEvent = payload.eventName;
         if (gemini) payload.eventName = GEMINI_EVENT[payload.eventName] ?? payload.eventName;
+        if (antigravity) {
+          const event = args.includes("--event") ? (args[args.indexOf("--event") + 1] ?? "") : "";
+          payload.eventName = ANTIGRAVITY_EVENT[event] ?? event;
+          if (payload.eventName === "UserPromptSubmit" && (payload.invocationNum ?? 0) > 0) {
+            // a later model call of the same turn: repeat the turn's instruction, count nothing
+            let text = "";
+            try {
+              const turn = JSON.parse(readFileSync(TURN_FILE, "utf8")) as { conversationId?: string; text?: string };
+              if (turn.conversationId === payload.sessionId && typeof turn.text === "string") text = turn.text;
+            } catch {
+              // no turn recorded: skip this call rather than count the turn twice
+            }
+            emit(text);
+          }
+          if (payload.transcriptPath && existsSync(payload.transcriptPath)) {
+            const turn = antigravityTurn(readTail(payload.transcriptPath));
+            payload.prompt ||= turn.prompt;
+            if (payload.eventName === "Stop") payload.lastMessage ||= turn.reply;
+          }
+        }
         // Plugin installs skip `init`; bootstrap the default config (idempotent, never clobbers).
         initConfig();
         // Plugin + legacy settings.json hook may both deliver the same payload — emit once.
@@ -438,6 +474,13 @@ try {
         text = makeInstruction(true, payload.sessionId, payload.eventName, payload.prompt);
       } catch {
         // swallow everything — empty stdout, exit 0
+      }
+      if (antigravity) {
+        try {
+          writeFileSync(TURN_FILE, JSON.stringify({ conversationId: payload.sessionId, text }));
+        } catch {
+          // later calls of this turn go without the instruction; never break the session
+        }
       }
       emit(text);
     }
@@ -872,12 +915,19 @@ try {
           process.exit(1);
         }
         console.log(installGemini(scope));
+      } else if (args[0] === "antigravity") {
+        const scope = args.includes("--scope") ? args[args.indexOf("--scope") + 1] : "project";
+        if (scope !== "project" && scope !== "user") {
+          console.error("--scope must be project or user");
+          process.exit(1);
+        }
+        console.log(installAntigravity(scope));
       } else if (args[0] === "hermes") {
         console.log(installHermes());
       } else if (args[0] === "openclaw") {
         console.log(installOpenclaw());
       } else {
-        console.error("usage: lazy-polyglot install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | gemini [--scope project|user] | hermes | openclaw>");
+        console.error("usage: lazy-polyglot install <claude [--scope project|user] | codex [--scope project|user] | opencode [--scope project|user] | antigravity [--scope project|user] | gemini [--scope project|user] | hermes | openclaw>");
         process.exit(1);
       }
       break;
@@ -909,6 +959,7 @@ try {
           "  install claude [--scope project|user]   register the hook in Claude Code",
           "  install codex [--scope project|user]   register the hook in Codex CLI (hooks.json)",
           "  install opencode [--scope project|user]   install the plugin + AGENTS.md fallback for opencode",
+          "  install antigravity [--scope project|user]   install the plugin for Antigravity CLI (agy)",
           "  install gemini [--scope project|user]   register the hook in Gemini CLI (settings.json, beta)",
           "  install hermes            install the Hermes Agent plugin ($HERMES_HOME/plugins/lazy-polyglot)",
           "  install openclaw          generate the OpenClaw plugin and print the link commands",

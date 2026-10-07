@@ -39,6 +39,7 @@ env:
   OPENCODE_DISABLE_AUTOUPDATE: "1"
   FAKE_LLM_PORT: "4010"
   LIVE_PROMPT: "In four or five plain sentences, explain why morning daylight helps people wake up."
+  SWITCH_PROMPT: "Please switch my Lazy Polyglot language to French."
 
 jobs:
   hermes-fake:
@@ -351,6 +352,8 @@ jobs:
           openclaw plugins install --link "$LAZY_POLYGLOT_DIR/openclaw-plugin" --force --accept-capabilities
           openclaw config set plugins.entries.lazy-polyglot.hooks.allowConversationAccess true --strict-json
           openclaw plugins enable lazy-polyglot
+          # the language switch runs a shell command; no UI on a runner to approve it
+          openclaw exec-policy preset yolo
       - name: Codex setup
         if: matrix.host == 'codex'
         run: |
@@ -371,7 +374,8 @@ jobs:
           npm install -g "opencode-ai@$OPENCODE_VERSION"
           mkdir -p "$RUNNER_TEMP/install" "$RUNNER_TEMP/work"
           (cd "$RUNNER_TEMP/install" && bun "$GITHUB_WORKSPACE/src/cli.ts" install opencode --scope user)
-          printf '{"share":"disabled","autoupdate":false,"provider":{"openrouter":{"models":{"%s":{}}}}}\n' "$MODEL" > ~/.config/opencode/opencode.json
+          # "permission": "allow": the language switch runs a command outside the work dir (external_directory asks by default)
+          printf '{"share":"disabled","autoupdate":false,"permission":"allow","provider":{"openrouter":{"models":{"%s":{}}}}}\n' "$MODEL" > ~/.config/opencode/opencode.json
       - name: A real model weaves (one retry, replies vary)
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -389,5 +393,35 @@ jobs:
               exit 0
             fi
             echo "attempt $attempt did not weave"
+          done
+          exit 1
+      - name: Asked in plain words, the agent switches to French, then weaves it (one retry each)
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          turn() {
+            case "${{ matrix.host }}" in
+              hermes) hermes -z "$1" --provider openrouter -m "$MODEL" > reply.txt || true ;;
+              openclaw) openclaw agent --local --agent main --message "$1" --timeout 180 > reply.txt || true ;;
+              opencode) (cd "$RUNNER_TEMP/work" && opencode run -m "openrouter/$MODEL" "$1") > reply.txt || true ;;
+              # danger-full-access: the switch writes to LAZY_POLYGLOT_DIR, outside the workspace; a throwaway runner
+              codex) codex exec --skip-git-repo-check --ephemeral --dangerously-bypass-hook-trust -s danger-full-access -o reply.txt "$1" > /dev/null || true ;;
+            esac
+          }
+          switched=""
+          for attempt in 1 2; do
+            turn "$SWITCH_PROMPT"
+            if bun tests/smoke/assert-woven.ts lang fr; then switched=1; break; fi
+            echo "attempt $attempt did not switch:"; cat reply.txt
+          done
+          test -n "$switched" || exit 1
+          { echo "### ${{ matrix.host }} × $MODEL: switch to French"; echo; cat reply.txt; echo; } >> "$GITHUB_STEP_SUMMARY"
+          for attempt in 1 2; do
+            turn "$LIVE_PROMPT"
+            if bun tests/smoke/assert-woven.ts reply reply.txt fr && bun tests/smoke/assert-woven.ts settled; then
+              { echo "### ${{ matrix.host }} × $MODEL: weaves French"; echo; cat reply.txt; } >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "attempt $attempt did not weave French"
           done
           exit 1

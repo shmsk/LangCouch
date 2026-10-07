@@ -18,4 +18,4 @@ labels: enhancement
 ## How I use Lazy Polyglot (optional)
 
 - Language and level: <!-- e.g. es, level 4 -->
-- Agent: <!-- Claude Code / opencode / Codex / Gemini CLI / Hermes / OpenClaw / other -->
+- Agent: <!-- Claude Code / opencode / Codex / Antigravity / Gemini CLI / Hermes / OpenClaw / other -->

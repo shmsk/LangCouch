@@ -7,6 +7,8 @@
  *     A real model wove what Lazy Polyglot served: at least one word the hook put
  *     into this run's instruction (read back from state.<lang>.json and mapped
  *     to its lemma via the wordlist) appears as **word** (translation).
+ *   bun tests/smoke/assert-woven.ts lang <code>
+ *     Asked in plain words, the agent switched the language: config.json says <code>.
  *   bun tests/smoke/assert-woven.ts settled
  *     The host's after-reply event reached Lazy Polyglot: a session in served.json
  *     was read back by a Stop (weave algorithm 3, honest counting).
@@ -20,6 +22,17 @@ import { isWordKey, type State } from "../../src/types.ts";
 import { wovenPairs, matchServed } from "./woven.ts";
 
 const [mode, file, lang] = process.argv.slice(2);
+if (mode === "lang") {
+  const path = join(DATA_DIR, "config.json");
+  const current = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as { lang?: string }).lang : undefined;
+  console.log(`config.json lang: ${current}`);
+  if (current === file) {
+    console.log(`OK: the agent switched the language to ${file}`);
+    process.exit(0);
+  }
+  console.error(`FAIL: expected ${file}; the agent did not switch the language`);
+  process.exit(1);
+}
 if (mode === "settled") {
   const path = join(DATA_DIR, "served.json");
   const all = existsSync(path) ? (JSON.parse(readFileSync(path, "utf8")) as Record<string, { stopSeen?: boolean; picks?: object }>) : {};
@@ -32,7 +45,7 @@ if (mode === "settled") {
   process.exit(1);
 }
 if (!file || (mode !== "request" && mode !== "reply") || (mode === "reply" && !lang)) {
-  console.error("usage: assert-woven.ts request <log.jsonl> | reply <reply.txt> <lang> | settled");
+  console.error("usage: assert-woven.ts request <log.jsonl> | reply <reply.txt> <lang> | lang <code> | settled");
   process.exit(2);
 }
 const text = readFileSync(file, "utf8");

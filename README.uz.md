@@ -9,7 +9,7 @@
 
 Har kuni baribir oʻqiydigan AI javoblaringiz orqali til oʻrganing.
 
-Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblariga toʻqib boradi (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
+Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblariga toʻqib boradi (Claude Code, OpenCode, Codex CLI, Antigravity CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
 
 > Siz: "Barselonada dam olish kunlarini rejalashtirishga yordam ber"
 
@@ -65,7 +65,7 @@ Plagin Anthropic'ning rasmiy plaginlar katalogiga kiryapti, yangi nom esa uni u 
 
 ## Tezkor boshlash
 
-Eng oson yoʻli: AI agentingizdan (Claude Code, Codex, OpenCode, Hermes Agent, OpenClaw yoki boshqasi) soʻrang. Unga buni yuboring:
+Eng oson yoʻli: AI agentingizdan (Claude Code, Codex, OpenCode, Antigravity, Hermes Agent, OpenClaw yoki boshqasi) soʻrang. Unga buni yuboring:
 
 ```
 Install Lazy Polyglot for me: https://github.com/shmsk/lazy-polyglot
@@ -131,7 +131,18 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 # start codex, open /hooks and trust the lazy-polyglot hook — replies start weaving Spanish
 ```
 
-Codex siz koʻrib chiqmagan hooklarni ishga tushirmaydi, shuning uchun `/hooks` qadami bir marta kerak (hook buyrugʻi oʻzgarsa, yana). `--scope project` hooki uchun loyihaning oʻzi ham ishonchli boʻlishi kerak. Agar eski eksperimental versiya oʻrnatilgan boʻlsa, oʻrnatuvchi uning `AGENTS.md` boʻlimini oʻzi olib tashlaydi. Hozircha Codex qoʻshilgan koʻrsatmani suhbatda koʻrinadigan developer xabari sifatida koʻrsatadi ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); bu faqat tashqi koʻrinish masalasi.
+Codex siz koʻrib chiqmagan hooklarni ishga tushirmaydi, shuning uchun `/hooks` qadami bir marta kerak (hook buyrugʻi oʻzgarsa, yana). `--scope project` hooki uchun loyihaning oʻzi ham ishonchli boʻlishi kerak. Agar eski eksperimental versiya oʻrnatilgan boʻlsa, oʻrnatuvchi uning `AGENTS.md` boʻlimini oʻzi olib tashlaydi. Hozircha Codex qoʻshilgan koʻrsatmani suhbatda koʻrinadigan developer xabari sifatida koʻrsatadi ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); bu faqat tashqi koʻrinish masalasi. Ollama orqali (`ollama launch codex`) soʻzlar hozircha toʻqilmaydi: Ollama koʻrsatmani yoʻqotadi, chunki suhbat boshida boʻlmagan `developer` xabarlarini eʼtiborsiz qoldiradi.
+
+### Antigravity CLI plagini sifatida
+
+```bash
+git clone https://github.com/shmsk/lazy-polyglot && cd lazy-polyglot
+bun install
+bun src/cli.ts install antigravity --scope user   # ~/.gemini/config/plugins/lazy-polyglot (or --scope project: ./.agents/plugins/lazy-polyglot)
+# start agy — replies start weaving Spanish
+```
+
+Plagin har bir model chaqiruvidan oldin koʻrsatma qoʻshadi (`PreInvocation`) va navbat tugaganda javobni transkriptdan qayta oʻqiydi (`Stop`). U yana qisqa qoida ham oʻrnatadi: `<lazy-polyglot>` xabari sizning oʻz plaginingizdan keladi. Usiz Gemini bu xabarni hozirgina oʻqilgan fayldan kelgan prompt injection deb oʻylashi mumkin. `agy -p /hooks` ikkita `lazy-polyglot` hookini koʻrsatishi kerak; `agy plugin disable lazy-polyglot` plaginni oʻchiradi. Sozlamalar agy ichida ham ishlaydi: `/lazy-polyglot:lang fr`, `/lazy-polyglot:level up`, `/lazy-polyglot:pause`, `/lazy-polyglot:status` yoki agentdan tilni almashtirishni shunchaki soʻrang.
 
 ### Gemini CLI hooki sifatida (beta)
 
@@ -267,6 +278,7 @@ Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangila
 | Claude Code | **Ishlab chiqarishda** | `/plugin marketplace add shmsk/lazy-polyglot` → `/plugin install lazy-polyglot@lazy-polyglot`, yoki `lazy-polyglot install claude` | `UserPromptSubmit` hook (kontekstga kiritish, ishonchli); `Stop` javobni qayta oʻqiydi |
 | OpenCode | **Ishlab chiqarishda** (plagin) + **eksperimental** (zaxira) | `lazy-polyglot install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plagin hooki + AGENTS.md orqali oʻz-oʻzidan ishlaydigan zaxira; `session.idle` javobni qayta oʻqiydi |
 | Codex CLI | **Production** | `lazy-polyglot install codex [--scope project\|user]` | `hooks.json`dagi `UserPromptSubmit` hook (kontekstga qoʻshish, ishonchli); `Stop` javobni qayta oʻqiydi |
+| Antigravity CLI | **Production** (qoʻlda jonli sinalgan, CI'da emas) | `lazy-polyglot install antigravity [--scope project\|user]` | `PreInvocation` plagin hooki (har bir model chaqiruvidan oldin `ephemeralMessage`) va plagin qoidasi; `Stop` javobni transkriptdan qayta oʻqiydi |
 | Gemini CLI | **Beta** (jonli sinalmagan) | `lazy-polyglot install gemini [--scope project\|user]` | `settings.json`dagi `BeforeAgent` hook (JSON `additionalContext`); `AfterAgent` javobni qayta oʻqiydi |
 | Hermes Agent | **Production** | `lazy-polyglot install hermes` | `pre_llm_call` plagin hooki (kontekst xabaringizga qoʻshiladi); `post_llm_call` javobni qayta oʻqiydi |
 | OpenClaw | **Production** | `lazy-polyglot install openclaw` | `before_prompt_build` plagin hooki (`prependContext`); `agent_end` javobni qayta oʻqiydi |
@@ -300,6 +312,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](.github/CONTRIBUT
 | `install claude [--scope project\|user]` | UserPromptSubmit, SessionStart va Stop hooklarini roʻyxatdan oʻtkazadi |
 | `install opencode [--scope project\|user]` | opencode uchun plagin + AGENTS.md zaxirasini oʻrnatadi |
 | `install codex [--scope project\|user]` | Codex CLI `hooks.json` fayliga UserPromptSubmit, SessionStart va Stop hooklarini roʻyxatdan oʻtkazadi |
+| `install antigravity [--scope project\|user]` | Antigravity CLI (`agy`) plaginini oʻrnatadi: PreInvocation va Stop hooklari hamda bitta qoida |
 | `install gemini [--scope project\|user]` | beta: Gemini CLI `settings.json` fayliga BeforeAgent, SessionStart va AfterAgent hooklarini roʻyxatdan oʻtkazadi |
 | `install hermes` | Hermes Agent plaginini `$HERMES_HOME/plugins/lazy-polyglot/` ichiga oʻrnatadi |
 | `install openclaw` | OpenClaw plaginini yaratadi va uni ulash hamda yoqish buyruqlarini chop etadi |
@@ -350,6 +363,7 @@ Javob tugagach, hook uni ham oʻqiydi (xost oʻzi uzatadi yoki u Claude Codeʼni
 - **Qoʻlda oʻrnatilgan Claude Code hooki:** `.claude/settings.json` faylida (yoki `--scope user` bilan oʻrnatgan boʻlsangiz `~/.claude/settings.json`da) buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit`, `SessionStart` va `Stop` yozuvlarini oʻchiring.
 - **OpenCode:** `.opencode/plugin/` dan (yoki `~/.config/opencode/plugin/` dan) `lazy-polyglot.ts` faylini va `AGENTS.md` ichidagi `<!-- lazy-polyglot:start -->` bilan `<!-- lazy-polyglot:end -->` orasidagi boʻlimni oʻchiring.
 - **Codex CLI:** `~/.codex/hooks.json` (yoki `--scope project` uchun `.codex/hooks.json`) faylidan buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit`, `SessionStart` va `Stop` yozuvlarini oʻchiring.
+- **Antigravity CLI:** `agy plugin disable lazy-polyglot` yoki `~/.gemini/config/plugins/lazy-polyglot/` papkasini oʻchiring (`--scope project` uchun `.agents/plugins/lazy-polyglot/`).
 - **Gemini CLI:** `~/.gemini/settings.json` (yoki `--scope project` uchun `.gemini/settings.json`) faylidan nomi `lazy-polyglot` boʻlgan `BeforeAgent`, `SessionStart` va `AfterAgent` yozuvlarini oʻchiring.
 - **Hermes Agent:** `hermes plugins disable lazy-polyglot`, keyin `~/.hermes/plugins/lazy-polyglot/` papkasini (yoki `$HERMES_HOME` ichidagisini) oʻchiring.
 - **OpenClaw:** `openclaw plugins uninstall lazy-polyglot`, keyin `~/.lazy-polyglot/openclaw-plugin/` papkasini oʻchiring.
@@ -373,7 +387,6 @@ Eng qimmatli hissa — bu sizning tilingiz, va [docs/AddLanguage.md](docs/AddLan
 - 2-daraja lugʻati (har bir til uchun →1000 soʻz), yadro ~80% oʻzlashtirilganda ochiladi
 - Leksik bloklar (butun iboralar), yadroning katta qismi oʻzlashtirilgach
 - Spinner fe'llarida ispancha gerundiylar («Pensando…»)
-- Gemini CLI'ni betadan chiqarish, jonli sinovdan keyin
 - Yana koʻproq tillar — sizniki ham boʻladimi? ([docs/AddLanguage.md](docs/AddLanguage.md))
 
 ## Litsenziya

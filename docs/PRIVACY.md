@@ -18,7 +18,7 @@ Only your settings and word progress, as plain JSON files in `~/.lazy-polyglot/`
 Some commands write elsewhere, only when you run them:
 
 - `/lazy-polyglot:spinner on` adds your words to `~/.claude/settings.json`; `off` removes them.
-- `lazy-polyglot install <host>` adds the hook to that agent's own config (Claude Code, Codex, OpenCode, Gemini CLI, Hermes Agent, OpenClaw).
+- `lazy-polyglot install <host>` adds the hook to that agent's own config (Claude Code, Codex, OpenCode, Antigravity CLI, Gemini CLI, Hermes Agent, OpenClaw).
 
 ## What it shares
 

@@ -9,7 +9,7 @@
 
 Учите язык по ответам AI, которые вы и так читаете каждый день.
 
-Lazy Polyglot вплетает слова изучаемого языка в ответы вашего AI-агента (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw и Gemini CLI в бете). Это техника *diglot weave*: вы работаете как обычно, а в ответах постепенно появляются слова на новом языке. Сначала 3–5 на ответ, потом чаще и сложнее, вплоть до правил словообразования, словосочетаний и простых конструкций. Никаких уроков. Погружение вместо зубрёжки.
+Lazy Polyglot вплетает слова изучаемого языка в ответы вашего AI-агента (Claude Code, OpenCode, Codex CLI, Antigravity CLI, Hermes Agent, OpenClaw и Gemini CLI в бете). Это техника *diglot weave*: вы работаете как обычно, а в ответах постепенно появляются слова на новом языке. Сначала 3–5 на ответ, потом чаще и сложнее, вплоть до правил словообразования, словосочетаний и простых конструкций. Никаких уроков. Погружение вместо зубрёжки.
 
 > Вы: «помоги спланировать выходные в Барселоне»
 
@@ -65,7 +65,7 @@ Lazy Polyglot вплетает слова изучаемого языка в о�
 
 ## Быстрый старт
 
-Проще всего попросить своего AI-агента (Claude Code, Codex, OpenCode, Hermes Agent, OpenClaw или другого). Вставьте ему:
+Проще всего попросить своего AI-агента (Claude Code, Codex, OpenCode, Antigravity, Hermes Agent, OpenClaw или другого). Вставьте ему:
 
 ```
 Install Lazy Polyglot for me: https://github.com/shmsk/lazy-polyglot
@@ -131,7 +131,18 @@ bun src/cli.ts install codex --scope user   # ~/.codex/hooks.json (or --scope pr
 # start codex, open /hooks and trust the lazy-polyglot hook — replies start weaving Spanish
 ```
 
-Codex не запускает хуки, которые вы не одобрили, поэтому шаг с `/hooks` нужен один раз (и снова, если команда хука изменится). Хуку с `--scope project` нужно ещё, чтобы сам проект был доверенным. Если у вас стояла старая экспериментальная версия, установщик сам удалит её секцию из `AGENTS.md`. Сейчас Codex показывает вставленную инструкцию в переписке как видимое developer-сообщение ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); это чисто косметика.
+Codex не запускает хуки, которые вы не одобрили, поэтому шаг с `/hooks` нужен один раз (и снова, если команда хука изменится). Хуку с `--scope project` нужно ещё, чтобы сам проект был доверенным. Если у вас стояла старая экспериментальная версия, установщик сам удалит её секцию из `AGENTS.md`. Сейчас Codex показывает вставленную инструкцию в переписке как видимое developer-сообщение ([openai/codex#16933](https://github.com/openai/codex/issues/16933)); это чисто косметика. Через Ollama (`ollama launch codex`) слова пока не вплетаются: Ollama теряет инструкцию, потому что игнорирует `developer`-сообщения не в начале разговора.
+
+### Как плагин Antigravity CLI
+
+```bash
+git clone https://github.com/shmsk/lazy-polyglot && cd lazy-polyglot
+bun install
+bun src/cli.ts install antigravity --scope user   # ~/.gemini/config/plugins/lazy-polyglot (or --scope project: ./.agents/plugins/lazy-polyglot)
+# start agy — replies start weaving Spanish
+```
+
+Плагин добавляет инструкцию перед каждым вызовом модели в ходе (`PreInvocation`) и читает ответ из транскрипта, когда ход закончен (`Stop`). Ещё он ставит короткое правило: сообщение `<lazy-polyglot>` приходит из вашего собственного плагина. Без него Gemini может принять это сообщение за prompt injection из только что прочитанного файла. `agy -p /hooks` должен показать два хука `lazy-polyglot`; `agy plugin disable lazy-polyglot` выключает плагин. Настройки работают и изнутри agy: `/lazy-polyglot:lang fr`, `/lazy-polyglot:level up`, `/lazy-polyglot:pause`, `/lazy-polyglot:status`, или просто попросите агента сменить язык.
 
 ### Как хук Gemini CLI (бета)
 
@@ -267,6 +278,7 @@ Lazy Polyglot один раз спросит для каждого языка и
 | Claude Code | **Production** | `/plugin marketplace add shmsk/lazy-polyglot` → `/plugin install lazy-polyglot@lazy-polyglot` или `lazy-polyglot install claude` | хук `UserPromptSubmit` (добавление в контекст, надёжно); `Stop` читает ответ обратно |
 | OpenCode | **Production** (плагин) + **экспериментально** (запасной путь) | `lazy-polyglot install opencode [--scope project\|user]` | хук плагина `experimental.chat.messages.transform` + запасная секция в AGENTS.md; `session.idle` читает ответ обратно |
 | Codex CLI | **Production** | `lazy-polyglot install codex [--scope project\|user]` | хук `UserPromptSubmit` в `hooks.json` (добавление в контекст, надёжно); `Stop` читает ответ обратно |
+| Antigravity CLI | **Production** (проверен вживую вручную, не в CI) | `lazy-polyglot install antigravity [--scope project\|user]` | хук плагина `PreInvocation` (`ephemeralMessage` перед каждым вызовом модели) и правило плагина; `Stop` читает ответ из транскрипта |
 | Gemini CLI | **Бета** (вживую пока не проверен) | `lazy-polyglot install gemini [--scope project\|user]` | хук `BeforeAgent` в `settings.json` (JSON `additionalContext`); `AfterAgent` читает ответ обратно |
 | Hermes Agent | **Production** | `lazy-polyglot install hermes` | хук плагина `pre_llm_call` (контекст добавляется к вашему сообщению); `post_llm_call` читает ответ обратно |
 | OpenClaw | **Production** | `lazy-polyglot install openclaw` | хук плагина `before_prompt_build` (`prependContext`); `agent_end` читает ответ обратно |
@@ -300,6 +312,7 @@ Codex CLI, OpenCode, Hermes Agent и OpenClaw устанавливаются н�
 | `install claude [--scope project\|user]` | регистрирует хуки UserPromptSubmit, SessionStart и Stop |
 | `install opencode [--scope project\|user]` | ставит плагин + запасную секцию в AGENTS.md для opencode |
 | `install codex [--scope project\|user]` | регистрирует хуки UserPromptSubmit, SessionStart и Stop в `hooks.json` Codex CLI |
+| `install antigravity [--scope project\|user]` | ставит плагин для Antigravity CLI (`agy`): хуки PreInvocation и Stop и одно правило |
 | `install gemini [--scope project\|user]` | бета: регистрирует хуки BeforeAgent, SessionStart и AfterAgent в `settings.json` Gemini CLI |
 | `install hermes` | ставит плагин Hermes Agent в `$HERMES_HOME/plugins/lazy-polyglot/` |
 | `install openclaw` | генерирует плагин OpenClaw и печатает команды, которые подключают и включают его |
@@ -350,6 +363,7 @@ lazy-polyglot import ~/Downloads/lazy-polyglot-export-2026-10-01.json   # на �
 - **Ручной хук Claude Code:** удалите записи `UserPromptSubmit`, `SessionStart` и `Stop`, команда которых заканчивается на `src/cli.ts hook`, из `.claude/settings.json` (или `~/.claude/settings.json`, если ставили с `--scope user`).
 - **OpenCode:** удалите `lazy-polyglot.ts` из `.opencode/plugin/` (или `~/.config/opencode/plugin/`) и секцию между `<!-- lazy-polyglot:start -->` и `<!-- lazy-polyglot:end -->` в `AGENTS.md`.
 - **Codex CLI:** удалите записи `UserPromptSubmit`, `SessionStart` и `Stop`, команда которых заканчивается на `src/cli.ts hook`, из `~/.codex/hooks.json` (или `.codex/hooks.json` для `--scope project`).
+- **Antigravity CLI:** `agy plugin disable lazy-polyglot` или удалите `~/.gemini/config/plugins/lazy-polyglot/` (или `.agents/plugins/lazy-polyglot/` для `--scope project`).
 - **Gemini CLI:** удалите записи `BeforeAgent`, `SessionStart` и `AfterAgent` с именем `lazy-polyglot` из `~/.gemini/settings.json` (или `.gemini/settings.json` для `--scope project`).
 - **Hermes Agent:** `hermes plugins disable lazy-polyglot`, затем удалите `~/.hermes/plugins/lazy-polyglot/` (или каталог в вашем `$HERMES_HOME`).
 - **OpenClaw:** `openclaw plugins uninstall lazy-polyglot`, затем удалите `~/.lazy-polyglot/openclaw-plugin/`.
@@ -373,7 +387,6 @@ lazy-polyglot import ~/Downloads/lazy-polyglot-export-2026-10-01.json   # на �
 - Словарь второго уровня (до 1000 слов на язык), открывается при ~80% усвоения базы
 - Лексические блоки (целые фразы), когда большая часть ядра усвоена
 - Испанские герундии в глаголах спиннера («Pensando…»)
-- Gemini CLI: выход из беты после проверки на живом Gemini CLI
 - Больше языков. Может, ваш? ([docs/AddLanguage.md](docs/AddLanguage.md))
 
 ## Лицензия
