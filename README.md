@@ -9,6 +9,7 @@ Learn a language from the AI replies you already read every day.
 Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "help me plan a weekend in Barcelona"
+
 > Agent: "Spend **sábado** (Saturday) in the Gothic Quarter: go **temprano** (early), before the crowds, and end the day with dinner by the **mar** (sea)."
 
 10 target languages ship out of the box. Glosses (the translation in parentheses) come in English, Russian or Uzbek, in whichever of them you write your message.
