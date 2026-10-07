@@ -2,14 +2,14 @@
 
 [English](README.md) · [Русский](README.ru.md) · O'zbekcha
 
-*README.md dan tarjima qilingan (manba sanasi: 2026-10-06). Farq boʻlsa, inglizcha versiya asosiy hisoblanadi.*
+*README.md dan tarjima qilingan (manba sanasi: 2026-10-07). Farq boʻlsa, inglizcha versiya asosiy hisoblanadi.*
 
 **Get (almost) accidentally fluent 🙂**  
 *(Tilni deyarli tasodifan oʻrganib olasiz 🙂)*
 
 Har kuni baribir oʻqiydigan AI javoblaringiz orqali til oʻrganing.
 
-Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblariga toʻqib boradi (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
+Lazy Polyglot siz oʻrganayotgan tildagi soʻzlarni AI agentingizning javoblariga toʻqib boradi (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw va beta holatidagi Gemini CLI). Bu *diglot weave* texnikasi: siz odatdagidek ishlaysiz, javoblar esa asta-sekin maqsadli til soʻzlari bilan toʻqilib boradi — dastlab har javobda 3–5 ta, keyin tez-tez va murakkabroq, hatto soʻz yasash qoidalari, soʻz birikmalari va oddiy gap qurilishlarigacha. Darslar yoʻq. Oʻqish oʻrniga — immersiya (til muhitiga toʻliq singib ketish).
 
 > Siz: "nega deploy muvaffaqiyatsiz boʻlyapti?"
 > Agent: "8080-portni ertalabki **primero** (birinchi) ishga tushirishdan qolgan **viejo** (eski) jarayon hali ham band qilib turibdi. Uni `lsof -ti :8080 | xargs kill` bilan toʻxtating, deploy **ahora** (hozir) oʻtadi."
@@ -28,11 +28,51 @@ Plagin Anthropic'ning rasmiy plaginlar katalogiga kiryapti, yangi nom esa uni u 
 
 ## Nega buni yaratdim
 
-Men har kuni koʻp oʻqiyman, va hozir bu matnning katta qismi terminaldagi AI agentlarimning javoblaridir. Oʻrganayotgan tilingizda oʻqish uni oʻzlashtirishning eng qadimiy usullaridan biri, Toucan esa brauzerda veb-sahifalar uchun aynan shuni qiladi. Terminal uchun bunday vosita yoʻq edi, shuning uchun Lazy Polyglot'ni oʻzim uchun yaratdim. Uni istagan har bir kishi bepul foydalanishi mumkin.
+Har kuni oʻqiydiganlarimning katta qismi endi AI agentlarimning javoblari. Oʻrganayotgan tilingizda oʻqish uni oʻzlashtirishning eng qadimiy usullaridan biri, shuning uchun bu javoblar yoʻl-yoʻlakay menga bir nechta soʻz oʻrgatishini xohladim. Gʻoya Toucan kabi brauzer kengaytmalaridan olingan: ular xuddi shuni veb-sahifalar bilan qiladi. AI agentlar uchun bunday vosita yoʻq edi, shuning uchun Lazy Polyglot'ni oʻzim uchun yaratdim. Uni istagan har bir kishi bepul foydalanishi mumkin.
+
+## Bu qanday ishlaydi
+
+![1-kun: yangi soʻzlar tarjima bilan keladi. 1-hafta: tanish soʻzlar tarjimasiz. 3-hafta: butun iboralar.](docs/img/how-it-works.png)
+
+- **Siz odatdagidek ishlaysiz.** Har bir javobdan oldin Lazy Polyglot agentga bir nechta soʻzni sezdirmasdan aytadi, agent esa ularni mos joyga qoʻyadi.
+- **Yangi soʻzlar tarjima bilan keladi.** Bir necha javobdan keyin tarjima oxiridagi bitta qisqa qatorga koʻchadi, keyin esa yoʻqoladi.
+- **Soʻzlar unutay deganingizda qaytadi:** 30 daqiqadan keyin, soʻng 8 soat, bir kun, 4 kun, 2 hafta va hokazo. Faqat javobda haqiqatan ishlatilgan soʻz hisobga olinadi.
+- **Daraja oshgani sari koʻproq.** Avval alohida soʻzlar; 2-darajadan (standart) soʻzlar qanday yasalishi ham (*-tion → -ción*); 4-darajadan qisqa iboralar, 7-darajadan oddiy gaplar. `/lazy-polyglot:level up` darajani oshiradi.
+- **Tarjima sizning tilingizda:** ingliz, rus yoki oʻzbek tilida, qaysi birida yozsangiz.
+- **Hammasi kompyuteringizda qoladi.** Progress `~/.lazy-polyglot/` dagi kichik fayl, hech narsa hech qayerga yuborilmaydi.
+
+Texnik versiyasi [Ichki tuzilish](#ichki-tuzilish) boʻlimida.
+
+## Kartochkalar va boshqa qoʻshimchalar (Claude Code)
+
+**Kartochkalar.** `/cards` deb yozing, Lazy Polyglot vaqti kelgan soʻzlarni ikki tomonga soʻraydi (ispancha → oʻzbekcha, keyinroq oʻzbekcha → ispancha). Kartochkalar va toʻqilgan javoblarning progressi bitta, shuning uchun kartochkada toʻgʻri topgan soʻzingiz javoblarda kamroq chiqadi.
+
+![/cards bilan quiz: kartochka ejemplo ni soʻraydi, siz example deb yozasiz, u javobni tekshiradi](docs/img/cards-quiz.gif)
+
+Terminalda, Desktop ilovasining Code boʻlimida, VS Code'da va mobil ilovada ishlaydi (macOS va Linux; Claude Code 2.1.287 yoki undan yangisi). Terminalda kartochka oddiy matn, boshqa joylarda yuqoridagi animatsiyadagidek koʻrinadi. Desktop'da `/cards` boʻlmasa, ilovani yangilang.
+
+**Ikkita kichik ixtiyoriy imkoniyat:**
+
+- `/lazy-polyglot:cards-status on` pastdagi holat qatorida nechta kartochka kutayotganini koʻrsatadi.
+- `/lazy-polyglot:spinner on` Claude oʻylayotganda oʻrganayotgan soʻzlaringizni koʻrsatadi. [Batafsil](#spinner-maslahatlari-ixtiyoriy).
+
+## Bu agentimning javoblarini yomonlashtiradimi?
+
+Yoʻq, aynan shunday boʻlmasligi uchun moʻljallangan. Toʻqish koʻrsatmasi kod bloklari, inline kod, identifikatorlar, buyruqlar, yoʻllar, URL manzillar, iqtiboslar va texnik atamalarga tegishni taqiqlaydi hamda modelga javobning maʼnosi va sifati toʻqishdan har doim ustun ekanini aytadi. Buning narxi — har bir soʻrov uchun bitta qisqa koʻrsatma (≤600 token), u asosan prompt keshidan oʻqiladi: odatiy sessiyaning taxminan 1–3% ([batafsil](docs/TokenUsage.md), ingliz tilida). Toʻrtta model buni qanday uddalashi: [evals/MODELS.md](evals/MODELS.md), ingliz tilida. Toza sessiya kerak boʻlsa, `/lazy-polyglot:pause` uni darhol toʻxtatadi, `/lazy-polyglot:resume` esa qaytaradi.
 
 ## Tezkor boshlash
 
-**Talab:** [bun](https://bun.sh) yoki Node.js ≥ 22.6 (`bun -v` yoki `node -v` bilan tekshiring). Ikkalasi ham topilmasa, plagin faolsiz qoladi va Claude buni sessiya boshida sizga aytadi.
+Eng oson yoʻli: AI agentingizdan (Claude Code, Codex, OpenCode, Hermes Agent, OpenClaw yoki boshqasi) soʻrang. Unga buni yuboring:
+
+```
+Install Lazy Polyglot for me: https://github.com/shmsk/lazy-polyglot
+```
+
+Agent bu sahifani oʻqib, kerakli qadamlarni bajaradi. Agar biror qadamni oʻzingiz yozishingiz kerak boʻlsa (Claude Code'da bu pastdagi ikki `/plugin` qatori), u aytadi. Keyin sessiyani qayta ishga tushiring, javoblarda ispancha soʻzlar paydo boʻladi. Boshqa tilni oʻrganish uchun agentga ayting yoki `/lazy-polyglot:lang` ni ishlating (masalan, `/lazy-polyglot:lang fr`).
+
+**Kerak boʻladi:** [bun](https://bun.sh) yoki Node.js 22.6 yoki undan yangisi (`bun -v` yoki `node -v` bilan tekshiring). Ularsiz plagin oʻchiq qoladi va Claude buni sessiya boshida aytadi.
+
+## Qoʻlda oʻrnatish
 
 ### Claude Code plagini sifatida (tavsiya etiladi)
 
@@ -62,19 +102,19 @@ bun src/cli.ts install claude            # hook into the project's .claude/setti
 
 Ikkalasidan bittasini tanlang, ikkovini birga emas. Baribir ikkalasini qoʻshsangiz ham, takroriy yetkazishga qarshi himoya hisoblashni toʻgʻri saqlaydi. Interaktiv `quiz` terminalda ishlaydi: qoʻlda klon qilingan versiyadan foydalaning, yoki CLI'ni plagin keshi ichida chaqiring (`~/.claude/plugins/cache/lazy-polyglot/…/scripts/cli.sh quiz`).
 
-### opencode plagini sifatida
+### OpenCode plagini sifatida
 
 ```
 git clone https://github.com/shmsk/lazy-polyglot && cd lazy-polyglot
 bun install
 bun src/cli.ts install opencode           # project scope (.opencode/plugin/)
 #   or:  bun src/cli.ts install opencode --scope user   # global (~/.config/opencode/plugin/)
-# quit and restart opencode — replies start weaving Spanish
+# quit and restart OpenCode — replies start weaving Spanish
 ```
 
 Bitta buyruq ikkita yoʻlni oʻrnatadi, ikkalasi ham bir vaqtda faol boʻladi:
 
-- **Plagin (asosiy, ishonchli)** — opencode tomonidan avtomatik aniqlanadi. `experimental.chat.messages.transform` ga ulanib, oxirgi foydalanuvchi xabaringizda `lazy-polyglot hook` ni ishga tushiradi va kontekstga `<lazy-polyglot>` blokini kiritadi. Barcha modellarda ishlaydi.
+- **Plagin (asosiy, ishonchli)** — OpenCode tomonidan avtomatik aniqlanadi. `experimental.chat.messages.transform` ga ulanib, oxirgi foydalanuvchi xabaringizda `lazy-polyglot hook` ni ishga tushiradi va kontekstga `<lazy-polyglot>` blokini kiritadi. Barcha modellarda ishlaydi.
 - **AGENTS.md boʻlimi (zaxira, eksperimental)** — agar plaginlarni oʻchirib qoʻysangiz yoki plagin yuklanmasa, modelga har javob boshida `lazy-polyglot hook`ni oʻzi ishga tushirish koʻrsatmasi beriladi. Bu modelning koʻrsatmaga rioya qilishiga bogʻliq.
 
 Agar ikkala yoʻl ham bitta soʻrov uchun ishga tushsa, takroriy yetkazishga qarshi himoya hisoblashni toʻgʻri saqlaydi.
@@ -126,11 +166,7 @@ openclaw plugins enable lazy-polyglot
 
 OpenClaw prompt hooklarini faqat siz ruxsat bergan plaginlar uchun ishga tushiradi, shuning uchun `allowConversationAccess` qatori shart. Plagin `before_prompt_build` hookidan foydalanadi, `/lazy-polyglot status`, `/lazy-polyglot lang pt`, `/lazy-polyglot pause` esa istalgan chat kanalida ishlaydi. OpenClaw'ning `claude-cli` provayderi prompt hooklarini ishga tushirmaydi ([openclaw/openclaw#65157](https://github.com/openclaw/openclaw/issues/65157)); qolgan barcha provayderlar ishga tushiradi.
 
-## Bu agentimning javoblarini yomonlashtiradimi?
-
-Yoʻq, aynan shunday boʻlmasligi uchun moʻljallangan. Toʻqish koʻrsatmasi kod bloklari, inline kod, identifikatorlar, buyruqlar, yoʻllar, URL manzillar, iqtiboslar va texnik atamalarga tegishni taqiqlaydi hamda modelga javobning maʼnosi va sifati toʻqishdan har doim ustun ekanini aytadi. Buning narxi — har bir soʻrov uchun bitta qisqa koʻrsatma (≤600 token), u asosan prompt keshidan oʻqiladi: odatiy sessiyaning taxminan 1–3% ([batafsil](docs/TokenUsage.md), ingliz tilida). Toʻrtta model buni qanday uddalashi: [evals/MODELS.md](evals/MODELS.md), ingliz tilida. Toza sessiya kerak boʻlsa, `/lazy-polyglot:pause` uni darhol toʻxtatadi, `/lazy-polyglot:resume` esa qaytaradi.
-
-## Bu qanday ishlaydi
+## Ichki tuzilish
 
 Brauzer kengaytmalari (Toucan, Vocabo) sahifa DOM'ini qayta yozadi. CLI'da esa keyinchalik qayta yozish imkoni yoʻq — shuning uchun Lazy Polyglot CLI hook orqali qisqa koʻrsatma kiritadi, toʻqishni esa modelning oʻzi amalga oshiradi. Yadro hech qanday CLI haqida bilmaydi — adapterlar yupqa qatlam xolos (arxitektura [context-mode](https://github.com/mksglu/context-mode)dan ilhomlangan).
 
@@ -226,13 +262,13 @@ Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangila
 | CLI | Holat | Oʻrnatish | Mexanizm |
 |---|---|---|---|
 | Claude Code | **Ishlab chiqarishda** | `/plugin marketplace add shmsk/lazy-polyglot` → `/plugin install lazy-polyglot@lazy-polyglot`, yoki `lazy-polyglot install claude` | `UserPromptSubmit` hook (kontekstga kiritish, ishonchli); `Stop` javobni qayta oʻqiydi |
-| opencode | **Ishlab chiqarishda** (plagin) + **eksperimental** (zaxira) | `lazy-polyglot install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plagin hooki + AGENTS.md orqali oʻz-oʻzidan ishlaydigan zaxira; `session.idle` javobni qayta oʻqiydi |
+| OpenCode | **Ishlab chiqarishda** (plagin) + **eksperimental** (zaxira) | `lazy-polyglot install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plagin hooki + AGENTS.md orqali oʻz-oʻzidan ishlaydigan zaxira; `session.idle` javobni qayta oʻqiydi |
 | Codex CLI | **Production** | `lazy-polyglot install codex [--scope project\|user]` | `hooks.json`dagi `UserPromptSubmit` hook (kontekstga qoʻshish, ishonchli); `Stop` javobni qayta oʻqiydi |
 | Gemini CLI | **Beta** (jonli sinalmagan) | `lazy-polyglot install gemini [--scope project\|user]` | `settings.json`dagi `BeforeAgent` hook (JSON `additionalContext`); `AfterAgent` javobni qayta oʻqiydi |
 | Hermes Agent | **Production** | `lazy-polyglot install hermes` | `pre_llm_call` plagin hooki (kontekst xabaringizga qoʻshiladi); `post_llm_call` javobni qayta oʻqiydi |
 | OpenClaw | **Production** | `lazy-polyglot install openclaw` | `before_prompt_build` plagin hooki (`prependContext`); `agent_end` javobni qayta oʻqiydi |
 
-Codex CLI, opencode, Hermes Agent va OpenClaw toza CI runnerga oʻrnatilib, boshidan oxirigacha sinovdan oʻtkaziladi ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): plagin yuklanadi, blok modelga yetib boradi, OpenRouterdagi haqiqiy modellar esa ularga berilgan soʻzlarni toʻqiydi.
+Codex CLI, OpenCode, Hermes Agent va OpenClaw toza CI runnerga oʻrnatilib, boshidan oxirigacha sinovdan oʻtkaziladi ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): plagin yuklanadi, blok modelga yetib boradi, OpenRouterdagi haqiqiy modellar esa ularga berilgan soʻzlarni toʻqiydi.
 
 Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](CONTRIBUTING.md). Har qanday adapter rioya qilishi kerak boʻlgan hook shartnomasi: xost sessiyasini hech qachon buzmaslik (har qanday xatoda hech narsa chop etmasdan 0 bilan chiqish).
 
@@ -303,13 +339,13 @@ Javob tugagach, hook uni ham oʻqiydi (xost oʻzi uzatadi yoki u Claude Codeʼni
 - **`/cards` modi** bitta dasturni ishga tushiradi: `/bin/sh <plugin>/scripts/cli.sh cards …`, ya'ni oʻsha Lazy Polyglot CLI, kartochkalarni tanlash, tekshirish va saqlash uchun (`/bin/sh`, chunki `scripts/cli.sh` shell-skript boʻlib, `bun` yoki Node’ni tanlaydi). Bu skriptni topish uchun `LAZY_POLYGLOT_CLI`, `LANGCOUCH_CLI`, `HOME` oʻzgaruvchilarini va `~/.claude/plugins/installed_plugins.json` faylini oʻqiydi. Hech qayerga hech narsa yubormaydi va tarmoqqa chiqmaydi: u ishga tushiradigan dastur lokal. U bitta buyruq qoʻshadi, `/cards`, va uning `command.run` hooki faqat shu buyruqqa javob beradi: kartochkalar panelini ochadi.
 - **Claude Code sozlamalari:** `~/.claude/settings.json` ga faqat `/lazy-polyglot:spinner on` yozadi (soʻzlaringiz spinner maslahatlari sifatida), `off` esa aynan shu qatorlarni oʻchiradi.
 - **`/lazy-polyglot:add-language`** faqat `~/.lazy-polyglot/` ichiga yoza oladi.
-- **Plagin ishlaganda ishlatilmaydi:** `evals/` (modellar sifatini oʻlchash; men ularni qoʻlda ishga tushirganimda OpenRouter kalitini macOS Keychain yoki `OPENROUTER_API_KEY` dan oladi), `bunfig.toml` (test sozlamalari, paketlar reyestri yoʻq), `package.json` va `bun.lock` (faqat test va tip tekshiruvi vositalari, sizga hech narsa oʻrnatilmaydi).
+- **Eʼtibor bermasa ham boʻladigan fayllar:** `evals/` — turli AI modellar soʻzlarni qanchalik yaxshi toʻqishini tekshiradigan mening sinov stendim. U faqat men qoʻlda, oʻz OpenRouter kalitim bilan ishga tushirganimda ishlaydi; plagin uni hech qachon ishga tushirmaydi va sizdan kalit soʻramaydi. `bunfig.toml`, `package.json` va `bun.lock` testlar va tiplarni tekshirish uchun, ulardan sizga hech narsa oʻrnatilmaydi.
 
 ## Oʻchirib tashlash
 
 - **Claude Code plagini:** agar spinnerni yoqqan boʻlsangiz, **avval** `/lazy-polyglot:spinner off` ni bajaring (Claude Code da oʻchirish hooki yoʻq, shuning uchun plagin oʻzidan keyin tozalay olmaydi). Keyin `/plugin uninstall lazy-polyglot@lazy-polyglot` va sessiyani qayta ishga tushiring. Spinner yoqilgan holda allaqachon oʻchirib yubordingizmi? `~/.claude/settings.json` dagi `spinnerTipsOverride.tips` dan `Lazy Polyglot · ` bilan boshlanadigan qatorlarni oʻchiring.
 - **Qoʻlda oʻrnatilgan Claude Code hooki:** `.claude/settings.json` faylida (yoki `--scope user` bilan oʻrnatgan boʻlsangiz `~/.claude/settings.json`da) buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit`, `SessionStart` va `Stop` yozuvlarini oʻchiring.
-- **opencode:** `.opencode/plugin/` dan (yoki `~/.config/opencode/plugin/` dan) `lazy-polyglot.ts` faylini va `AGENTS.md` ichidagi `<!-- lazy-polyglot:start -->` bilan `<!-- lazy-polyglot:end -->` orasidagi boʻlimni oʻchiring.
+- **OpenCode:** `.opencode/plugin/` dan (yoki `~/.config/opencode/plugin/` dan) `lazy-polyglot.ts` faylini va `AGENTS.md` ichidagi `<!-- lazy-polyglot:start -->` bilan `<!-- lazy-polyglot:end -->` orasidagi boʻlimni oʻchiring.
 - **Codex CLI:** `~/.codex/hooks.json` (yoki `--scope project` uchun `.codex/hooks.json`) faylidan buyrugʻi `src/cli.ts hook` bilan tugaydigan `UserPromptSubmit`, `SessionStart` va `Stop` yozuvlarini oʻchiring.
 - **Gemini CLI:** `~/.gemini/settings.json` (yoki `--scope project` uchun `.gemini/settings.json`) faylidan nomi `lazy-polyglot` boʻlgan `BeforeAgent`, `SessionStart` va `AfterAgent` yozuvlarini oʻchiring.
 - **Hermes Agent:** `hermes plugins disable lazy-polyglot`, keyin `~/.hermes/plugins/lazy-polyglot/` papkasini (yoki `$HERMES_HOME` ichidagisini) oʻchiring.

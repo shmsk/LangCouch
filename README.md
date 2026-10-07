@@ -6,7 +6,7 @@ English · [Русский](README.ru.md) · [O'zbekcha](README.uz.md)
 
 Learn a language from the AI replies you already read every day.
 
-Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, opencode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
+Lazy Polyglot weaves words from the language you're learning into your AI agent's replies (Claude Code, OpenCode, Codex CLI, Hermes Agent, OpenClaw, and Gemini CLI in beta). This is the *diglot weave* technique: you work as usual, and the answers gradually get laced with target-language words — 3–5 per reply at first, then more often and more complex, up to word-building rules, collocations and simple constructions. No lessons. Immersion instead of studying.
 
 > You: "why is the deploy failing?"
 > Agent: "Port 8080 is still held by a **viejo** (old) process from your **primero** (first) run this morning. Kill it with `lsof -ti :8080 | xargs kill` and the deploy will go through **ahora** (now)."
@@ -25,13 +25,53 @@ The plugin is going into Anthropic's official plugin directory, and the new name
 
 ## Why I built this
 
-I read a lot every day, and these days most of that text is my AI agents' replies in a terminal. Reading in the language you're learning is one of the oldest ways to pick it up, and Toucan does exactly that for web pages in the browser. Nothing did it for the terminal, so I built Lazy Polyglot for myself. It's free for anyone who wants it too.
+Most of what I read every day is now my AI agents' replies. Reading in a language you're learning is one of the oldest ways to pick it up, so I wanted those replies to teach me a few words along the way. The idea comes from browser extensions like Toucan, which do the same for web pages. Nothing did it for AI agents, so I built Lazy Polyglot for myself. It's free for anyone who wants it too.
+
+## How it works
+
+![Day 1: new words come with a translation. Week 1: words you know lose it. Week 3: whole phrases.](docs/img/how-it-works.png)
+
+- **You work as usual.** Before each reply, Lazy Polyglot quietly tells your agent which few words to use, and the agent puts them where they fit.
+- **New words come with a translation.** After a few replies the translation moves to one short line at the end, and later it goes away.
+- **Words come back just before you'd forget them:** after 30 minutes, then 8 hours, a day, 4 days, 2 weeks and so on. Only a word the reply really used counts.
+- **More as you go up.** Single words first; from level 2 (the default) also how words are built (*-tion → -ción*); from level 4 short phrases, from 7 simple sentences. `/lazy-polyglot:level up` moves you up.
+- **Translations come in your language:** English, Russian or Uzbek, whichever you write in.
+- **Everything stays on your computer.** Your progress is a small file in `~/.lazy-polyglot/`; nothing is sent anywhere.
+
+The technical version is in [Under the hood](#under-the-hood).
+
+## Flashcards and other extras (Claude Code)
+
+**Flashcards.** Type `/cards` and Lazy Polyglot quizzes you on the words that are due today, both ways (Spanish → English, and later English → Spanish). Cards and woven replies share one progress, so a word you get right in a card shows up less in replies.
+
+![Quiz with /cards: the card asks for ejemplo, you type example, it checks the answer](docs/img/cards-quiz.gif)
+
+It works in the terminal, the Desktop app's Code tab, VS Code and the mobile app (macOS and Linux; Claude Code 2.1.287 or newer). In the terminal the card is plain text; everywhere else it looks like the animation above. If `/cards` is missing in the Desktop app, update the app.
+
+**Two small opt-ins:**
+
+- `/lazy-polyglot:cards-status on` shows how many cards are due in the status line at the bottom.
+- `/lazy-polyglot:spinner on` shows words you're learning while Claude is thinking. [Details](#spinner-tips-opt-in).
+
+## Will it make my agent's answers worse?
+
+It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt, mostly read from the prompt cache: about 1–3% of a typical session ([details](docs/TokenUsage.md)). How four models handle it: [evals/MODELS.md](evals/MODELS.md). If you need a clean session, `/lazy-polyglot:pause` stops it instantly and `/lazy-polyglot:resume` brings it back.
 
 ## Quick start
 
-**Requirement:** [bun](https://bun.sh) or Node.js ≥ 22.6 (check with `bun -v` or `node -v`). If neither is found, the plugin stays inactive and Claude tells you at session start.
+The easiest way is to ask your AI agent (Claude Code, Codex, OpenCode, Hermes Agent, OpenClaw or another one) to do it. Paste this:
 
-### As a Claude Code plugin (recommended)
+```
+Install Lazy Polyglot for me: https://github.com/shmsk/lazy-polyglot
+```
+
+The agent reads this page and runs the right steps. If one step has to be typed by you (in Claude Code, the two `/plugin` lines below), it tells you. Restart the session afterwards, and replies start weaving Spanish. To learn another language, say so or run `/lazy-polyglot:lang` (for example `/lazy-polyglot:lang fr`).
+
+**You'll need** [bun](https://bun.sh) or Node.js 22.6 or newer (check with `bun -v` or `node -v`). Without them the plugin stays off, and Claude tells you so at session start.
+
+## Install by hand
+
+### Claude Code plugin (recommended)
 
 ```
 /plugin marketplace add shmsk/lazy-polyglot
@@ -40,8 +80,6 @@ I read a lot every day, and these days most of that text is my AI agents' replie
 ```
 
 Zero setup: no `npm install`, no build step, and the hook bootstraps its own config on first use. Control it from inside Claude Code with `/lazy-polyglot:status`, `/lazy-polyglot:lang pt`, `/lazy-polyglot:level up`, `/lazy-polyglot:mode 3`, `/lazy-polyglot:pause` / `/lazy-polyglot:resume`, `/lazy-polyglot:spinner on`, `/lazy-polyglot:placement`, and add your own language with `/lazy-polyglot:add-language <language>`.
-
-**Flashcards:** `/cards` opens a pane in the terminal, the Desktop Code tab, VS Code and mobile. It reviews the words that are due both ways (the language you learn → yours, and from the 3rd ladder step also yours → the one you learn), then asks placement words. Lazy Polyglot itself grades and records every card, so cards and woven replies share one progress. macOS and Linux; part of Lazy Polyglot since 0.9.1. Outside the terminal each card is drawn as a flashcard (since 0.9.3). Each word and answer shows its flag and language name (since 0.9.4). Needs Claude Code 2.1.287 or newer; the Desktop app updates its own copy, so if `/cards` is missing there, update the app.
 
 **Glosses in your language:** translations follow the language of your message. Cyrillic gets Russian; Latin gets your `native` if it is `en` or `uz` (Uzbek, Latin script), else English. `lazy-polyglot native <en|ru|uz>` (default `en`) sets the fallback for a message Lazy Polyglot can't read, and the language of quiz answers and spinner tips.
 
@@ -59,19 +97,19 @@ bun src/cli.ts install claude            # hook into the project's .claude/setti
 
 Pick one install, not both. If you do combine them, a duplicate-delivery guard keeps the counting honest. The interactive `quiz` runs in a terminal: use the manual clone, or call the CLI inside the plugin cache (`~/.claude/plugins/cache/lazy-polyglot/…/scripts/cli.sh quiz`).
 
-### As an opencode plugin
+### As an OpenCode plugin
 
 ```
 git clone https://github.com/shmsk/lazy-polyglot && cd lazy-polyglot
 bun install
 bun src/cli.ts install opencode           # project scope (.opencode/plugin/)
 #   or:  bun src/cli.ts install opencode --scope user   # global (~/.config/opencode/plugin/)
-# quit and restart opencode — replies start weaving Spanish
+# quit and restart OpenCode — replies start weaving Spanish
 ```
 
 One command installs two paths, both active at once:
 
-- **Plugin (primary, reliable)** — auto-discovered by opencode. Hooks `experimental.chat.messages.transform` to run `lazy-polyglot hook` on your latest user message and inject the `<lazy-polyglot>` block into context. Works on every model.
+- **Plugin (primary, reliable)** — auto-discovered by OpenCode. Hooks `experimental.chat.messages.transform` to run `lazy-polyglot hook` on your latest user message and inject the `<lazy-polyglot>` block into context. Works on every model.
 - **AGENTS.md section (fallback, experimental)** — if you disable plugins or the plugin can't load, the model is instructed to run `lazy-polyglot hook` itself at the start of each reply. Model-compliance-dependent.
 
 A duplicate-delivery guard keeps the counting honest if both paths fire for the same prompt.
@@ -123,11 +161,7 @@ openclaw plugins enable lazy-polyglot
 
 OpenClaw only runs prompt hooks of plugins you have allowed, so the `allowConversationAccess` line is required. The plugin uses the `before_prompt_build` hook, and `/lazy-polyglot status`, `/lazy-polyglot lang pt`, `/lazy-polyglot pause` work in any chat channel. OpenClaw's `claude-cli` provider doesn't run prompt hooks ([openclaw/openclaw#65157](https://github.com/openclaw/openclaw/issues/65157)); every other provider does.
 
-## Will it make my agent's answers worse?
-
-It's designed not to. The weave instruction forbids touching code blocks, inline code, identifiers, commands, paths, URLs, quotes and technical terms, and it tells the model that the meaning and quality of the reply always outweigh the weaving. The cost is one short instruction (≤600 tokens) per prompt, mostly read from the prompt cache: about 1–3% of a typical session ([details](docs/TokenUsage.md)). How four models handle it: [evals/MODELS.md](evals/MODELS.md). If you need a clean session, `/lazy-polyglot:pause` stops it instantly and `/lazy-polyglot:resume` brings it back.
-
-## How it works
+## Under the hood
 
 Browser extensions (Toucan, Vocabo) rewrite the page DOM. In a CLI there is no post-hoc rewrite — so Lazy Polyglot injects a short instruction through a CLI hook, and the model does the weaving itself. The core knows nothing about any CLI — adapters are thin (architecture inspired by [context-mode](https://github.com/mksglu/context-mode)).
 
@@ -223,13 +257,13 @@ What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update
 | CLI | Status | Install | Mechanism |
 |---|---|---|---|
 | Claude Code | **Production** | `/plugin marketplace add shmsk/lazy-polyglot` → `/plugin install lazy-polyglot@lazy-polyglot`, or `lazy-polyglot install claude` | `UserPromptSubmit` hook (context injection, reliable); `Stop` reads the reply back |
-| opencode | **Production** (plugin) + **experimental** (fallback) | `lazy-polyglot install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback; `session.idle` reads the reply back |
+| OpenCode | **Production** (plugin) + **experimental** (fallback) | `lazy-polyglot install opencode [--scope project\|user]` | `experimental.chat.messages.transform` plugin hook + AGENTS.md self-serve fallback; `session.idle` reads the reply back |
 | Codex CLI | **Production** | `lazy-polyglot install codex [--scope project\|user]` | `UserPromptSubmit` hook in `hooks.json` (context injection, reliable); `Stop` reads the reply back |
 | Gemini CLI | **Beta** (not live-tested yet) | `lazy-polyglot install gemini [--scope project\|user]` | `BeforeAgent` hook in `settings.json` (JSON `additionalContext`); `AfterAgent` reads the reply back |
 | Hermes Agent | **Production** | `lazy-polyglot install hermes` | `pre_llm_call` plugin hook (context appended to your message); `post_llm_call` reads the reply back |
 | OpenClaw | **Production** | `lazy-polyglot install openclaw` | `before_prompt_build` plugin hook (`prependContext`); `agent_end` reads the reply back |
 
-Codex CLI, opencode, Hermes Agent and OpenClaw are installed on a clean CI runner and tested end to end ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): the plugin loads, the block reaches the model, and real models on OpenRouter weave the words they were given.
+Codex CLI, OpenCode, Hermes Agent and OpenClaw are installed on a clean CI runner and tested end to end ([hosts-smoke workflow](.github/workflows/hosts-smoke.yml)): the plugin loads, the block reaches the model, and real models on OpenRouter weave the words they were given.
 
 Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook contract any adapter must satisfy: never break the host session (on any error, print nothing and exit 0).
 
@@ -256,7 +290,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](CONTRIBUTING.md). The hook con
 | `instruction` | print the weave instruction (without marking exposures) |
 | `hook` | CLI-hook mode: before a reply, builds the instruction and scans your prompt for recalls; after it (a `Stop` payload), counts the words the reply used. Exits 0 on any error so it never breaks the host session |
 | `install claude [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks |
-| `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for opencode |
+| `install opencode [--scope project\|user]` | install the plugin + AGENTS.md fallback for OpenCode |
 | `install codex [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks in Codex CLI's `hooks.json` |
 | `install gemini [--scope project\|user]` | beta: register the BeforeAgent, SessionStart and AfterAgent hooks in Gemini CLI's `settings.json` |
 | `install hermes` | install the Hermes Agent plugin into `$HERMES_HOME/plugins/lazy-polyglot/` |
@@ -300,13 +334,13 @@ Once a reply is finished, the hook also reads it (the host hands it over, or Cla
 - **The `/cards` mod** runs one program: `/bin/sh <plugin>/scripts/cli.sh cards …`, the same Lazy Polyglot CLI, to pick, grade and save cards (`/bin/sh` because `scripts/cli.sh` is a shell script that picks `bun` or Node). To find that script it reads the env vars `LAZY_POLYGLOT_CLI`, `LANGCOUCH_CLI` and `HOME`, and `~/.claude/plugins/installed_plugins.json`. It sends nothing anywhere and makes no network calls; the program it runs is local. It adds one command, `/cards`, and its `command.run` hook answers only that command, by opening the cards pane.
 - **Claude Code settings:** only `/lazy-polyglot:spinner on` writes to `~/.claude/settings.json` (your words as spinner tips), and `off` removes exactly those lines.
 - **`/lazy-polyglot:add-language`** may write only under `~/.lazy-polyglot/`.
-- **Not part of the plugin at runtime:** `evals/` (my model-quality evals; they read an OpenRouter key from the macOS Keychain or `OPENROUTER_API_KEY` when I run them by hand), `bunfig.toml` (test settings, no package registry), `package.json` and `bun.lock` (test and type-check tools only, nothing is installed for you).
+- **Files you can ignore:** `evals/` is my test bench for checking how well different AI models weave words. It only runs when I start it by hand, with my own OpenRouter key; the plugin never runs it and never asks you for a key. `bunfig.toml`, `package.json` and `bun.lock` are for tests and type checks; nothing from them is installed for you.
 
 ## Uninstall
 
 - **Claude Code plugin:** if you turned the spinner on, run `/lazy-polyglot:spinner off` **first** (Claude Code has no uninstall hook, so the plugin can't clean up after itself). Then `/plugin uninstall lazy-polyglot@lazy-polyglot` and restart the session. Already uninstalled with the spinner on? Delete the lines starting with `Lazy Polyglot · ` from `spinnerTipsOverride.tips` in `~/.claude/settings.json`.
 - **Manual Claude Code hook:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` in `.claude/settings.json` (or `~/.claude/settings.json` if you installed with `--scope user`).
-- **opencode:** delete `lazy-polyglot.ts` from `.opencode/plugin/` (or `~/.config/opencode/plugin/`) and the section between `<!-- lazy-polyglot:start -->` and `<!-- lazy-polyglot:end -->` in `AGENTS.md`.
+- **OpenCode:** delete `lazy-polyglot.ts` from `.opencode/plugin/` (or `~/.config/opencode/plugin/`) and the section between `<!-- lazy-polyglot:start -->` and `<!-- lazy-polyglot:end -->` in `AGENTS.md`.
 - **Codex CLI:** remove the `UserPromptSubmit`, `SessionStart` and `Stop` entries whose command ends in `src/cli.ts hook` from `~/.codex/hooks.json` (or `.codex/hooks.json` for `--scope project`).
 - **Gemini CLI:** remove the `BeforeAgent`, `SessionStart` and `AfterAgent` entries named `lazy-polyglot` from `~/.gemini/settings.json` (or `.gemini/settings.json` for `--scope project`).
 - **Hermes Agent:** `hermes plugins disable lazy-polyglot`, then delete `~/.hermes/plugins/lazy-polyglot/` (or under your `$HERMES_HOME`).
