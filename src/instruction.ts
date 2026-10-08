@@ -165,7 +165,7 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   lines.push(...numberLines(picks, num));
   lines.push(
     `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply.`,
-    `Text the user will copy or send (post, email, message, commit) stays free of ${name} words: weave only in your text around it.`,
+    `Text the user will copy or send (post, email, message, summary, document, commit) stays free of ${name} words: weave only in your text around it.`,
     correctLine(name),
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
