@@ -10,7 +10,7 @@ import { wovenLemmas } from "../src/weave-detect.ts";
 import { buildInstruction, INSTRUCTION_BUDGET } from "../src/instruction.ts";
 import { loadWordlist, loadGrammar, loadPatterns, falseFriendsFor } from "../src/store.ts";
 import { pickPattern, patternCue } from "../src/patterns.ts";
-import { isAbsorbed, LADDER_MS, NUDGE_AFTER_MISSES, type State, type Word } from "../src/types.ts";
+import { isAbsorbed, LADDER_MS, NUDGE_AFTER_MISSES, NUDGE_GIVE_UP, type State, type Word } from "../src/types.ts";
 
 const mkWord = (id: string): Word => ({ id, target: id, pos: "noun", tier: 1, gloss: { en: `en-${id}` } });
 const words: Word[] = Array.from({ length: 40 }, (_, i) => mkWord(`w${String(i).padStart(2, "0")}`));
@@ -138,6 +138,33 @@ describe("honest counting", () => {
   test("the reply's bold words count, glossed or not, inflected, never inside code", () => {
     const reply = "The **casas** (houses) look **grande**. Run `nombre` here.\n```\n**tiempo**\n```";
     expect(wovenLemmas(reply, ["casa", "grande", "nombre", "tiempo"])).toEqual(["casa", "grande"]);
+  });
+
+  test("Italian forms count when glossed: inflected verbs, multi-word, irregular leading verb", () => {
+    const served = ["tirare fuori", "cadere", "avere bisogno", "casa"];
+    expect(wovenLemmas("Он **tira fuori** (вынимает) звук.", served)).toEqual(["tirare fuori"]);
+    expect(wovenLemmas("Сервер **cade** (падает).", served)).toEqual(["cadere"]);
+    expect(wovenLemmas("Нам **abbiamo bisogno** (нужно) ключа.", served)).toEqual(["avere bisogno"]);
+    expect(wovenLemmas("Ne **ho bisogno** (мне нужно).", served)).toEqual(["avere bisogno"]);
+  });
+
+  test("the looser match never fires on bare bold headers or a lone noun", () => {
+    const served = ["casa", "cadere", "avere bisogno"];
+    expect(wovenLemmas("**Case closed:** the **cadence** is fine.", served)).toEqual([]);
+    expect(wovenLemmas("Нужен **bisogno** (нужда).", served)).toEqual([]);
+  });
+
+  test("a word missed NUDGE_GIVE_UP times rests a week and leaves the nudge slot", () => {
+    const now = iso(T0);
+    const state: State = { w00: { exposures: 0, lastSeen: "", step: 0, due: iso(T0 - DAY), missed: NUDGE_GIVE_UP - 1 } };
+    markMissed(state, ["w00"], now);
+    expect(state.w00!.missed).toBe(1);
+    expect(state.w00!.due).toBe(iso(T0 + 7 * DAY));
+    const { picks } = pickLadder(words, state, 4, iso(T0 + MIN));
+    expect(picks.some((p) => p.word.id === "w00")).toBe(false);
+    // a week later it is due again, with a clean count
+    const later = pickLadder(words, state, 4, iso(T0 + 7 * DAY + MIN)).picks.find((p) => p.word.id === "w00");
+    expect(later?.nudge).toBe(false);
   });
 
   test("settle: woven picks climb, skipped ones are missed, known words only count a showing", () => {

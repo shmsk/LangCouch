@@ -6,6 +6,16 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.12] - 2026-10-08
+
+### Fixed
+- Words woven in another form now count in Italian, Portuguese, French, German and Turkish,
+  not only Spanish: **tira fuori** counts for *tirare fuori*, **cade** for *cadere*, and
+  **abbiamo bisogno** for *avere bisogno*. Before, these were recorded as misses, so the
+  word stayed in every instruction and its progress stood still.
+- A word the model keeps skipping no longer holds a nudge slot forever: after 12 misses in a
+  row it rests for a week, then comes back with a clean count.
+
 ## [0.9.11] - 2026-10-07
 
 ### Added

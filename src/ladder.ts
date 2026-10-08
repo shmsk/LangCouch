@@ -1,5 +1,5 @@
 import type { State, Word, WordState } from "./types.ts";
-import { absorbedByScore, isWordKey, ABSORBED_STEP, KNOWN_SAMPLE, LADDER_MS, MAX_NUDGE, NUDGE_AFTER_MISSES } from "./types.ts";
+import { absorbedByScore, isWordKey, ABSORBED_STEP, KNOWN_SAMPLE, LADDER_MS, MAX_NUDGE, NUDGE_AFTER_MISSES, NUDGE_GIVE_UP, NUDGE_REST_MS } from "./types.ts";
 import type { Pick } from "./scheduler.ts";
 import { MAX_NUMERALS, NUM_POS } from "./numbers.ts";
 
@@ -75,11 +75,18 @@ export function markWoven(state: State, ids: string[], now: string): State {
   return state;
 }
 
-/** Served while due and skipped: stays due, one miss closer to the nudge slot. */
+/**
+ * Served while due and skipped: stays due, one miss closer to the nudge slot.
+ * A word missed NUDGE_GIVE_UP times rests for a week instead, so a word models
+ * can never fit stops holding a nudge slot; it keeps one miss, so it stays started.
+ */
 export function markMissed(state: State, ids: string[], now: string): State {
   for (const id of ids) {
     const prev: WordState = state[id] ?? { exposures: 0, lastSeen: "" };
-    state[id] = { ...prev, step: stepOf(prev), due: dueOf(prev) || now, missed: (prev.missed ?? 0) + 1 };
+    const missed = (prev.missed ?? 0) + 1;
+    state[id] = missed >= NUDGE_GIVE_UP
+      ? { ...prev, step: stepOf(prev), due: at(now, NUDGE_REST_MS), missed: 1 }
+      : { ...prev, step: stepOf(prev), due: dueOf(prev) || now, missed };
   }
   return state;
 }

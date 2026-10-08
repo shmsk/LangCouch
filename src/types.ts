@@ -146,6 +146,9 @@ export const ABSORBED_STEP = 5;
 /** Served while due this many times without fitting → the word may be nudged in */
 export const NUDGE_AFTER_MISSES = 3;
 export const MAX_NUDGE = 2;
+/** Missed this many times in a row → the word stops blocking a nudge slot and rests (NUDGE_REST_MS) */
+export const NUDGE_GIVE_UP = 12;
+export const NUDGE_REST_MS = 7 * 24 * 60 * 60 * 1000;
 /** Absorbed lemmas offered per reply, without glosses, to use freely where they fit */
 export const KNOWN_SAMPLE = 30;
 

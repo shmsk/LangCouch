@@ -29,6 +29,19 @@ export function stem(lemma: string): string {
   return w.length >= 4 && /[aeiouáéíóú]$/.test(w) ? w.slice(0, -1) : w;
 }
 
+/** Infinitive endings across the served languages: it -are/-ere/-ire, es/pt -ar/-er/-ir, fr -re, de -en, tr -mak/-mek. */
+const INFINITIVE = /(?:are|ere|ire|ar|er|ir|re|en|mak|mek)$/;
+
+/**
+ * Looser root for glossed pairs: a verb loses its infinitive ending (cadere → cad,
+ * tirare → tir), anything else falls back to stem(). Never shorter than 3 letters.
+ */
+export function looseStem(lemma: string): string {
+  const w = norm(lemma);
+  const end = w.match(INFINITIVE)?.[0];
+  return end && w.length - end.length >= 3 ? w.slice(0, -end.length) : stem(w);
+}
+
 /**
  * Strict check for a Spanish form of a lemma in running prose, where the loose
  * stem match would fire on English words (casa → "case"). Plural, gender, and
@@ -65,15 +78,27 @@ export function matchServed(reply: string, served: string[]): string[] {
 /**
  * Served lemmas the reply wove in any bold form, glossed or not, outside code.
  * Bold spans of 4+ tokens are the whole-sentence task: their words count too,
- * since the learner reads them. Matching is strict (inflects), not stem-prefix,
- * so a bold English word never passes for a Spanish one.
+ * since the learner reads them. Bare bold matches strictly (inflects), so a bold
+ * English header never passes for a Spanish word; a glossed pair also matches by
+ * looseStem, which counts Italian, Portuguese, French, German and Turkish forms.
  */
 export function wovenLemmas(reply: string, served: string[]): string[] {
   const { prose } = splitCode(reply);
-  const bold = boldSpans(prose).flatMap(tokens);
+  const spans = boldSpans(prose).map(tokens);
+  const bold = spans.flat();
+  // a glossed pair is an explicit weave, so a loose root is safe there: tira, cade, porta
+  const glossed = wovenPairs(prose).map((p) => tokens(p.word));
+  const glossedHit = (part: string) => glossed.some((toks) => toks.some((t) => t.startsWith(looseStem(part))));
+  const hit = (part: string) => bold.some((t) => inflects(t, part)) || glossedHit(part);
   return served.filter((lemma) => {
     const parts = tokens(lemma);
+    if (parts.length === 0) return false;
     // multi-word lemmas ("por favor"): every part must show up in bold
-    return parts.length > 0 && parts.every((p) => bold.some((t) => inflects(t, p)));
+    if (parts.every(hit)) return true;
+    // a leading verb may take any form, irregular too (avere bisogno → abbiamo bisogno),
+    // when one bold span is long enough and holds every other part
+    const [verb, ...rest] = parts;
+    if (rest.length === 0 || !INFINITIVE.test(verb!)) return false;
+    return spans.some((toks) => toks.length >= parts.length && rest.every((p) => toks.some((t) => inflects(t, p) || t.startsWith(looseStem(p)))));
   });
 }
