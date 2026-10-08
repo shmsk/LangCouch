@@ -47,6 +47,9 @@ function groupByTier(words: Word[]): [number, Word[]][] {
 const clearThreshold = (total: number): number => Math.ceil(total * TIER_UNLOCK_RATIO);
 const tierCleared = (absorbed: number, total: number): boolean => absorbed >= clearThreshold(total);
 
+/** A word that exists only in a topic: outside the tier gate (same test as isTopicOnly in topics.ts, kept here to avoid an import cycle). */
+const topicOnly = (w: Word) => w.id.startsWith("topic.");
+
 /** Count absorbed words in a cohort. */
 const absorbedCount = (cohort: Word[], state: State): number => cohort.filter((w) => isAbsorbed(state[w.id])).length;
 
@@ -77,11 +80,14 @@ export function tierProgress(words: Word[], state: State): TierProgress[] {
  */
 export function unlockedWords(words: Word[], state: State): Word[] {
   const out: Word[] = [];
-  for (const [, cohort] of groupByTier(words)) {
+  for (const [, cohort] of groupByTier(words.filter((w) => !topicOnly(w)))) {
     out.push(...cohort);
     if (!tierCleared(absorbedCount(cohort, state), cohort.length)) break; // higher tiers stay locked
   }
-  return out;
+  // topic-only words are never gated: the user asked for them. List order is kept (topics first).
+  if (out.length + words.filter(topicOnly).length === words.length) return words;
+  const open = new Set(out);
+  return words.filter((w) => topicOnly(w) || open.has(w));
 }
 
 /**
@@ -100,7 +106,8 @@ export function pickWords(words: Word[], state: State, n: number): Pick[] {
   const exposures = (w: Word) => state[w.id]?.exposures ?? 0;
 
   // Regional words (a variant's own lemmas) lead: after a switch they are the actual difference to learn.
-  const regional = (w: Word) => (w.baseTarget === undefined ? 1 : 0);
+  // topic words lead, then a variant's own words
+  const regional = (w: Word) => (w.topic !== undefined ? 0 : w.baseTarget === undefined ? 2 : 1);
   const fresh = words
     .filter((w) => !isAbsorbed(state[w.id]))
     .sort((a, b) => regional(a) - regional(b) || exposures(a) - exposures(b) || seenAt(a).localeCompare(seenAt(b)));

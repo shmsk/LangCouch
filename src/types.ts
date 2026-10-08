@@ -40,6 +40,10 @@ export interface Word {
   baseNote?: string;
   /** Pronunciation as IPA, from data/readings/<lang>.json; absent for languages that read as written. */
   ipa?: string;
+  /** Slug of the running topic this word belongs to: topic words lead the queue (src/topics.ts). */
+  topic?: string;
+  /** A topic phrase ("la cuenta, por favor"): taught whole, never counted toward grammar unlocks. */
+  phrase?: boolean;
 }
 
 /**

@@ -101,7 +101,8 @@ export function markMissed(state: State, ids: string[], now: string): State {
  *   seen first, to use freely without a translation.
  */
 export function pickLadder(words: Word[], state: State, n: number, now: string): { picks: LadderPick[]; known: Word[] } {
-  const regional = (w: Word) => (w.baseTarget === undefined ? 1 : 0);
+  // topic words lead, then a variant's own words (carro, not casa)
+  const regional = (w: Word) => (w.topic !== undefined ? 0 : w.baseTarget === undefined ? 2 : 1);
   const due = words
     .filter((w) => started(state[w.id]) && isDue(state[w.id], now))
     .sort((a, b) => dueOf(state[a.id]).localeCompare(dueOf(state[b.id])) || regional(a) - regional(b));

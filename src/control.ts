@@ -18,6 +18,9 @@ const CONTROL = [
   new RegExp(`\\b(switch|change)\\b.{0,20}\\b(the\\s+|my\\s+)?(target\\s+)?language\\b`),
   new RegExp(`(переключи|смени|поменяй|поставь|переведи|хочу\\s+учить|давай\\s+учить)\\S*.{0,40}${LANGUAGE_WORD}`),
   new RegExp(`(tilni|tilga).{0,30}(almashtir|o['ʻ‘’]?zgartir|o['ʻ‘’]?tkaz)`),
+  // "a topic for my trip to Barcelona": words for a goal (docs/Topics.md)
+  /\btopics?\b.{0,60}\b(trip|exam|travel|move|visit)|\b(trip|exam|travel)\b.{0,60}\btopics?\b/,
+  /(^|[^\p{L}])тем[аыуе](?![\p{L}]).{0,60}(поездк|экзамен|переезд|путешеств)|(поездк|экзамен|переезд|путешеств)\S*.{0,60}(^|[^\p{L}])тем[аыуе](?![\p{L}])/u,
 ];
 
 export function detectControl(prompt: string): boolean {
@@ -35,10 +38,10 @@ export function controlCommand(cliFile = fileURLToPath(import.meta.url)): string
  * the line only points the user at them; other hosts get the shell command to run.
  */
 export const claudeControlLine =
-  "The user is asking about Lazy Polyglot settings. Do not run anything: tell them, in one line, to type `/lazy-polyglot:lang <code>` (`/lazy-polyglot:lang` lists the codes), or `/lazy-polyglot:level`, `/lazy-polyglot:pause`, `/lazy-polyglot:resume`, `/lazy-polyglot:status`.";
+  "The user is asking about Lazy Polyglot settings. Do not run anything: tell them, in one line, to type `/lazy-polyglot:lang <code>` (`/lazy-polyglot:lang` lists the codes), or `/lazy-polyglot:level`, `/lazy-polyglot:pause`, `/lazy-polyglot:resume`, `/lazy-polyglot:status`, or `/lazy-polyglot:topic <goal>` to learn the words for a trip or an exam first.";
 
 export const controlLine = (cmd: string) =>
-  `The user is asking about Lazy Polyglot settings. To change them, run \`${cmd} lang <code>\` (\`${cmd} lang\` lists the codes), or \`${cmd} level <1-10|up|down>\`, \`${cmd} pause\`, \`${cmd} resume\`, \`${cmd} status\`. Then confirm in one line.`;
+  `The user is asking about Lazy Polyglot settings. To change them, run \`${cmd} lang <code>\` (\`${cmd} lang\` lists the codes), or \`${cmd} level <1-10|up|down>\`, \`${cmd} pause\`, \`${cmd} resume\`, \`${cmd} status\`. For words for a goal (a trip, an exam), follow ${resolve(dirname(fileURLToPath(import.meta.url)), "..", "docs", "Topics.md")}. Then confirm in one line.`;
 
 /**
  * "Why does Lazy Polyglot keep showing the same words?" The plugin is young and moves fast,

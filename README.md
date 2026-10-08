@@ -205,6 +205,17 @@ flowchart LR
 - **Levels 1–10**: words from level 1; [word-building rules](#word-building-rules) from level 2 (`data/patterns/<lang>.json`); collocations from 4 and simple sentences from 7, using the constructions in `data/grammar/<lang>.json` where a language has them
 - **Native language**: when you learn your own native language (e.g. `en` with native `en`), glosses fall back to another language
 
+## Topics: words for a trip or an exam
+
+The core teaches the ~450 most frequent words. A topic puts the words for one goal first: `/lazy-polyglot:topic restaurants in Barcelona by Nov 20`, "a topic for my DELE A2 exam", "I'm moving to Rome". If the goal is vague, the agent asks one or two questions you can skip (which city, roughly when), then builds 40–150 words and short phrases ("la cuenta, por favor"). Words you already know reuse their progress.
+
+- Topic words come first in replies, `/cards` and placement until the date, or until `topic end`.
+- `status` shows each running topic: `Topic Barcelona restaurants: 23/62 passed (18 words, 5 phrases) · 41 days left`.
+- At most 20 new entries a day: with a tight date the first ones fit and the rest wait, and it tells you.
+- Two topics at once; a third asks "are you sure?", a fourth waits until one ends.
+
+How the agent builds one: [docs/Topics.md](docs/Topics.md).
+
 ## Supported languages
 
 | Language | Code | Words | Grammar constructions | Word-building rules | Number rules | Pronunciation |
@@ -299,7 +310,8 @@ Adding yours is welcome — see [CONTRIBUTING.md](.github/CONTRIBUTING.md). The 
 | `placement [n] [--reset]` | check which listed words you already know: type a translation, Enter = don't know, `q` = stop; known words skip the new-word stage. `placement next [n]` / `placement answer <word>=<translation>...` do the same one batch at a time (what `/lazy-polyglot:placement` uses); `--reset` asks the "don't know" words again |
 | `cards status \| next [n] \| answer … \| reveal … \| grade …` | JSON for the cards mod (`/cards`): what is due, grading and recording each card; you don't need to call it yourself |
 | `pause` / `resume` | kill switch for weaving |
-| `export [file\|-] [--force]` | save progress, settings and your own wordlists to one file, `~/lazy-polyglot-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
+| `topic list \| add <file> [--name <name>] [--yes] \| end <name> \| drop <name> <entry>` | words for a goal, taught first ([docs/Topics.md](docs/Topics.md)); `/lazy-polyglot:topic <goal>` builds one for you |
+| `export [file\|-] [--force]` | save progress, settings, your own wordlists and topics to one file, `~/lazy-polyglot-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
 | `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |
 | `reading <off\|native\|ipa\|status>` | pronunciation of new French, English and Portuguese words: in your letters (default), IPA, or none |
 | `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
@@ -336,7 +348,7 @@ lazy-polyglot import ~/Downloads/lazy-polyglot-export-2026-10-01.json   # on the
 
 In a chat the same works as `/lazy-polyglot:export` and `/lazy-polyglot:import <file>` (Claude Code) or `/lazy-polyglot export` and `/lazy-polyglot import <file>` (Hermes, OpenClaw).
 
-Import merges, it never overwrites. If you already started the same language on the other machine, words only it has stay, words only the export has are added, and a word both have keeps the better record: more exposures and recalls, the higher step on the review ladder. Your local settings stay unless you pass `--config`, and your own wordlists are kept if they differ. Before changing anything, import copies the old files to `~/.lazy-polyglot/backups/`. Importing the same file twice, or sending it back, changes nothing.
+Import merges, it never overwrites. If you already started the same language on the other machine, words only it has stay, words only the export has are added, and a word both have keeps the better record: more exposures and recalls, the higher step on the review ladder. Your local settings stay unless you pass `--config`, and your own wordlists and topics are kept if they differ. Before changing anything, import copies the old files to `~/.lazy-polyglot/backups/`. Importing the same file twice, or sending it back, changes nothing.
 
 One trade-off: if you learned the same word on both machines, its counts are not added up (5 and 10 become 10, not 15). Adding them would count everything twice the moment a file goes back and forth.
 

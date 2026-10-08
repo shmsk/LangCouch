@@ -210,6 +210,17 @@ flowchart LR
 - **1–10 darajalar**: soʻzlar 1-darajadan; soʻz yasash qoidalari 2-darajadan (`data/patterns/<lang>.json`); soʻz birikmalari 4-darajadan va oddiy gaplar 7-darajadan, agar tilda boʻlsa, `data/grammar/<lang>.json` dagi qurilmalar asosida
 - **Ona tili**: agar siz oʻz ona tilingizni oʻrganayotgan boʻlsangiz (masalan, native `en` bilan `en`), glosslar boshqa tilga oʻtadi
 
+## Mavzular: safar yoki imtihon uchun soʻzlar
+
+Asosiy qism eng koʻp ishlatiladigan ~450 soʻzni oʻrgatadi. Mavzu bitta maqsad uchun kerakli soʻzlarni oldinga qoʻyadi: `/lazy-polyglot:topic Barselonadagi restoranlar, 20-noyabrgacha`, «DELE A2 imtihoni uchun mavzu», «Rimga koʻchyapman». Maqsad aniq boʻlmasa, agent oʻtkazib yuborish mumkin boʻlgan bir-ikki savol beradi (qaysi shahar, taxminan qachon), soʻng 40–150 ta soʻz va qisqa ibora («la cuenta, por favor») tuzadi. Siz allaqachon biladigan soʻzlar oʻz natijasini saqlaydi.
+
+- Mavzu soʻzlari javoblarda, `/cards` va placement da sanagacha yoki `topic end` gacha birinchi keladi.
+- `status` har bir faol mavzuni koʻrsatadi: `Topic Barcelona restaurants: 23/62 passed (18 words, 5 phrases) · 41 days left`.
+- Kuniga koʻpi bilan 20 ta yangi yozuv: muddat qisqa boʻlsa, birinchilari sigʻadi, qolganlari kutadi va bu haqda aytiladi.
+- Bir vaqtda ikkita mavzu; uchinchisi «ishonchingiz komilmi?» deb soʻraydi, toʻrtinchisi bittasi tugaguncha kutadi.
+
+Agent mavzuni qanday tuzishi: [docs/Topics.md](docs/Topics.md) (ingliz tilida).
+
 ## Qoʻllab-quvvatlanadigan tillar
 
 | Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari | Son qoidalari | Talaffuz |
@@ -304,7 +315,8 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](.github/CONTRIBUT
 | `placement [n] [--reset]` | roʻyxatdagi qaysi soʻzlarni allaqachon bilishingizni tekshiradi: tarjimani yozing, Enter = bilmayman, `q` = toʻxtash; bilgan soʻzlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. `placement next [n]` / `placement answer <soʻz>=<tarjima>...` xuddi shuni guruhlab bajaradi (`/lazy-polyglot:placement` shundan foydalanadi); `--reset` «bilmayman» javobli soʻzlarni qayta soʻraydi |
 | `cards status \| next [n] \| answer … \| reveal … \| grade …` | kartochkalar modi (`/cards`) uchun JSON: nimani takrorlash vaqti kelgani, har bir kartochkani tekshirish va yozib borish; oʻzingiz chaqirishingiz shart emas |
 | `pause` / `resume` | toʻqishni oʻchirish/qayta yoqish tugmasi |
-| `export [fayl\|-] [--force]` | natija, sozlamalar va oʻz lugʻatlaringizni bitta faylga saqlash, odatda `~/lazy-polyglot-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
+| `topic list \| add <fayl> [--name <nom>] [--yes] \| end <nom> \| drop <nom> <yozuv>` | maqsad uchun soʻzlar, birinchi oʻrgatiladi ([docs/Topics.md](docs/Topics.md)); `/lazy-polyglot:topic <maqsad>` mavzuni siz uchun tuzadi |
+| `export [fayl\|-] [--force]` | natija, sozlamalar, oʻz lugʻatlaringiz va mavzularni bitta faylga saqlash, odatda `~/lazy-polyglot-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
 | `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |
 | `reading <off\|native\|ipa\|status>` | yangi fransuzcha, inglizcha va portugalcha soʻzlarning talaffuzi: sizning harflaringizda (standart), IPA'da yoki umuman yoʻq |
 | `spinner <on\|off\|status>` | ixtiyoriy: oʻrganayotgan soʻzlaringiz Claude Code spinner maslahatlarida |
@@ -341,7 +353,7 @@ lazy-polyglot import ~/Downloads/lazy-polyglot-export-2026-10-01.json   # boshqa
 
 Chatda ham xuddi shunday: `/lazy-polyglot:export` va `/lazy-polyglot:import <fayl>` (Claude Code) yoki `/lazy-polyglot export` va `/lazy-polyglot import <fayl>` (Hermes, OpenClaw).
 
-Import ustidan yozmaydi, birlashtiradi. Agar boshqa kompyuterda shu tilni allaqachon boshlagan boʻlsangiz, faqat oʻsha yerda bor soʻzlar qoladi, faqat eksportda bor soʻzlar qoʻshiladi, ikkalasida ham bor soʻz uchun esa yaxshiroq yozuv qoladi: koʻproq koʻrsatish va yodga tushirish, takrorlash zinapoyasining yuqoriroq pogʻonasi. Lokal sozlamalar `--config` berilmasa oʻzgarmaydi, oʻz lugʻatlaringiz farq qilsa saqlab qolinadi. Biror narsani oʻzgartirishdan oldin import eski fayllarni `~/.lazy-polyglot/backups/` ga nusxalaydi. Bir faylni ikki marta import qilish yoki uni qaytarib yuborish hech narsani oʻzgartirmaydi.
+Import ustidan yozmaydi, birlashtiradi. Agar boshqa kompyuterda shu tilni allaqachon boshlagan boʻlsangiz, faqat oʻsha yerda bor soʻzlar qoladi, faqat eksportda bor soʻzlar qoʻshiladi, ikkalasida ham bor soʻz uchun esa yaxshiroq yozuv qoladi: koʻproq koʻrsatish va yodga tushirish, takrorlash zinapoyasining yuqoriroq pogʻonasi. Lokal sozlamalar `--config` berilmasa oʻzgarmaydi, oʻz lugʻatlaringiz va mavzularingiz farq qilsa saqlab qolinadi. Biror narsani oʻzgartirishdan oldin import eski fayllarni `~/.lazy-polyglot/backups/` ga nusxalaydi. Bir faylni ikki marta import qilish yoki uni qaytarib yuborish hech narsani oʻzgartirmaydi.
 
 Bitta murosa: bir soʻzni ikkala kompyuterda ham oʻrgangan boʻlsangiz, hisoblagichlar qoʻshilmaydi (5 va 10 — 15 emas, 10 boʻladi). Qoʻshilsa, fayl borib-kelishi bilan hammasi ikki marta hisoblanib ketardi.
 

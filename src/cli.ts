@@ -3,7 +3,7 @@ import { createInterface } from "node:readline/promises";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, loadGrammar, loadPatterns, loadNumberRules, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, readJson, loadGrammar, loadPatterns, loadNumberRules, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
 import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
@@ -32,6 +32,7 @@ import { installOpenclaw } from "../adapters/openclaw/install.ts";
 import { installGemini } from "../adapters/gemini/install.ts";
 import { installAntigravity } from "../adapters/antigravity/install.ts";
 import { migrateLegacyDataDir } from "./migrate.ts";
+import { loadLearningWords, listTopics, topicId, isRunning, topicProgress, topicLine, topicListView, addTopic, endTopic, dropEntry, type Topic } from "./topics.ts";
 import { detectControl, detectTrouble, troubleLine, controlCommand, controlLine, claudeControlLine } from "./control.ts";
 
 const PAUSED_LINE = "The user may be asking why Lazy Polyglot stopped: it is paused. Tell them in one line that `/lazy-polyglot:resume` (or the `resume` command) turns it back on.";
@@ -54,9 +55,9 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
   const offerStart = !tooEasy && eventName !== "SessionStart" && !placementStarted(saved, saved.lang) && !(saved.placementOffered ?? []).includes(saved.lang);
   const config: Config = { ...saved, native: gloss.lang };
   const algorithm = algorithmOf(config);
-  const words = loadWordlist(config.lang);
   const state = loadState(config.lang);
   const now = new Date().toISOString();
+  const words = loadLearningWords(config.lang, state, now);
   const n = wordsPerResponse(config.level);
   let picks: Pick[];
   let known: Word[] = [];
@@ -138,7 +139,7 @@ function settleReply(payload: HookPayload): void {
 function refreshSpinner(on: boolean): number {
   const config = loadConfig();
   const before = readSettings();
-  const words = on ? loadWordlist(config.lang) : [];
+  const words = on ? loadLearningWords(config.lang, loadState(config.lang)) : [];
   const mode = readingOf(config, config.lang, words.some((w) => w.ipa));
   const tips = on ? pickSpinnerWords(words, loadState(config.lang)).map((w) => tipFor(w, config.native, readingFor(w, mode, config.native, config.lang))) : [];
   writeSettingsIfChanged(before, on ? applySpinnerTips(before, tips) : removeSpinnerTips(before), DATA_DIR);
@@ -274,7 +275,13 @@ function status(): string {
   const news = whatsNew(config);
   const words = safeWordlist(config.lang);
   const state = loadState(config.lang);
-  const byId = new Map(words.map((w) => [w.id, w.target]));
+  const now = new Date().toISOString();
+  const topics = listTopics(config.lang);
+  // names for the "most exposed" list: core words, plus the words of every topic, ended ones too
+  const byId = new Map([
+    ...topics.flatMap((f) => f.topic.entries.map((e): [string, string] => [topicId(f.slug, e.key), e.target])),
+    ...words.map((w): [string, string] => [w.id, w.target]),
+  ]);
   const touched = Object.entries(state).filter(([k, s]) => isWordKey(k) && inProgress(s));
   const absorbed = touched.filter(([, s]) => isAbsorbed(s));
   const top = touched
@@ -338,6 +345,7 @@ function status(): string {
     grammarLine,
     patternLine,
     numberLine,
+    ...topics.filter((f) => isRunning(f.topic, now)).map((f) => topicLine(topicProgress(f, state, now))),
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
     `Spinner tips: ${config.spinner ? "on" : "off (lazy-polyglot spinner on)"}`,
@@ -459,8 +467,8 @@ try {
         if (payload.prompt) {
           const config = loadConfig();
           if (config.enabled !== false) {
-            const found = scanRecalls(payload.prompt, loadWordlist(config.lang));
             const state = loadState(config.lang);
+            const found = scanRecalls(payload.prompt, loadLearningWords(config.lang, state));
             if (algorithmOf(config) === 3) migrate(state); // recalls climb the ladder only once it is there
             if (found.length) saveState(config.lang, recordRecalls(state, found));
           }
@@ -491,8 +499,8 @@ try {
     }
     case "quiz": {
       const config = loadConfig();
-      const words = loadWordlist(config.lang);
       const state = loadState(config.lang);
+      const words = loadLearningWords(config.lang, state);
       if (algorithmOf(config) === 3) migrate(state); // a quiz answer climbs or resets the ladder
       const n = Math.max(1, Math.trunc(Number(args[0])) || 5);
       const seenTargets = new Set<string>();
@@ -530,8 +538,8 @@ try {
       // JSON for the cards mod: it draws, this grades and records
       const config = loadConfig();
       const lang = config.lang;
-      const words = loadWordlist(lang);
       const state = loadState(lang);
+      const words = loadLearningWords(lang, state);
       if (algorithmOf(config) === 3) migrate(state);
       const now = new Date().toISOString();
       const out = (v: unknown) => console.log(JSON.stringify(v));
@@ -599,8 +607,8 @@ try {
     case "placement": {
       const config = loadConfig();
       const lang = config.lang;
-      const words = loadWordlist(lang);
       const state = loadState(lang);
+      const words = loadLearningWords(lang, state);
       if (algorithmOf(config) === 3) migrate(state);
       const skipped = skippedFor(config, lang);
       const now = () => new Date().toISOString();
@@ -849,6 +857,32 @@ try {
       }
       break;
     }
+    case "topic": {
+      const config = loadConfig();
+      const lang = config.lang;
+      const now = new Date().toISOString();
+      const [sub, ...rest] = args;
+      const value = (flag: string) => { const i = rest.indexOf(flag); return i >= 0 ? rest[i + 1] : undefined; };
+      const plain = rest.filter((a, i) => !a.startsWith("--") && !(i > 0 && rest[i - 1] === "--name"));
+      if (sub === "list" || sub === undefined) {
+        console.log(topicListView(lang, loadState(lang), now));
+      } else if (sub === "add" && plain[0]) {
+        const file = userPath(plain[0]);
+        const slug = value("--name") ?? basename(file).replace(/\.json$/i, "").toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "");
+        const draft = readJson<Topic>(file, "topic draft");
+        const r = addTopic(draft, slug, lang, loadState(lang), config.level, now, rest.includes("--yes"));
+        console.log(r.lines.join("\n"));
+        if (!r.ok && !r.confirm) process.exit(1);
+      } else if (sub === "end" && plain[0]) {
+        console.log(endTopic(lang, plain[0], now));
+      } else if (sub === "drop" && plain[0] && plain[1]) {
+        console.log(dropEntry(lang, plain[0], plain.slice(1).join(" ")));
+      } else {
+        console.error("usage: lazy-polyglot topic list | add <file.json> [--name <name>] [--yes] | end <name> | drop <name> <entry>");
+        process.exit(1);
+      }
+      break;
+    }
     case "status":
       console.log(args.includes("--absorbed") ? absorbedListView() : status());
       break;
@@ -945,6 +979,7 @@ try {
           "  init                      create ~/.lazy-polyglot",
           "  pause / resume            turn weaving off/on",
           "  status [--absorbed]       level, core/grammar progress; --absorbed lists absorbed words",
+          "  topic list|add|end|drop     words for a goal (a trip, an exam): see docs/Topics.md",
           "  lang [code]               switch language / list available (regional variants too: pt-BR)",
           "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.lazy-polyglot/wordlists/)",
           "  native [en|ru|uz]         your language: translations when a message's language is unclear, quiz answers",

@@ -6,6 +6,23 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.13] - 2026-10-09
+
+### Added
+- Topics: the words for one goal, taught first. Say `/lazy-polyglot:topic restaurants in
+  Barcelona by Nov 20` (or ask in plain words), and the agent builds 40–150 words and short
+  phrases, asking one or two skippable questions when the goal is vague. Topic words lead in
+  replies, `/cards` and placement; words you already know keep their progress. `status`
+  shows each running topic as *23/62 passed (18 words, 5 phrases) · 41 days left*. Two topics
+  run at once, a third asks first, a fourth waits. At most 20 new entries a day: with a tight
+  date the rest wait, and you're told. `export` and `import` carry topics. See
+  docs/Topics.md.
+- When you ask your agent why Lazy Polyglot does something, or say it's broken, the agent now
+  first recommends checking for a newer version, since it may already be fixed, then works
+  through the new docs/TROUBLESHOOTING.md. A paused plugin answers "why did it stop?" with how
+  to resume.
+- `status` shows the installed version in its first line.
+
 ## [0.9.12] - 2026-10-08
 
 ### Fixed

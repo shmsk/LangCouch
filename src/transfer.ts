@@ -6,6 +6,7 @@ import {
   DATA_DIR, PLUGIN_VERSION, WORDLISTS_DIR, availableLangs, baseLang, langsWithState, loadConcepts, mergeWordState,
   normalizeLang, readJson, readStateFile, sharedWithBase, writeJsonAtomic, writeStateFile,
 } from "./store.ts";
+import { validateTopic, type Topic } from "./topics.ts";
 
 /**
  * Moving progress between machines: `export` packs ~/.lazy-polyglot into one JSON file,
@@ -17,8 +18,8 @@ import {
 export const BUNDLE_FORMAT = "langcouch-export";
 export const BUNDLE_VERSION = 1;
 
-/** The user's own data files next to progress; each folder holds <lang>.json files. */
-const USER_DIRS = ["wordlists", "grammar", "patterns", "falseFriends", "numbers", "readings"] as const;
+/** The user's own data files next to progress; each folder holds <lang>.json files, topics hold <lang>.<name>.json. */
+const USER_DIRS = ["wordlists", "grammar", "patterns", "falseFriends", "numbers", "readings", "topics"] as const;
 type UserDir = (typeof USER_DIRS)[number];
 
 export interface Bundle {
@@ -35,6 +36,8 @@ export interface Bundle {
 // Language codes and file names come from the bundle and end up in paths and in the
 // config the hook reads, so only plain codes are allowed.
 const SAFE_LANG = /^[a-z]+(?:-[A-Za-z0-9]+)*$/;
+const SAFE_TOPIC = /^([a-z]+(?:-[A-Za-z0-9]+)*)\.[a-z0-9][a-z0-9-]{0,40}$/;
+const safeName = (dir: UserDir, name: string) => (dir === "topics" ? SAFE_TOPIC.test(name) : SAFE_LANG.test(name));
 
 const configPath = () => join(DATA_DIR, "config.json");
 const has = (o: object, k: string) => Object.hasOwn(o, k);
@@ -52,7 +55,7 @@ export function exportBundle(now: Date = new Date()): { bundle: Bundle; skipped:
     if (!existsSync(path)) continue;
     for (const f of readdirSync(path).filter((f) => f.endsWith(".json"))) {
       const name = f.slice(0, -".json".length);
-      if (!SAFE_LANG.test(name)) skipped.push(`${dir}/${f}`);
+      if (!safeName(dir, name)) skipped.push(`${dir}/${f}`);
       else user[dir][name] = readJson<unknown>(join(path, f), `${dir}/${f}`);
     }
   }
@@ -95,7 +98,8 @@ function validConfig(c: unknown): c is Config {
 }
 
 /** A user file must have the shape the loaders expect, or it would break the language it overrides. */
-function validUserFile(dir: UserDir, content: unknown, concepts: Set<string>): boolean {
+function validUserFile(dir: UserDir, content: unknown, concepts: Set<string>, name = ""): boolean {
+  if (dir === "topics") return isObject(content) && validateTopic(content as unknown as Topic, name.split(".")[0]!, concepts).length === 0;
   if (dir === "wordlists" || dir === "readings") return isObject(content) && Object.entries(content).every(([id, value]) => concepts.has(id) && typeof value === "string" && value.length > 0);
   if (!Array.isArray(content) || !content.every(isObject)) return false;
   return dir === "falseFriends" || content.every((item) => typeof item.id === "string");
@@ -128,8 +132,8 @@ export function parseBundle(raw: unknown): Bundle {
     const files = user[dir] ?? {};
     if (!isObject(files)) bad(`user ${dir} is not an object`);
     for (const [name, content] of Object.entries(files as Record<string, unknown>)) {
-      if (!SAFE_LANG.test(name)) bad(`bad file name "${dir}/${name}"`);
-      if (!validUserFile(dir, content, concepts)) bad(`${dir}/${name}.json has the wrong shape`);
+      if (!safeName(dir, name)) bad(`bad file name "${dir}/${name}"`);
+      if (!validUserFile(dir, content, concepts, name)) bad(`${dir}/${name}.json has the wrong shape`);
     }
   }
   const out = { ...(b as unknown as Bundle), config: (b.config as Config | undefined) ?? null, user: {} as Bundle["user"] };
