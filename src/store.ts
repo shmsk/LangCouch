@@ -174,6 +174,7 @@ const USER_NUMBERS_DIR = join(DATA_DIR, "numbers");
 const READINGS_DIR = join(BUNDLED, "readings");
 const USER_READINGS_DIR = join(DATA_DIR, "readings");
 export const CONCEPTS_PATH = join(BUNDLED, "concepts.json");
+export const HOMOGRAPHS_PATH = join(BUNDLED, "homographs.json");
 const CHANGELOG_PATH = join(REPO_ROOT, "CHANGELOG.md");
 
 /** Version of the installed plugin, from its package.json. */
@@ -225,6 +226,16 @@ export function normalizeLang(code: string): string {
 export function baseLang(lang: string): string | null {
   const i = lang.indexOf("-");
   return i > 0 ? lang.slice(0, i) : null;
+}
+
+/**
+ * Lemmas of this language that are also English words (it: via, fine, due), lowercased;
+ * empty when the language has none or the file is missing. data/homographs.json is generated
+ * by scripts/homographs.ts.
+ */
+export function loadHomographs(lang: string): Set<string> {
+  if (!existsSync(HOMOGRAPHS_PATH)) return new Set();
+  return new Set(readJson<Record<string, string[]>>(HOMOGRAPHS_PATH, "homographs")[normalizeLang(lang)] ?? []);
 }
 
 /** First existing `<lang>.json`: the user dir wins over the bundled one. */

@@ -225,7 +225,7 @@ describe("algorithm 3 instruction", () => {
     const known = long.slice(12, 60);
     const text = buildInstruction(config, picks, grammar, rule, 3, known);
     expect(text.length).toBeLessThanOrEqual(INSTRUCTION_BUDGET);
-    for (const part of ["New, translation inline:", "Familiar, no translation in the text:", "Nudge, the one exception:", "close with one line of only those used", "Known, no translation anywhere:", "Word-building rule", "whole simple sentence", "stays entirely free of Spanish words"])
+    for (const part of ["New, translation inline:", "Familiar, no translation in the text:", "Nudge, the one exception:", "close with one line of only those used", "Known, no translation anywhere:", "Word-building rule", "whole simple sentence", "stays free of Spanish words"])
       expect(text).toContain(part);
     const knownLine = text.split("\n").find((l) => l.startsWith("Known"))!;
     expect(knownLine.split(",").length).toBeGreaterThanOrEqual(8);

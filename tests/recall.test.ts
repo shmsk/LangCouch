@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer, MIN_RECALL_LENGTH } from "../src/recall.ts";
 import { isAbsorbed, QUIZ_FAIL_EXPOSURES, type Word, type State } from "../src/types.ts";
+import { loadHomographs } from "../src/store.ts";
 
 const mk = (target: string, ru = "перевод", en = "gloss"): Word => ({ id: `id-${target}`, target, pos: "noun", tier: 1, gloss: { ru, en } });
 
@@ -20,6 +21,28 @@ describe("scanRecalls", () => {
   test("short targets are ignored — cognate/particle noise filter", () => {
     expect("ir".length).toBeLessThan(MIN_RECALL_LENGTH);
     expect(scanRecalls("voy a ir mañana", words)).toEqual([]);
+  });
+
+  test("a homograph counts only outside an English sentence", () => {
+    const it = [mk("via"), mk("fine"), mk("casa")];
+    const homographs = new Set(["via", "fine"]);
+    expect(scanRecalls("Send it via email, that's fine.", it, homographs)).toEqual([]);
+    expect(scanRecalls("la via di casa", it, homographs)).toEqual(["id-via", "id-casa"]); // anchored by casa
+    expect(scanRecalls("Это не via, а fine", it, homographs)).toEqual(["id-via", "id-fine"]); // Cyrillic sentence
+    expect(scanRecalls("Back home. Ma via, casa!", it, homographs)).toEqual(["id-via", "id-casa"]); // anchor is per sentence
+    expect(scanRecalls("Go via the casa route. Fine!", it, homographs)).toEqual(["id-via", "id-casa"]);
+    expect(scanRecalls("Send it via email", it)).toEqual(["id-via"]); // no homograph list: as before
+  });
+
+  test("bundled homographs: English look-alikes, never a plain Italian word", () => {
+    const it = loadHomographs("it");
+    for (const w of ["via", "fine", "due", "zero"]) expect(it.has(w)).toBe(true);
+    expect(it.has("casa")).toBe(false);
+    expect(loadHomographs("en").size).toBe(0);
+  });
+
+  test("a misspelling is not a recall", () => {
+    expect(scanRecalls("la cassa è grande", words)).toEqual([]);
   });
 
   test("scan of 325 words stays under the 100ms hook budget", () => {

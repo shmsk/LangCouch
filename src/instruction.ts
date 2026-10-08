@@ -42,6 +42,9 @@ export type WeaveAlgorithm = 1 | 2 | 3;
 
 export const INSTRUCTION_BUDGET = 2400;
 
+/** Prompt recall credits only exact spellings; the model catches a misspelt or misused word (cassa for casa) from context. */
+const correctLine = (name: string) => `If the user misspells or misuses a word in ${name}, correct it in one short line.`;
+
 export function buildInstruction(config: Config, picks: Pick[], grammar: GrammarItem | null = null, rule: PatternCue | null = null, algorithm: WeaveAlgorithm = 1, known: Word[] = [], ask: string | null = null, num: NumberCue | null = null, reading: (w: Word) => string = () => ""): string {
   const name = langName(config.lang);
   const base = config.lang.split("-")[0]!;
@@ -102,6 +105,7 @@ export function buildInstruction(config: Config, picks: Pick[], grammar: Grammar
   lines.push(
     `Forbidden: touching code blocks, inline code, identifiers, commands, paths, URLs, quotes, or technical terms; translating the whole reply; weaving words not on the list${rule || num ? " (the one rule word aside)" : ""}.`,
     `Never weave into text the user will copy or send (a post, email, message, summary, document, commit message): keep it free of ${name} words and weave only in your own words around it.`,
+    correctLine(name),
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
     `</lazy-polyglot>`,
@@ -135,13 +139,13 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
     ...head,
     `Use a word only where your reply already needs that meaning; skip the rest. A few words, or none, is fine. Never write a sentence, metaphor or example just to host a word${nudge.length ? " (the nudge aside)" : ""}.`,
     ...(nudge.length
-      ? [`Nudge, the one exception: work in ${nudge.map(spoken).join("; ")} even if unneeded, as a short aside or metaphor in your own words or one closing line after the answer; never in code, facts, numbers or names.`]
+      ? [`Nudge, the one exception: work in ${nudge.map(spoken).join("; ")} even if unneeded, as a short aside, metaphor or closing line; never in code, facts, numbers or names.`]
       : []),
     [...fresh, ...nudge].some((p) => reading(p.word))
-      ? `Format: bold every woven word. New and nudge words: **word** [pronunciation] (translation) the first time, pronunciation copied as given, then **word**; familiar and known: just **word**.`
-      : `Format: bold every woven word. New and nudge words: **word** (translation) the first time, then **word**; familiar and known: just **word**.`,
+      ? `Format: bold every woven word. New and nudge words: **word** [pronunciation] (translation) the first time, pronunciation copied as given; others: just **word**.`
+      : `Format: bold every woven word. New and nudge words: **word** (translation) the first time; others: just **word**.`,
     ...(familiar.length ? [`If you used familiar words, close with one line of only those used: ${familiar[0] ? item(familiar[0]) : ""} · …; none used, no line.`] : []),
-    `Inflect words to fit (casas, bonitas), keeping the lemma recognizable.`,
+    `Inflect words to fit, keeping the lemma recognizable.`,
   ];
 
   if (stage >= 2 && grammar) {
@@ -151,7 +155,7 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   }
   if (stage >= 3) {
     const withConstruction = grammar ? ", using the construction above in it" : "";
-    lines.push(`If it fits, once, in your own words and never in text the user will copy, insert a whole simple sentence in the language (5-8 listed or basic words)${withConstruction}, its translation right after in parentheses.`);
+    lines.push(`If it fits, once, insert a whole simple sentence in the language (5-8 listed or basic words)${withConstruction}, its translation right after in parentheses.`);
   }
   if (rule) {
     const notThese = rule.notThese.length > 0 ? ` False friends, not this rule: ${rule.notThese.join("; ")}.` : "";
@@ -160,8 +164,9 @@ function ladderInstruction(config: Config, picks: Pick[], grammar: GrammarItem |
   }
   lines.push(...numberLines(picks, num));
   lines.push(
-    `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply or weave unlisted words${rule || num ? " (the rule word aside)" : ""}.`,
-    `Anything the user will copy or send (post, email, message, summary, document, commit message) stays entirely free of ${name} words: weave only in your text around it.`,
+    `Never touch code, identifiers, commands, paths, URLs, quotes or technical terms; never translate the whole reply.`,
+    `Text the user will copy or send (post, email, message, commit) stays free of ${name} words.`,
+    correctLine(name),
     `The meaning and quality of the main reply always outweigh the weaving.`,
     ...(ask ? [ask] : []),
     `</lazy-polyglot>`,

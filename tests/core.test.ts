@@ -104,6 +104,10 @@ describe("instruction", () => {
     for (const algo of [1, 2] as const) expect(buildInstruction(config, picks, null, null, algo)).toContain("Never weave into text the user will copy or send");
   });
 
+  test("asks the model to correct a misspelt or misused word from the user's message, in every algorithm", () => {
+    for (const algo of [1, 2, 3] as const) expect(buildInstruction(config, picks, null, null, algo)).toContain("If the user misspells or misuses a word in Spanish");
+  });
+
   test("algorithm 2 asks for a word only where the reply needs it, within budget", () => {
     const maxPicks = pickWords(words, {}, wordsPerResponse(10));
     const two = buildInstruction({ ...config, level: 10 }, maxPicks, null, null, 2);

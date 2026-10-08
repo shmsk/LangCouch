@@ -77,7 +77,7 @@ describe("instruction with the ask line", () => {
   test("the deliverables line names no language", () => {
     const picks = pickWords(words, {}, 3);
     const text = buildInstruction({ lang: "es", native: "ru", level: 2 }, picks, null, null, 3);
-    expect(text).toContain("stays entirely free of Spanish words");
+    expect(text).toContain("stays free of Spanish words");
     expect(text).not.toContain("written entirely in");
   });
 });

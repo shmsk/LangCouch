@@ -11,16 +11,26 @@ export const MIN_RECALL_LENGTH = 3;
 
 const norm = (s: string) => s.toLowerCase().normalize("NFC");
 
+// a letter outside the Latin script (Cyrillic and the like): the sentence isn't English
+const NON_LATIN = /[^\P{L}\p{Script=Latin}]/u;
+
 /**
  * Find wordlist words the user actively used in their prompt; returns concept ids
  * (the state keys). Word-boundary matching via tokenization; deduped (N mentions =
  * 1 recall); multi-token targets are skipped — the scan is a cheap signal, not a parser.
+ * A homograph (a lemma that is also an English word: via, fine) counts only in a sentence
+ * with a non-Latin letter or another, non-homograph list word: "via email" is English.
  */
-export function scanRecalls(prompt: string, words: Word[]): string[] {
-  const tokens = new Set(norm(prompt).split(/[^\p{L}]+/u));
-  return words
-    .filter((w) => w.target.length >= MIN_RECALL_LENGTH && !w.target.includes(" ") && tokens.has(norm(w.target)))
-    .map((w) => w.id);
+export function scanRecalls(prompt: string, words: Word[], homographs: ReadonlySet<string> = new Set()): string[] {
+  const usable = words.filter((w) => w.target.length >= MIN_RECALL_LENGTH && !w.target.includes(" "));
+  const listed = new Set(usable.map((w) => norm(w.target)));
+  const found = new Set<string>();
+  for (const sentence of norm(prompt).split(/[.!?;\n]+/)) {
+    const hits = sentence.split(/[^\p{L}]+/u).filter((t) => listed.has(t));
+    const anchored = NON_LATIN.test(sentence) || hits.some((t) => !homographs.has(t));
+    for (const t of hits) if (anchored || !homographs.has(t)) found.add(t);
+  }
+  return usable.filter((w) => found.has(norm(w.target))).map((w) => w.id);
 }
 
 /** Record recall events by concept id. lastSeen is NOT touched — it tracks instruction exposure only. */

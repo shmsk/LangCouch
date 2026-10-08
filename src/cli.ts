@@ -3,7 +3,7 @@ import { createInterface } from "node:readline/promises";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
-import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, readJson, loadGrammar, loadPatterns, loadNumberRules, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
+import { initConfig, loadConfig, saveConfig, loadState, saveState, loadWordlist, readJson, loadGrammar, loadPatterns, loadNumberRules, falseFriendsFor, availableLangs, userLangs, wordlistPath, wordlistLayers, normalizeLang, baseLang, langsWithState, sharedWithBase, changelogFor, loadHomographs, PLUGIN_VERSION, DATA_DIR, CONCEPTS_PATH, USER_WORDLISTS_DIR } from "./store.ts";
 import { runValidation } from "./validate.ts";
 import { langName } from "./instruction.ts";
 import { invocationKey, isDuplicateInvocation } from "./guard.ts";
@@ -468,7 +468,7 @@ try {
           const config = loadConfig();
           if (config.enabled !== false) {
             const state = loadState(config.lang);
-            const found = scanRecalls(payload.prompt, loadLearningWords(config.lang, state));
+            const found = scanRecalls(payload.prompt, loadLearningWords(config.lang, state), loadHomographs(config.lang));
             if (algorithmOf(config) === 3) migrate(state); // recalls climb the ladder only once it is there
             if (found.length) saveState(config.lang, recordRecalls(state, found));
           }

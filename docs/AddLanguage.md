@@ -186,4 +186,5 @@ Learners see translations in their own language via `config.native`. To support 
 - **Why at most 2 concepts per word?** Progress is kept per concept, but a recall of a shared word credits every concept that uses it. Two is a real homonym; more means the list is dodging the work.
 - **Multi-token entries** are never counted by the prompt-recall scanner (it matches single tokens only) — another reason to prefer single words.
 - **Words shorter than 3 characters** are never counted as recalls (noise filter).
+- **Words that are also English** (Italian *via*, *fine*) count as a recall only in a sentence that isn't English. After changing a wordlist, rerun `bun scripts/homographs.ts` (macOS) to refresh `data/homographs.json`.
 - **Case folding**: recall matching lowercases with default Unicode rules; store words pre-lowercased in your language's own convention (Turkish `İstanbul` → dotted lowercase `i̇stanbul` differs from `istanbul` — prefer the form users actually type).
