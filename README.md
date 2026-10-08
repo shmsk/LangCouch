@@ -266,6 +266,8 @@ Every number up to 1000 is built from 30 words: 0–20, the tens, 100 and 1000. 
 
 What changed in each version is in [CHANGELOG.md](CHANGELOG.md). After an update, `status` shows the new version's changes once.
 
+Something wrong? Check for a newer version first, it may already be fixed; the rest is in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md). Ask your agent "why is Lazy Polyglot doing X" and it gets the same advice.
+
 ## Supported CLIs
 
 | CLI | Status | Install | Mechanism |

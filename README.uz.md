@@ -271,6 +271,8 @@ Koʻp soʻzlar bir nechta tilda bir xil tuziladi. *Revolution* ispanchada *revol
 
 Har bir versiyada nima oʻzgargani [CHANGELOG.md](CHANGELOG.md) faylida. Yangilanishdan keyin `status` yangi versiyadagi oʻzgarishlarni bir marta koʻrsatadi.
 
+Nimadir notoʻgʻrimi? Avval yangi versiya bor-yoʻqligini tekshiring: ehtimol, bu allaqachon tuzatilgan. Qolgani [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) da (ingliz tilida). Agentdan «Lazy Polyglot nega X qilyapti» deb soʻrang, u ham shu maslahatni oladi.
+
 ## Qoʻllab-quvvatlanadigan CLI'lar
 
 | CLI | Holat | Oʻrnatish | Mexanizm |

@@ -32,7 +32,9 @@ import { installOpenclaw } from "../adapters/openclaw/install.ts";
 import { installGemini } from "../adapters/gemini/install.ts";
 import { installAntigravity } from "../adapters/antigravity/install.ts";
 import { migrateLegacyDataDir } from "./migrate.ts";
-import { detectControl, controlCommand, controlLine, claudeControlLine } from "./control.ts";
+import { detectControl, detectTrouble, troubleLine, controlCommand, controlLine, claudeControlLine } from "./control.ts";
+
+const PAUSED_LINE = "The user may be asking why Lazy Polyglot stopped: it is paused. Tell them in one line that `/lazy-polyglot:resume` (or the `resume` command) turns it back on.";
 
 /**
  * Build this turn's instruction. `mark` records the turn: algorithms 1-2 count the
@@ -42,7 +44,8 @@ import { detectControl, controlCommand, controlLine, claudeControlLine } from ".
  */
 function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt = ""): string {
   const saved = loadConfig();
-  if (saved.enabled === false) return "";
+  // paused: nothing, except a one-line answer when the user asks why the plugin went quiet
+  if (saved.enabled === false) return prompt !== "" && detectTrouble(prompt) ? PAUSED_LINE : "";
   // translations follow the language the user just wrote in; quiz, spinner and status stay on `native`
   const gloss = promptGlossLang(prompt, saved.native);
   const ask = gloss.unsure === "unknown" && saved.nativeAsked !== true;
@@ -92,6 +95,8 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
   const extra = [
     // "switch to French" in plain words: hand the agent the exact command
     prompt !== "" && detectControl(prompt) ? (process.env.CLAUDE_PLUGIN_ROOT ? claudeControlLine : controlLine(controlCommand())) : "",
+    // "why is Lazy Polyglot doing X": recommend checking for an update first, then the troubleshooting doc
+    prompt !== "" && detectTrouble(prompt) ? troubleLine(PLUGIN_VERSION) : "",
     ask ? askNativeLine(langName(gloss.lang.split("-")[0]!)) : "",
     tooEasy ? OFFER_TOO_EASY : offerStart ? offerAtStart(langName(config.lang)) : "",
   ].filter(Boolean);
@@ -326,7 +331,7 @@ function status(): string {
   });
 
   return [
-    `lazy-polyglot — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response) · mode ${algorithmOf(config)}`,
+    `lazy-polyglot ${PLUGIN_VERSION} — ${config.lang} @ level ${config.level} (${wordsPerResponse(config.level)} words/response) · mode ${algorithmOf(config)}`,
     news,
     coreLine,
     regionalLine,
