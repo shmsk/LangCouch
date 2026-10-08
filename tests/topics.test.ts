@@ -184,6 +184,30 @@ describe("topic command (real CLI, throwaway data dir)", () => {
     expect(run(dir, ["topic", "add", write(dir, "four", draft({ title: "four" })), "--name", "four", "--yes"]).status).toBe(0);
   });
 
+  test("delete asks first, then removes the file; progress stays and comes back on re-add", () => {
+    const dir = setup();
+    run(dir, ["topic", "add", write(dir, "bcn", draft()), "--name", "barcelona"]);
+    const id = topicId("barcelona", "bill");
+    writeFileSync(join(dir, "state.es.json"), JSON.stringify({ [id]: absorbed }));
+    const ask = run(dir, ["topic", "delete", "barcelona"]);
+    expect(ask.status).toBe(0);
+    expect(ask.stdout).toContain("for good? Its progress stays");
+    expect(existsSync(join(dir, "topics", "es.barcelona.json"))).toBe(true);
+    expect(run(dir, ["topic", "delete", "barcelona", "--yes"]).stdout).toContain('Deleted topic "Barcelona restaurants"');
+    expect(existsSync(join(dir, "topics", "es.barcelona.json"))).toBe(false);
+    expect(run(dir, ["topic", "list"]).stdout).toContain("No topics for es yet");
+    expect(run(dir, ["topic", "delete", "barcelona", "--yes"]).status).toBe(1);
+    run(dir, ["topic", "add", write(dir, "bcn", draft()), "--name", "barcelona"]);
+    expect(run(dir, ["status"]).stdout).toContain("Topic Barcelona restaurants: 1/4 passed (1 word, 0 phrases)");
+  });
+
+  test("a broken topic file can be deleted", () => {
+    const dir = setup();
+    mkdirSync(join(dir, "topics"), { recursive: true });
+    writeFileSync(join(dir, "topics", "es.broken.json"), "{ not json");
+    expect(run(dir, ["topic", "delete", "broken", "--yes"]).stdout).toContain('Deleted topic "broken"');
+  });
+
   test("a broken topic file never stops the hook and shows up in topic list", () => {
     const dir = setup();
     mkdirSync(join(dir, "topics"), { recursive: true });

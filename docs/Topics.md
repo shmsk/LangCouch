@@ -64,5 +64,6 @@ Show the learner the output in one or two lines. Adding the same name again repl
 - `topic list`: every topic with progress (`23/62 passed (18 words, 5 phrases) · 41 days left`). `status` shows the running ones.
 - `topic drop <name> <entry>`: remove one entry, by key or by the word itself.
 - `topic end <name>`: stop it early. Its words go back to the normal order; what was learned stays.
+- `topic delete <name>`: changed your mind? Removes the topic from the list for good. It asks first: show the learner its question and add `--yes` only if they agree. Progress on its words stays, and re-adding the same name brings it back.
 
 Topics live in `~/.lazy-polyglot/topics/<lang>.<name>.json`, next to progress: they survive plugin updates, and `export` / `import` carry them to another machine.

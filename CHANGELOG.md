@@ -15,7 +15,8 @@ after an update. If an update ever needs you to do something, its section starts
   replies, `/cards` and placement; words you already know keep their progress. `status`
   shows each running topic as *23/62 passed (18 words, 5 phrases) · 41 days left*. Two topics
   run at once, a third asks first, a fourth waits. At most 20 new entries a day: with a tight
-  date the rest wait, and you're told. `export` and `import` carry topics. See
+  date the rest wait, and you're told. `topic end` stops a topic, `topic delete` removes it after a
+  yes; what you learned stays either way. `export` and `import` carry topics. See
   docs/Topics.md.
 - When you ask your agent why Lazy Polyglot does something, or say it's broken, the agent now
   first recommends checking for a newer version, since it may already be fixed, then works

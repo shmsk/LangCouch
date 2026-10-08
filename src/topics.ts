@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { existsSync, mkdirSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import type { Pos, State, Word } from "./types.ts";
 import { isAbsorbed, wordsPerResponse } from "./types.ts";
 import { DATA_DIR, loadConcepts, loadWordlist, normalizeLang, readJson, writeJsonAtomic } from "./store.ts";
@@ -314,6 +314,21 @@ export function endTopic(lang: string, slug: string, now: string): string {
   if (!f.topic.active) return `Topic "${f.topic.title}" has already ended.`;
   saveTopic(lang, slug, { ...f.topic, active: false, endedAt: now });
   return `Ended topic "${f.topic.title}". Its words go back to the normal order; what you learned stays.`;
+}
+
+/**
+ * Delete a topic for good (changed your mind): the file goes, so it leaves `topic list` and
+ * `status`. Progress on its words stays in the state file: core words stay learned, and a
+ * topic re-added under the same name gets its progress back. Asks first; `yes` confirms.
+ * Works on a broken file too.
+ */
+export function deleteTopic(lang: string, slug: string, yes = false): { ok: boolean; confirm?: boolean; line: string } {
+  const path = SLUG.test(slug) ? topicPath(lang, slug) : null;
+  if (!path || !existsSync(path)) return { ok: false, line: `No topic "${slug}" for ${lang}. \`topic list\` shows them.` };
+  const title = listTopics(lang).find((t) => t.slug === slug)?.topic.title ?? slug;
+  if (!yes) return { ok: false, confirm: true, line: `Delete topic "${title}" for good? Its progress stays, but the topic leaves the list. Run it again with --yes. (\`topic end ${slug}\` only stops it.)` };
+  unlinkSync(path);
+  return { ok: true, line: `Deleted topic "${title}". What you learned from it stays.` };
 }
 
 /** Remove one entry (a bad word from the model, or one you don't need). Progress on it stays in the state file. */

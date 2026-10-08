@@ -218,6 +218,7 @@ Asosiy qism eng koʻp ishlatiladigan ~450 soʻzni oʻrgatadi. Mavzu bitta maqsad
 - `status` har bir faol mavzuni koʻrsatadi: `Topic Barcelona restaurants: 23/62 passed (18 words, 5 phrases) · 41 days left`.
 - Kuniga koʻpi bilan 20 ta yangi yozuv: muddat qisqa boʻlsa, birinchilari sigʻadi, qolganlari kutadi va bu haqda aytiladi.
 - Bir vaqtda ikkita mavzu; uchinchisi «ishonchingiz komilmi?» deb soʻraydi, toʻrtinchisi bittasi tugaguncha kutadi.
+- Fikringiz oʻzgardimi: `topic end <nom>` mavzuni toʻxtatadi, `topic delete <nom>` uni butunlay oʻchiradi (tasdiqlagandan keyin). Ikkala holatda ham oʻrganganlaringiz qoladi.
 
 Agent mavzuni qanday tuzishi: [docs/Topics.md](docs/Topics.md) (ingliz tilida).
 
@@ -315,7 +316,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](.github/CONTRIBUT
 | `placement [n] [--reset]` | roʻyxatdagi qaysi soʻzlarni allaqachon bilishingizni tekshiradi: tarjimani yozing, Enter = bilmayman, `q` = toʻxtash; bilgan soʻzlaringiz yangi soʻz bosqichini oʻtkazib yuboradi. `placement next [n]` / `placement answer <soʻz>=<tarjima>...` xuddi shuni guruhlab bajaradi (`/lazy-polyglot:placement` shundan foydalanadi); `--reset` «bilmayman» javobli soʻzlarni qayta soʻraydi |
 | `cards status \| next [n] \| answer … \| reveal … \| grade …` | kartochkalar modi (`/cards`) uchun JSON: nimani takrorlash vaqti kelgani, har bir kartochkani tekshirish va yozib borish; oʻzingiz chaqirishingiz shart emas |
 | `pause` / `resume` | toʻqishni oʻchirish/qayta yoqish tugmasi |
-| `topic list \| add <fayl> [--name <nom>] [--yes] \| end <nom> \| drop <nom> <yozuv>` | maqsad uchun soʻzlar, birinchi oʻrgatiladi ([docs/Topics.md](docs/Topics.md)); `/lazy-polyglot:topic <maqsad>` mavzuni siz uchun tuzadi |
+| `topic list \| add <fayl> [--name <nom>] [--yes] \| end <nom> \| delete <nom> [--yes] \| drop <nom> <yozuv>` | maqsad uchun soʻzlar, birinchi oʻrgatiladi ([docs/Topics.md](docs/Topics.md)); `/lazy-polyglot:topic <maqsad>` mavzuni siz uchun tuzadi |
 | `export [fayl\|-] [--force]` | natija, sozlamalar, oʻz lugʻatlaringiz va mavzularni bitta faylga saqlash, odatda `~/lazy-polyglot-export-<sana>.json` (`-` uni chiqaradi; mavjud fayl faqat `--force` bilan almashtiriladi) |
 | `import <fayl> [--config]` | eksportni shu kompyuterdagi natijaga qoʻshish, ikki tomonning eng yaxshisini qoldirib; `--config` uning sozlamalarini ham oladi |
 | `reading <off\|native\|ipa\|status>` | yangi fransuzcha, inglizcha va portugalcha soʻzlarning talaffuzi: sizning harflaringizda (standart), IPA'da yoki umuman yoʻq |

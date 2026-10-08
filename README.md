@@ -213,6 +213,7 @@ The core teaches the ~450 most frequent words. A topic puts the words for one go
 - `status` shows each running topic: `Topic Barcelona restaurants: 23/62 passed (18 words, 5 phrases) · 41 days left`.
 - At most 20 new entries a day: with a tight date the first ones fit and the rest wait, and it tells you.
 - Two topics at once; a third asks "are you sure?", a fourth waits until one ends.
+- Changed your mind: `topic end <name>` stops a topic, `topic delete <name>` removes it for good (after a yes). Either way, what you learned stays.
 
 How the agent builds one: [docs/Topics.md](docs/Topics.md).
 
@@ -310,7 +311,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](.github/CONTRIBUTING.md). The 
 | `placement [n] [--reset]` | check which listed words you already know: type a translation, Enter = don't know, `q` = stop; known words skip the new-word stage. `placement next [n]` / `placement answer <word>=<translation>...` do the same one batch at a time (what `/lazy-polyglot:placement` uses); `--reset` asks the "don't know" words again |
 | `cards status \| next [n] \| answer … \| reveal … \| grade …` | JSON for the cards mod (`/cards`): what is due, grading and recording each card; you don't need to call it yourself |
 | `pause` / `resume` | kill switch for weaving |
-| `topic list \| add <file> [--name <name>] [--yes] \| end <name> \| drop <name> <entry>` | words for a goal, taught first ([docs/Topics.md](docs/Topics.md)); `/lazy-polyglot:topic <goal>` builds one for you |
+| `topic list \| add <file> [--name <name>] [--yes] \| end <name> \| delete <name> [--yes] \| drop <name> <entry>` | words for a goal, taught first ([docs/Topics.md](docs/Topics.md)); `/lazy-polyglot:topic <goal>` builds one for you |
 | `export [file\|-] [--force]` | save progress, settings, your own wordlists and topics to one file, `~/lazy-polyglot-export-<date>.json` by default (`-` prints it; an existing file is replaced only with `--force`) |
 | `import <file> [--config]` | merge an export into this machine's progress, keeping the best of both; `--config` also takes its settings |
 | `reading <off\|native\|ipa\|status>` | pronunciation of new French, English and Portuguese words: in your letters (default), IPA, or none |

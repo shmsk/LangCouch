@@ -32,7 +32,7 @@ import { installOpenclaw } from "../adapters/openclaw/install.ts";
 import { installGemini } from "../adapters/gemini/install.ts";
 import { installAntigravity } from "../adapters/antigravity/install.ts";
 import { migrateLegacyDataDir } from "./migrate.ts";
-import { loadLearningWords, listTopics, topicId, isRunning, topicProgress, topicLine, topicListView, addTopic, endTopic, dropEntry, type Topic } from "./topics.ts";
+import { loadLearningWords, listTopics, topicId, isRunning, topicProgress, topicLine, topicListView, addTopic, endTopic, deleteTopic, dropEntry, type Topic } from "./topics.ts";
 import { detectControl, detectTrouble, troubleLine, controlCommand, controlLine, claudeControlLine } from "./control.ts";
 
 const PAUSED_LINE = "The user may be asking why Lazy Polyglot stopped: it is paused. Tell them in one line that `/lazy-polyglot:resume` (or the `resume` command) turns it back on.";
@@ -875,10 +875,14 @@ try {
         if (!r.ok && !r.confirm) process.exit(1);
       } else if (sub === "end" && plain[0]) {
         console.log(endTopic(lang, plain[0], now));
+      } else if (sub === "delete" && plain[0]) {
+        const r = deleteTopic(lang, plain[0], rest.includes("--yes"));
+        console.log(r.line);
+        if (!r.ok && !r.confirm) process.exit(1);
       } else if (sub === "drop" && plain[0] && plain[1]) {
         console.log(dropEntry(lang, plain[0], plain.slice(1).join(" ")));
       } else {
-        console.error("usage: lazy-polyglot topic list | add <file.json> [--name <name>] [--yes] | end <name> | drop <name> <entry>");
+        console.error("usage: lazy-polyglot topic list | add <file.json> [--name <name>] [--yes] | end <name> | delete <name> [--yes] | drop <name> <entry>");
         process.exit(1);
       }
       break;
@@ -979,7 +983,7 @@ try {
           "  init                      create ~/.lazy-polyglot",
           "  pause / resume            turn weaving off/on",
           "  status [--absorbed]       level, core/grammar progress; --absorbed lists absorbed words",
-          "  topic list|add|end|drop     words for a goal (a trip, an exam): see docs/Topics.md",
+          "  topic list|add|end|delete|drop  words for a goal (a trip, an exam): see docs/Topics.md",
           "  lang [code]               switch language / list available (regional variants too: pt-BR)",
           "  validate <code> [--full]  check a wordlist (e.g. one you added in ~/.lazy-polyglot/wordlists/)",
           "  native [en|ru|uz]         your language: translations when a message's language is unclear, quiz answers",
