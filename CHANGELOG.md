@@ -6,6 +6,19 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.14] - 2026-10-09
+
+### Fixed
+- Words that are also English words (Italian *via*, *fine*, *due*, *zero*, and their kin in
+  every language) no longer count as recalled when you write them in an English sentence. They
+  count when the sentence has another listed word or is written in a non-Latin script.
+- When you misspell or misuse a word you're learning, the agent corrects it in one short line.
+  A misspelt word gets no credit.
+
+### Changed
+- The instruction your agent gets each turn is a little shorter, so more of your known words fit
+  in it.
+
 ## [0.9.13] - 2026-10-09
 
 ### Added
