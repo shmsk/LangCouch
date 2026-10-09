@@ -93,7 +93,9 @@ function validConfig(c: unknown): c is Config {
     (c.placementOffered === undefined || strings(c.placementOffered)) &&
     (c.cardsStatus === undefined || typeof c.cardsStatus === "boolean") &&
     (c.reading === undefined || (isObject(c.reading) && Object.entries(c.reading).every(([lang, m]) => SAFE_LANG.test(lang) && (m === "off" || m === "native" || m === "ipa")))) &&
-    (c.readingAsked === undefined || strings(c.readingAsked))
+    (c.readingAsked === undefined || strings(c.readingAsked)) &&
+    (c.milestones === undefined || typeof c.milestones === "boolean") &&
+    (c.milestoneLog === undefined || (isObject(c.milestoneLog) && Object.entries(c.milestoneLog).every(([lang, l]) => SAFE_LANG.test(lang) && isObject(l) && typeof l.words === "number" && isObject(l.topics) && typeof l.weekAt === "string" && typeof l.weekBase === "number")))
   );
 }
 

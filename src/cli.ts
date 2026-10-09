@@ -32,7 +32,8 @@ import { installOpenclaw } from "../adapters/openclaw/install.ts";
 import { installGemini } from "../adapters/gemini/install.ts";
 import { installAntigravity } from "../adapters/antigravity/install.ts";
 import { migrateLegacyDataDir } from "./migrate.ts";
-import { loadLearningWords, listTopics, topicId, isRunning, topicProgress, topicLine, topicListView, addTopic, endTopic, deleteTopic, dropEntry, type Topic } from "./topics.ts";
+import { loadLearningWords, runningTopics, isTopicOnly, listTopics, topicId, isRunning, topicProgress, topicLine, topicListView, addTopic, endTopic, deleteTopic, dropEntry, type Topic } from "./topics.ts";
+import { pickCheer, cheerLine, absorbedCount, milestoneBar } from "./milestones.ts";
 import { detectControl, detectTrouble, troubleLine, controlCommand, controlLine, claudeControlLine } from "./control.ts";
 
 const PAUSED_LINE = "The user may be asking why Lazy Polyglot stopped: it is paused. Tell them in one line that `/lazy-polyglot:resume` (or the `resume` command) turns it back on.";
@@ -114,8 +115,23 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
       saveConfig({ ...fresh, readingAsked: [...(fresh.readingAsked ?? []), config.lang] });
     }
   }
+  // a round number of absorbed words, half a topic, a week's tally: one closing line, at most once a day
+  if (mark && eventName !== "SessionStart" && saved.milestones !== false) {
+    const cheer = milestoneCheer(config.lang, words, state, now);
+    if (cheer) extra.push(cheer);
+  }
   const num = numberRule ? numberCue(numberRule, config.native) : null;
   return buildInstruction(config, picks, grammar, cue, algorithm, known, extra.length ? extra.join(" ") : null, num, (w) => readingFor(w, mode, config.native, config.lang));
+}
+
+/** This turn's milestone line, if one is due; records it (and a first run's starting point) in the config. */
+function milestoneCheer(lang: string, words: Word[], state: Record<string, WordState>, now: string): string | null {
+  const core = words.filter((w) => !isTopicOnly(w));
+  const topics = runningTopics(lang, now).map((f) => topicProgress(f, state, now));
+  const fresh = loadConfig(); // re-read: never undo a change made meanwhile
+  const { cheer, log } = pickCheer(fresh.milestoneLog?.[lang], absorbedCount(state), { absorbed: core.filter((w) => isAbsorbed(state[w.id])).length, total: core.length }, topics, now);
+  if (JSON.stringify(log) !== JSON.stringify(fresh.milestoneLog?.[lang])) saveConfig({ ...fresh, milestoneLog: { ...fresh.milestoneLog, [lang]: log } });
+  return cheer ? cheerLine(cheer, langName(lang)) : null;
 }
 
 /**
@@ -346,6 +362,7 @@ function status(): string {
     patternLine,
     numberLine,
     ...topics.filter((f) => isRunning(f.topic, now)).map((f) => topicLine(topicProgress(f, state, now))),
+    milestoneStatus(config, words, state),
     `Dictionary: ${words.length} | In progress: ${touched.length} | Absorbed (recall formula): ${absorbed.length}`,
     `Languages:\n${langRows.join("\n")}`,
     `Spinner tips: ${config.spinner ? "on" : "off (lazy-polyglot spinner on)"}`,
@@ -355,6 +372,13 @@ function status(): string {
   ]
     .filter((line): line is string => line !== null)
     .join("\n");
+}
+
+/** "Next milestone: ▓▓▓▓░ 87/100", or how to turn milestones back on. */
+function milestoneStatus(config: Config, words: Word[], state: Record<string, WordState>): string | null {
+  if (config.milestones === false) return "Milestones: off (lazy-polyglot milestones on)";
+  const bar = milestoneBar(absorbedCount(state), words.length);
+  return bar ? `Next milestone: ${bar}` : null;
 }
 
 /** `status --absorbed`: the full list of absorbed words with their gloss. */
@@ -887,6 +911,21 @@ try {
       }
       break;
     }
+    case "milestones": {
+      const sub = args[0] ?? "status";
+      const config = loadConfig();
+      if (sub === "on" || sub === "off") {
+        saveConfig({ ...config, milestones: sub === "on" });
+        console.log(sub === "on" ? "Milestones on: one short line at 50, 100, 200… words, half and all of a topic, and a weekly tally; at most one a day" : "Milestones off: no closing lines, no progress bar");
+      } else if (sub === "status") {
+        const bar = milestoneBar(absorbedCount(loadState(config.lang)), safeWordlist(config.lang).length);
+        console.log(`Milestones: ${config.milestones === false ? "off" : "on"}${config.milestones !== false && bar ? ` · next ${bar}` : ""}`);
+      } else {
+        console.error("usage: lazy-polyglot milestones <on|off|status>");
+        process.exit(1);
+      }
+      break;
+    }
     case "status":
       console.log(args.includes("--absorbed") ? absorbedListView() : status());
       break;
@@ -998,6 +1037,7 @@ try {
           "  reading <off|native|ipa|status>   pronunciation of new words: your letters (default), IPA, or none (fr, en, pt)",
           "  spinner <on|off|status>   words to review in the Claude Code spinner tips (opt-in)",
           "  cards-status <on|off|status>   due-card count in the Claude Code status line (opt-in)",
+          "  milestones <on|off|status>   one short line at 50, 100, 200… words and topic halves; at most one a day",
           "  instruction               print the weave instruction (without marking exposures)",
           "  hook                      CLI-hook mode (marks exposures, always exit 0)",
           "  install claude [--scope project|user]   register the hook in Claude Code",

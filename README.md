@@ -41,7 +41,7 @@ It works in the terminal, the Desktop app's Code tab, VS Code and the mobile app
 
 **Two small opt-ins:**
 
-- `/lazy-polyglot:cards-status on` shows how many cards are due in the status line at the bottom.
+- `/lazy-polyglot:cards-status on` shows how many cards are due in the status line at the bottom, and the way to your next milestone (`▓▓▓░░ 87/100`).
 - `/lazy-polyglot:spinner on` shows words you're learning while Claude is thinking. [Details](#spinner-tips-opt-in).
 
 ## Will it make my agent's answers worse?
@@ -217,6 +217,15 @@ The core teaches the ~450 most frequent words. A topic puts the words for one go
 
 How the agent builds one: [docs/Topics.md](docs/Topics.md).
 
+## Milestones
+
+When you pass 50, 100, 200, 300 or 400 absorbed words, or the whole core, the agent ends its next reply with one short line in the language you're learning: by then you can read it. Half a topic, a whole topic and a week with new words (once every 7 days) get a line too.
+
+- At most one line a day. No streaks, nothing about days you missed.
+- Updating doesn't replay milestones you passed long ago: counting starts from where you are.
+- `status` shows the way to the next one: `Next milestone: ▓▓▓░░ 87/100`.
+- `/lazy-polyglot:milestones off` turns them off, bar included.
+
 ## Supported languages
 
 | Language | Code | Words | Grammar constructions | Word-building rules | Number rules | Pronunciation |
@@ -317,6 +326,7 @@ Adding yours is welcome — see [CONTRIBUTING.md](.github/CONTRIBUTING.md). The 
 | `reading <off\|native\|ipa\|status>` | pronunciation of new French, English and Portuguese words: in your letters (default), IPA, or none |
 | `spinner <on\|off\|status>` | opt-in: words you are learning in the Claude Code spinner tips |
 | `cards-status <on\|off\|status>` | opt-in: how many cards are due, in the Claude Code status line (`/cards` asks once) |
+| `milestones <on\|off\|status>` | a short line at 50, 100, 200… absorbed words and topic halves, at most one a day (on by default) |
 | `instruction` | print the weave instruction (without marking exposures) |
 | `hook` | CLI-hook mode: before a reply, builds the instruction and scans your prompt for recalls; after it (a `Stop` payload), counts the words the reply used. Exits 0 on any error so it never breaks the host session |
 | `install claude [--scope project\|user]` | register the UserPromptSubmit, SessionStart and Stop hooks |

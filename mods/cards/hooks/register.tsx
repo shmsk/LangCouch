@@ -57,7 +57,8 @@ const message = (err: unknown) => (err instanceof Error ? err.message : String(e
 
 async function showStatus($: Engine, status: CardStatus) {
   // opt-in: the status line is the user's space, nothing shows there until they say yes
-  $.ui.status(status.statusLine !== true || status.paused || status.due === 0 ? undefined : `🃏 ${status.due} due`)
+  const parts = [status.due > 0 ? `🃏 ${status.due} due` : '', status.progress ?? ''].filter(Boolean)
+  $.ui.status(status.statusLine !== true || status.paused || parts.length === 0 ? undefined : parts.join(' · '))
 }
 
 async function start($: Engine) {

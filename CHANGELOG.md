@@ -6,6 +6,16 @@ What changed in each version, written for people who use Lazy Polyglot. The form
 after an update. If an update ever needs you to do something, its section starts with
 **Upgrade notes**: numbered steps.
 
+## [0.9.15] - 2026-10-09
+
+### Added
+- Milestones. At 50, 100, 200, 300 and 400 absorbed words, and at the whole core, your agent
+  ends its next reply with one short line in the language you're learning. Half a topic, a whole
+  topic and a week with new words get a line too. At most one a day, no streaks, and milestones
+  you passed before updating aren't replayed. `status` shows the way to the next one
+  (`▓▓▓░░ 87/100`), and so does the status line if you turned on `cards-status`.
+  `/lazy-polyglot:milestones off` turns them off.
+
 ## [0.9.14] - 2026-10-09
 
 ### Fixed

@@ -4,6 +4,8 @@ import { dueOf, isDue, stepOf } from "./ladder.ts";
 import { applyQuizResult, checkAnswer, dropLeading } from "./recall.ts";
 import { answerPlacement, placementQueue, skippedFor } from "./placement.ts";
 import { readingFor, readingOf } from "./reading.ts";
+import { absorbedCount, milestoneBar } from "./milestones.ts";
+import { isTopicOnly } from "./topics.ts";
 
 /**
  * Flashcards: the review half of the ladder, driven by the learner instead of by replies.
@@ -163,6 +165,8 @@ export interface CardStatus {
   total: number;
   /** Show the due count in the status line: true/false as chosen, null = never asked. */
   statusLine: boolean | null;
+  /** The way to the next milestone (`▓▓▓▓░ 87/100`), null when milestones are off or all are behind. */
+  progress: string | null;
 }
 
 export function cardStatus(words: Word[], state: State, config: Config, now: string): CardStatus {
@@ -181,5 +185,6 @@ export function cardStatus(words: Word[], state: State, config: Config, now: str
     placementLeft: placementQueue(words, state, skippedFor(config, config.lang)).length,
     total: words.length,
     statusLine: config.cardsStatus ?? null,
+    progress: config.milestones === false ? null : milestoneBar(absorbedCount(state), words.filter((w) => !isTopicOnly(w)).length),
   };
 }

@@ -1,3 +1,5 @@
+import type { MilestoneLog } from "./milestones.ts";
+
 export type Pos = "noun" | "verb" | "adj" | "adv" | "num";
 
 /**
@@ -98,6 +100,10 @@ export interface Config {
   reading?: Record<string, "off" | "native" | "ipa">;
   /** Languages whose pronunciation question has been asked (it is asked once). */
   readingAsked?: string[];
+  /** A closing line at round numbers of absorbed words, topic halves and a weekly tally. On unless false; toggled by `milestones on|off`. */
+  milestones?: boolean;
+  /** Per language: which milestones were already celebrated (src/milestones.ts). */
+  milestoneLog?: Record<string, MilestoneLog>;
 }
 
 /** Algorithm 3 since 0.6.0; a config without the field gets it. `lazy-polyglot mode 1` brings the old weave back. */

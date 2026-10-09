@@ -44,7 +44,7 @@ Terminalda, Desktop ilovasining Code boʻlimida, VS Code'da va mobil ilovada ish
 
 **Ikkita kichik ixtiyoriy imkoniyat:**
 
-- `/lazy-polyglot:cards-status on` pastdagi holat qatorida nechta kartochka kutayotganini koʻrsatadi.
+- `/lazy-polyglot:cards-status on` pastdagi holat qatorida nechta kartochka kutayotganini va keyingi marragacha qancha qolganini (`▓▓▓░░ 87/100`) koʻrsatadi.
 - `/lazy-polyglot:spinner on` Claude oʻylayotganda oʻrganayotgan soʻzlaringizni koʻrsatadi. [Batafsil](#spinner-maslahatlari-ixtiyoriy).
 
 ## Bu agentimning javoblarini yomonlashtiradimi?
@@ -222,6 +222,15 @@ Asosiy qism eng koʻp ishlatiladigan ~450 soʻzni oʻrgatadi. Mavzu bitta maqsad
 
 Agent mavzuni qanday tuzishi: [docs/Topics.md](docs/Topics.md) (ingliz tilida).
 
+## Marralar
+
+50, 100, 200, 300 yoki 400 ta oʻzlashtirilgan soʻzdan yoki butun asosiy qismdan oʻtganingizda, agent keyingi javobini oʻrganayotgan tilingizdagi bitta qisqa qator bilan tugatadi: bu paytga kelib uni oʻqiy olasiz. Mavzuning yarmi, butun mavzu va yangi soʻzli hafta (har 7 kunda bir marta) ham qator oladi.
+
+- Kuniga koʻpi bilan bitta qator. Ketma-ketlik hisobi yoʻq, oʻtkazib yuborilgan kunlar haqida hech narsa yoʻq.
+- Yangilangandan keyin ancha oldin oʻtilgan marralar takrorlanmaydi: hisob hozirgi joyingizdan boshlanadi.
+- `status` keyingisigacha yoʻlni koʻrsatadi: `Next milestone: ▓▓▓░░ 87/100`.
+- `/lazy-polyglot:milestones off` ularni chiziq bilan birga oʻchiradi.
+
 ## Qoʻllab-quvvatlanadigan tillar
 
 | Til | Kod | Soʻzlar | Grammatik qurilmalar | Soʻz yasash qoidalari | Son qoidalari | Talaffuz |
@@ -322,6 +331,7 @@ Oʻzingiznikini qoʻshish mumkin — qarang: [CONTRIBUTING.md](.github/CONTRIBUT
 | `reading <off\|native\|ipa\|status>` | yangi fransuzcha, inglizcha va portugalcha soʻzlarning talaffuzi: sizning harflaringizda (standart), IPA'da yoki umuman yoʻq |
 | `spinner <on\|off\|status>` | ixtiyoriy: oʻrganayotgan soʻzlaringiz Claude Code spinner maslahatlarida |
 | `cards-status <on\|off\|status>` | ixtiyoriy: takrorlashni kutayotgan kartochkalar soni Claude Code holat qatorida (`/cards` bir marta soʻraydi) |
+| `milestones <on\|off\|status>` | 50, 100, 200… oʻzlashtirilgan soʻzda va mavzu yarmida qisqa qator, kuniga koʻpi bilan bitta (standart holatda yoqilgan) |
 | `instruction` | toʻqish koʻrsatmasini chop etadi (duchor boʻlishlarni belgilamasdan) |
 | `hook` | CLI-hook rejimi: javobdan oldin koʻrsatma tuzadi va soʻrovingizni yodga tushirishlar uchun skanerlaydi; undan keyin (`Stop` yuki) javob ishlatgan soʻzlarni hisoblaydi. Har qanday xatoda 0 bilan chiqadi, shuning uchun xost sessiyasini hech qachon buzmaydi |
 | `install claude [--scope project\|user]` | UserPromptSubmit, SessionStart va Stop hooklarini roʻyxatdan oʻtkazadi |
