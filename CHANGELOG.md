@@ -16,6 +16,12 @@ after an update. If an update ever needs you to do something, its section starts
   (`▓▓▓░░ 87/100`), and so does the status line if you turned on `cards-status`.
   `/lazy-polyglot:milestones off` turns them off.
 
+### Changed
+- The "already know some of this language?" placement offer is no longer made to someone who
+  has already absorbed 20 or more words in it.
+- A reply ends with at most one extra line: when a question or an offer is due, a milestone
+  waits for the next reply.
+
 ## [0.9.14] - 2026-10-09
 
 ### Fixed

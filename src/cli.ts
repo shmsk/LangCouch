@@ -17,7 +17,7 @@ import { buildInstruction } from "./instruction.ts";
 import { readingOf, readingFor, askReadingLine, readingExamples, READING_MODES, type ReadingMode } from "./reading.ts";
 import { promptGlossLang, askNativeLine, GLOSS_LANGS } from "./glossLang.ts";
 import { scanRecalls, recordRecalls, applyQuizResult, checkAnswer } from "./recall.ts";
-import { placementQueue, answerPlacement, skippedFor, withSkipped, placementStarted, detectTooEasy, OFFER_TOO_EASY, offerAtStart } from "./placement.ts";
+import { placementQueue, answerPlacement, skippedFor, withSkipped, placementStarted, detectTooEasy, OFFER_TOO_EASY, OFFER_KNOWN_MAX, offerAtStart } from "./placement.ts";
 import { acceptCard, answerCard, cardQueue, cardStatus, revealCard } from "./cards.ts";
 import type { CardUndo } from "./cards.ts";
 import { algorithmOf, glossFor, grammarStage, isAbsorbed, isWordKey, wordsPerResponse, type Config } from "./types.ts";
@@ -53,12 +53,14 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
   const ask = gloss.unsure === "unknown" && saved.nativeAsked !== true;
   // placement: offered when the user says the words are too easy, and once per language at the start
   const tooEasy = prompt !== "" && detectTooEasy(prompt);
-  const offerStart = !tooEasy && eventName !== "SessionStart" && !placementStarted(saved, saved.lang) && !(saved.placementOffered ?? []).includes(saved.lang);
+  const offerCandidate = !tooEasy && eventName !== "SessionStart" && !placementStarted(saved, saved.lang) && !(saved.placementOffered ?? []).includes(saved.lang);
   const config: Config = { ...saved, native: gloss.lang };
   const algorithm = algorithmOf(config);
   const state = loadState(config.lang);
   const now = new Date().toISOString();
   const words = loadLearningWords(config.lang, state, now);
+  // no "new to Italian?" for someone who already knows a fair share: they never get asked
+  const offerStart = offerCandidate && absorbedCount(state) < OFFER_KNOWN_MAX;
   const n = wordsPerResponse(config.level);
   let picks: Pick[];
   let known: Word[] = [];
@@ -116,7 +118,8 @@ function makeInstruction(mark: boolean, sessionId = "", eventName = "", prompt =
     }
   }
   // a round number of absorbed words, half a topic, a week's tally: one closing line, at most once a day
-  if (mark && eventName !== "SessionStart" && saved.milestones !== false) {
+  // one closing line per reply: a milestone waits while a question or an offer takes the slot (it is not marked shown)
+  if (mark && eventName !== "SessionStart" && saved.milestones !== false && !ask && !tooEasy && !offerStart && !sample) {
     const cheer = milestoneCheer(config.lang, words, state, now);
     if (cheer) extra.push(cheer);
   }

@@ -91,5 +91,8 @@ export function detectTooEasy(prompt: string): boolean {
 export const OFFER_TOO_EASY =
   "The user says these words are too easy. In one short line after the answer, offer a placement test: `/lazy-polyglot:placement` here, or `lazy-polyglot placement` in a terminal. It marks the words they already know, so only new ones are taught.";
 
+/** The start-of-use offer is for beginners: a learner with this many words absorbed already found their level. */
+export const OFFER_KNOWN_MAX = 20;
+
 export const offerAtStart = (name: string) =>
   `New to ${name} in Lazy Polyglot? Once, in one short line after the answer, mention that if the user already knows some ${name}, a placement test marks those words: \`/lazy-polyglot:placement\` here, or \`lazy-polyglot placement\` in a terminal.`;

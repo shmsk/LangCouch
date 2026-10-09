@@ -120,6 +120,23 @@ describe("the hook", () => {
     expect(run(dir, ["status"]).stdout).toContain("Next milestone: ░░░░░ 100/200");
   });
 
+  test("no placement offer once a learner knows 20+ words; a beginner still gets it", () => {
+    const known = setup(101, { milestoneLog: { it: { words: 50, topics: {}, weekAt: DAY1, weekBase: 101 } } });
+    const hook = run(known, ["hook"], "Explain git rebase").stdout;
+    expect(hook).not.toContain("New to Italian");
+    expect(hook).toContain("absorbed 100 Italian words");
+    expect(run(setup(5), ["hook"], "Explain git rebase").stdout).toContain("New to Italian");
+  });
+
+  test("one closing line per reply: a milestone waits while an offer takes the slot", () => {
+    const dir = setup(101, { placementOffered: ["it"], milestoneLog: { it: { words: 50, topics: {}, weekAt: DAY1, weekBase: 101 } } });
+    const busy = run(dir, ["hook"], "these words are too easy").stdout;
+    expect(busy).toContain("placement");
+    expect(busy).not.toContain("Milestone");
+    expect(config(dir).milestoneLog.it.words).toBe(50); // not marked shown
+    expect(run(dir, ["hook"], "Explain git rebase").stdout).toContain("absorbed 100 Italian words");
+  });
+
   test("SessionStart and `milestones off` never cheer; off hides the bar", () => {
     const dir = setup(120, { milestoneLog: { it: { words: 50, topics: {}, weekAt: DAY1, weekBase: 120 } } });
     expect(run(dir, ["hook"], "", "SessionStart").stdout).not.toContain("Milestone");
